@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Painel do dono · Orçamento Falado</title>
+<link rel="icon" href="../assets/icone.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+.painel-wrap { max-width: 1080px; margin: 0 auto; padding: 28px 16px 64px; display: grid; gap: 28px; }
+.cab-painel { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 6px; }
+.kpi b { font: 700 2rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.kpi small { color: var(--muted); font-size: .85rem; }
+@media (max-width: 820px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.duas { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 820px) { .duas { grid-template-columns: 1fr; } }
+.caixa-p { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.caixa-p h2 { font-size: 1.3rem; }
+#grafico svg { width: 100%; height: auto; display: block; }
+#grafico rect { fill: var(--accent); }
+#grafico text { fill: var(--muted); font: 500 10px var(--font-body); }
+#grafico line { stroke: var(--line); }
+.cidades { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cidades li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; font-size: .95rem; }
+.cidades li span:last-child { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.cidades .barra { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; }
+.cidades .barra i { display: block; height: 100%; background: var(--ink); }
+.tabela td { white-space: nowrap; }
+.tabela td.num { text-align: right; }
+.tabela th.num { text-align: right; }
+.selo-p { font-size: .72rem; font-weight: 600; padding: 2px 7px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+.selo-p.ok { background: var(--go); color: #fff; border-color: var(--go); }
+.selo-p.adm { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.login { max-width: 420px; display: grid; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+.login label { display: grid; gap: 4px; font-weight: 500; }
+.login input, .busca { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; min-width: 0; }
+.erro { color: #b3261e; }
+.nota-p { color: var(--muted); font-size: .9rem; max-width: 70ch; }
+</style>
+</head>
+<body>
+<header class="topo"><div class="wrap">
+<a class="marca" href="../"><span class="faixa" aria-hidden="true"></span>Orçamento Falado</a>
+<nav style="display:flex;gap:8px"><button id="atualizar" class="botao peq" type="button" hidden>Atualizar</button><button id="sair" class="botao peq" type="button" hidden>Sair</button></nav>
+</div></header>
+<main class="painel-wrap">
+  <div class="cab-painel"><div><span class="etiqueta">Só para o dono</span><h1 style="font-size:2.4rem">Painel</h1></div><p id="quando" class="miudo"></p></div>
+
+  <form id="login" class="login" hidden>
+    <h2 style="font-size:1.5rem">Entrar</h2>
+    <label>E-mail<input id="email" type="email" autocomplete="email"></label>
+    <label>Senha<input id="senha" type="password" autocomplete="current-password"></label>
+    <button class="botao primario" type="submit">Entrar</button>
+    <p id="login-msg" class="erro" role="status"></p>
+  </form>
+
+  <div id="conteudo" hidden style="display:grid;gap:28px">
+    <section class="kpis" aria-label="Números">
+      <div class="kpi"><span class="etiqueta">Contas</span><b id="k-contas"></b><small id="k-contas-s"></small></div>
+      <div class="kpi"><span class="etiqueta">Novas</span><b id="k-novas"></b><small id="k-novas-s"></small></div>
+      <div class="kpi"><span class="etiqueta">Usando (7 dias)</span><b id="k-ativas"></b><small id="k-ativas-s"></small></div>
+      <div class="kpi"><span class="etiqueta">Orçamentos</span><b id="k-orcs"></b><small id="k-orcs-s"></small></div>
+      <div class="kpi"><span class="etiqueta">Taxa de aprovação</span><b id="k-taxa"></b><small id="k-taxa-s"></small></div>
+      <div class="kpi"><span class="etiqueta">Valor orçado</span><b id="k-orcado"></b><small>soma dos orçamentos de todos</small></div>
+      <div class="kpi"><span class="etiqueta">Recebido pelos usuários</span><b id="k-recebido"></b><small>pagamentos registrados no app</small></div>
+      <div class="kpi"><span class="etiqueta">Receita sua</span><b>R$ 0</b><small>cobrança ainda não ligada</small></div>
+    </section>
+    <section class="duas">
+      <div class="caixa-p"><h2>Cadastros por dia (30 dias)</h2><div id="grafico"></div></div>
+      <div class="caixa-p"><h2>Cidades</h2><ul id="cidades" class="cidades"></ul><p id="cidades-vazio" class="miudo" hidden>Ninguém preencheu a cidade ainda.</p></div>
+    </section>
+    <section class="caixa-p">
+      <div class="cab-painel"><h2>Contas</h2><input id="busca" class="busca" type="search" placeholder="Buscar por e-mail, empresa ou cidade" style="max-width:320px"></div>
+      <div class="tabela"><table>
+        <thead><tr><th>E-mail</th><th>Empresa</th><th>Cidade</th><th>Criada</th><th>Último uso</th><th class="num">Orçamentos</th><th class="num">Orçado</th><th class="num">Recebido</th><th>Situação</th></tr></thead>
+        <tbody id="linhas"></tbody>
+      </table></div>
+      <p class="nota-p">O painel mostra totais e dados de cadastro. O conteúdo dos orçamentos e os clientes de cada usuário não aparecem aqui, como promete a política de privacidade.</p>
+    </section>
+  </div>
+  <p id="msg" class="erro" role="status"></p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  var SB_URL = 'https://xzumkgmzmjmlxeigicbt.supabase.co';
+  var SB_KEY = 'sb_publishable_5-o29KR-a2F3ZMU7SpWKlw_eTc6X7TM';
+  var $ = function (id) { return document.getElementById(id); };
+  var real = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+  var inteiro = new Intl.NumberFormat('pt-BR');
+  var dataCurta = function (s) { return s ? new Date(s).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '—'; };
+  function relativo(s) {
+    if (!s) return '—';
+    var min = Math.round((Date.now() - new Date(s)) / 60000);
+    if (min < 60) return 'há ' + Math.max(1, min) + ' min';
+    if (min < 1440) return 'há ' + Math.round(min / 60) + ' h';
+    return 'há ' + Math.round(min / 1440) + ' d';
+  }
+  if (!window.supabase) { $('msg').textContent = 'Não carregou a biblioteca de login. Confira a internet.'; return; }
+  var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'orc-admin-auth' } });
+  var dados = null;
+
+  function mostrarLogin(t) { $('login').hidden = false; $('conteudo').hidden = true; $('sair').hidden = true; $('atualizar').hidden = true; $('login-msg').textContent = t || ''; }
+  function carregar() {
+    $('msg').textContent = 'Carregando…';
+    sb.rpc('painel_admin').then(function (r) {
+      if (r.error) {
+        $('msg').textContent = /acesso negado/.test(r.error.message) ? 'Esta conta não é de administrador.' : 'Erro: ' + r.error.message;
+        $('conteudo').hidden = true; $('sair').hidden = false; return;
+      }
+      dados = r.data; $('msg').textContent = ''; $('login').hidden = true; $('conteudo').hidden = false; $('sair').hidden = false; $('atualizar').hidden = false;
+      desenhar();
+    });
+  }
+  function desenhar() {
+    var d = dados;
+    $('quando').textContent = 'Atualizado às ' + new Date(d.agora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    $('k-contas').textContent = inteiro.format(d.contas); $('k-contas-s').textContent = inteiro.format(d.confirmadas) + ' com e-mail confirmado';
+    $('k-novas').textContent = inteiro.format(d.novas_7d); $('k-novas-s').textContent = 'nos últimos 7 dias · ' + inteiro.format(d.novas_30d) + ' em 30';
+    $('k-ativas').textContent = inteiro.format(d.ativas_7d); $('k-ativas-s').textContent = inteiro.format(d.ativas_30d) + ' nos últimos 30 dias';
+    $('k-orcs').textContent = inteiro.format(d.orcamentos); $('k-orcs-s').textContent = inteiro.format(d.orcamentos_30d) + ' criados nos últimos 30 dias';
+    $('k-taxa').textContent = d.orcamentos ? Math.round(100 * d.aprovados / d.orcamentos) + '%' : '—';
+    $('k-taxa-s').textContent = inteiro.format(d.aprovados) + ' aprovados ou com pagamento';
+    $('k-orcado').textContent = real.format(Number(d.valor_orcado)); $('k-recebido').textContent = real.format(Number(d.valor_recebido));
+    grafico(d.cadastros_dia); cidades(d.cidades); tabela();
+  }
+  function grafico(dias) {
+    var W = 600, H = 180, ml = 26, mr = 14, mb = 22, mt = 8, max = Math.max(1, Math.max.apply(null, dias.map(function (x) { return x.n; })));
+    var passo = (W - ml - mr) / dias.length, alt = H - mb - mt, s = '';
+    var topo = Math.ceil(max);
+    [0, topo].forEach(function (v) { var y = mt + alt - alt * v / topo; s += '<line x1="' + ml + '" x2="' + (W - mr) + '" y1="' + y + '" y2="' + y + '"/><text x="' + (ml - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + v + '</text>'; });
+    dias.forEach(function (x, i) {
+      var h = alt * x.n / topo, xx = ml + i * passo + 2;
+      s += '<rect x="' + xx + '" y="' + (mt + alt - h) + '" width="' + Math.max(2, passo - 4) + '" height="' + h + '" rx="2"><title>' + dataCurta(x.dia + 'T12:00:00') + ': ' + x.n + '</title></rect>';
+      if (i % 7 === 0) s += '<text x="' + (xx + passo / 2 - 2) + '" y="' + (H - 6) + '" text-anchor="middle">' + x.dia.slice(8, 10) + '/' + x.dia.slice(5, 7) + '</text>';
+    });
+    $('grafico').innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Cadastros por dia nos últimos 30 dias">' + s + '</svg>';
+  }
+  function cidades(lista) {
+    var ul = $('cidades'); ul.textContent = ''; $('cidades-vazio').hidden = lista.length > 0;
+    var max = lista.length ? lista[0].n : 1;
+    lista.forEach(function (c) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span></span><span></span><span class="barra"><i></i></span>';
+      li.children[0].textContent = c.cidade; li.children[1].textContent = c.n; li.querySelector('i').style.width = (100 * c.n / max) + '%';
+      ul.appendChild(li);
+    });
+  }
+  function tabela() {
+    var q = $('busca').value.trim().toLowerCase(), tb = $('linhas'); tb.textContent = '';
+    dados.lista.filter(function (u) { return !q || [u.email, u.empresa, u.cidade].join(' ').toLowerCase().indexOf(q) >= 0; }).forEach(function (u) {
+      var tr = document.createElement('tr');
+      var cel = [u.email, u.empresa || '—', u.cidade || '—', dataCurta(u.criado), relativo(u.ultima_atividade || u.ultimo_login),
+        inteiro.format(u.orcamentos), real.format(Number(u.orcado)), real.format(Number(u.recebido))];
+      cel.forEach(function (t, i) { var td = document.createElement('td'); td.textContent = t; if (i >= 5) td.className = 'num'; tr.appendChild(td); });
+      var td = document.createElement('td');
+      td.innerHTML = (u.admin ? '<span class="selo-p adm">admin</span> ' : '') + (u.confirmada ? '<span class="selo-p ok">confirmada</span>' : '<span class="selo-p">sem confirmar</span>');
+      tr.appendChild(td); tb.appendChild(tr);
+    });
+  }
+  $('busca').addEventListener('input', function () { if (dados) tabela(); });
+  $('atualizar').addEventListener('click', carregar);
+  $('sair').addEventListener('click', function () { sb.auth.signOut().then(function () { dados = null; $('msg').textContent = ''; mostrarLogin(); }); });
+  $('login').addEventListener('submit', function (e) {
+    e.preventDefault(); $('login-msg').textContent = 'Entrando…';
+    sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('senha').value }).then(function (r) {
+      if (r.error) { $('login-msg').textContent = /Invalid login/.test(r.error.message) ? 'E-mail ou senha errados.' : r.error.message; return; }
+      $('login-msg').textContent = ''; carregar();
+    });
+  });
+  sb.auth.getSession().then(function (r) { if (r.data.session) carregar(); else mostrarLogin(); });
+})();
+</script>
+</body>
+</html>

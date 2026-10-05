@@ -586,7 +586,7 @@ def gerar():
         f.writelines(f'  <url><loc>{u}</loc></url>\n' for u in urls)
         f.write('</urlset>\n')
     with open(os.path.join(RAIZ, 'robots.txt'), 'w', encoding='utf-8') as f:
-        f.write(f'User-agent: *\nAllow: /\nSitemap: {URL}sitemap.xml\n')
+        f.write(f'User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: {URL}sitemap.xml\n')
     print('\n'.join(feitas))
 
 
