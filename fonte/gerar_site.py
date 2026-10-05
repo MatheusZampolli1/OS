@@ -12,7 +12,7 @@ URL = 'https://matheuszampolli1.github.io/OS/'
 NOME = 'Orçamento Falado'
 
 # Canal de atendimento. Vazio esconde o item no site.
-WHATSAPP = ''          # só dígitos, com DDI: 5511999999999
+WHATSAPP = '5511989167926'  # só dígitos, com DDI
 EMAIL = ''
 RESPONSAVEL = 'Matheus Zampolli'
 
