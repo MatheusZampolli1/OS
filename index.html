@@ -518,30 +518,64 @@ function montar() {
 }
 
 // ----- voz -----
+// O Chrome do Android repete o trecho já falado quando a escuta é contínua.
+// Por isso cada frase é ouvida numa sessão curta, que reinicia sozinha até a pessoa tocar para parar.
 var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-var rec = null, gravando = false, base = '';
+var rec = null, querOuvir = false, base = '', frases = [], parcial = '';
 if (!Rec) { $('mic').disabled = true; $('mic-aviso').hidden = false; }
-$('mic').addEventListener('click', function () {
-  if (!Rec) return;
-  if (gravando) { rec.stop(); return; }
+
+function limparRepeticao(t) {
+  // "piso piso piso 45" → "piso 45"
+  return t.replace(/(^|\s)([a-zà-ú]+)(?:\s+\2)+(?=\s|$)/gi, '$1$2').replace(/\s+/g, ' ').trim();
+}
+function guardarFrase(t) {
+  t = limparRepeticao(t);
+  if (!t) return;
+  var ultima = frases[frases.length - 1];
+  if (ultima && t.toLowerCase().indexOf(ultima.toLowerCase()) === 0) frases[frases.length - 1] = t; // versão mais completa da mesma frase
+  else if (!ultima || ultima.toLowerCase().indexOf(t.toLowerCase()) !== 0) frases.push(t);
+}
+function mostrarFala() {
+  var partes = frases.slice();
+  if (parcial) partes.push(limparRepeticao(parcial));
+  $('fala').value = (base ? base + ', ' : '') + partes.join(', ');
+}
+function ouvir() {
   rec = new Rec();
-  rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true;
-  base = $('selo-exemplo').hidden ? $('fala').value.trim() : '';
+  rec.lang = 'pt-BR'; rec.continuous = false; rec.interimResults = true; rec.maxAlternatives = 1;
   rec.onresult = function (e) {
-    var texto = '';
-    for (var i = 0; i < e.results.length; i++) texto += e.results[i][0].transcript + (e.results[i].isFinal ? ', ' : ' ');
-    $('fala').value = (base ? base + ', ' : '') + texto.trim().replace(/,$/, '');
+    var r = e.results[e.results.length - 1];
+    if (r.isFinal) { guardarFrase(r[0].transcript); parcial = ''; }
+    else parcial = r[0].transcript;
+    mostrarFala();
   };
   rec.onerror = function (e) {
-    $('status').textContent = e.error === 'not-allowed' ? 'Libere o microfone para este site nas configurações do navegador.' : 'Não deu para ouvir. Tente de novo ou digite.';
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      querOuvir = false;
+      $('status').textContent = 'Libere o microfone para este site nas configurações do navegador.';
+    } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
+      $('status').textContent = 'Não deu para ouvir. Tente de novo ou digite.';
+    }
   };
   rec.onend = function () {
-    gravando = false; $('mic').classList.remove('gravando'); $('mic-txt').textContent = 'Toque e fale';
-    if ($('fala').value.trim()) { $('selo-exemplo').hidden = true; montar(); }
+    if (parcial) { guardarFrase(parcial); parcial = ''; mostrarFala(); }
+    if (querOuvir) { try { ouvir(); return; } catch (err) {} }
+    pararVisual();
   };
   rec.start();
-  gravando = true; $('mic').classList.add('gravando'); $('mic-txt').textContent = 'Ouvindo… toque para parar';
+}
+function pararVisual() {
+  querOuvir = false; $('mic').classList.remove('gravando'); $('mic-txt').textContent = 'Toque e fale';
+  if ($('fala').value.trim()) { $('selo-exemplo').hidden = true; montar(); }
+}
+$('mic').addEventListener('click', function () {
+  if (!Rec) return;
+  if (querOuvir) { querOuvir = false; if (rec) rec.stop(); return; }
+  base = $('selo-exemplo').hidden ? $('fala').value.trim() : '';
+  frases = []; parcial = ''; querOuvir = true;
+  $('mic').classList.add('gravando'); $('mic-txt').textContent = 'Ouvindo… toque para parar';
   $('status').textContent = '';
+  try { ouvir(); } catch (err) { pararVisual(); $('status').textContent = 'Não deu para ligar o microfone. Tente de novo.'; }
 });
 
 $('montar').addEventListener('click', function () { $('selo-exemplo').hidden = true; montar(); });
