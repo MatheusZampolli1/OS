@@ -1,0 +1,12 @@
+# Configuração mínima para o deploy das Edge Functions pela CLI.
+project_id = "xzumkgmzmjmlxeigicbt"
+
+# O login é conferido dentro de cada função (assinar e cancelar); o aviso do Asaas usa o próprio token.
+[functions.assinar]
+verify_jwt = false
+
+[functions.cancelar]
+verify_jwt = false
+
+[functions.asaas-webhook]
+verify_jwt = false

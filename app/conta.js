@@ -152,7 +152,7 @@
     if (/Password should be|at least/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
     if (/invalid.*email|Unable to validate email/i.test(m)) return 'Confira o e-mail digitado.';
     if (/Failed to fetch|NetworkError|network/i.test(m)) return 'sem conexão com o servidor';
-    return m || 'erro desconhecido';
+    return m && m !== '{}' && m !== '[object Object]' ? m : 'erro inesperado, tente de novo';
   }
   function mostrarNuvem(t) { var n = el('nuvem'); if (n) n.textContent = t; }
   function msg(t, erro) { var m = el('conta-msg'); m.textContent = t; m.className = erro ? 'aviso' : 'status'; m.hidden = !t; }
@@ -263,5 +263,127 @@
     if (u && (!usuario || usuario.id !== u.id)) setTimeout(function () { entrou(u); }, 0);
     if (!u && usuario) setTimeout(saiu, 0);
   });
-  window.contaDebug = { sincronizar: sincronizar, estado: estado };
+  window.contaDebug = { sincronizar: sincronizar, estado: estado, plano: function () { return acesso; } };
+
+  // ---------- assinatura ----------
+  // O banco decide quem tem acesso (meu_acesso); a tela só mostra e bloqueia a aba Novo.
+  // Sem a cobrança ligada pelo dono, ninguém é bloqueado e a seção do plano fica escondida.
+  var acesso = null, config = null;
+  var real = function (v) { return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
+  var dataBR = function (s) { return s ? new Date(s).toLocaleDateString('pt-BR') : ''; };
+  var STATUS = { PENDING: 'Em aberto', OVERDUE: 'Vencida', CONFIRMED: 'Paga', RECEIVED: 'Paga', RECEIVED_IN_CASH: 'Paga', REFUNDED: 'Estornada', DELETED: 'Cancelada' };
+
+  function lerConfig() {
+    return sb.from('cobranca_config').select('*').eq('id', 1).maybeSingle().then(function (r) { if (!r.error) config = r.data; });
+  }
+  function lerAcesso() {
+    if (!usuario) { acesso = null; return lerConfig().then(aplicarAcesso); }
+    return Promise.all([sb.rpc('meu_acesso'), sb.from('cobrancas').select('*').order('vencimento', { ascending: false }).limit(12), lerConfig()])
+      .then(function (rs) {
+        if (rs[0].error) throw rs[0].error;
+        acesso = rs[0].data; desenharPlano(acesso, rs[1].data || []); aplicarAcesso();
+      }).catch(function () { aplicarAcesso(); });
+  }
+  function bloquear(sim, tit, txt, botao) {
+    el('tela-novo').classList.toggle('bloqueado', !!sim); el('bloqueio').hidden = !sim;
+    if (sim) { el('bloqueio-tit').textContent = tit; el('bloqueio-txt').textContent = txt; el('bloqueio-btn').textContent = botao; }
+  }
+  function aplicarAcesso() {
+    var ligada = config && config.ligada_em;
+    if (!usuario) {
+      var lim = (config && config.limite_sem_conta) || 3;
+      var passou = ligada && docs.length >= lim;
+      bloquear(passou, 'Crie sua conta para continuar', 'Sem conta dá para fazer ' + lim + ' orçamentos. Com a conta você ganha ' + ((config && config.dias_teste) || 14) + ' dias grátis com tudo liberado e seus dados ficam guardados na nuvem.', 'Criar conta grátis');
+      el('bloqueio-btn').onclick = function () { abrir('criar'); };
+      return;
+    }
+    if (!acesso || !acesso.cobranca_ligada) { bloquear(false); return; }
+    var vencido = acesso.motivo === 'vencido';
+    bloquear(!acesso.liberado, vencido ? 'Sua assinatura venceu' : 'Seu teste grátis acabou',
+      'Para continuar fazendo orçamentos, assine por ' + real(acesso.preco_mensal) + ' por mês ou ' + real(acesso.preco_anual) + ' por ano.', vencido ? 'Pagar agora' : 'Assinar');
+    el('bloqueio-btn').onclick = function () { irPara('perfil'); el('plano-sec').scrollIntoView({ behavior: 'smooth' }); };
+  }
+  function desenharPlano(a, faturas) {
+    var mostrar = a && (a.cobranca_ligada || a.motivo === 'admin');
+    el('plano-sec').hidden = !mostrar;
+    if (!mostrar) return;
+    var s = '', d = '';
+    if (a.motivo === 'admin') { s = 'Conta do dono'; d = 'Sempre liberada. Os botões abaixo servem para você testar a assinatura.'; }
+    else if (a.motivo === 'teste') { s = 'Teste grátis até ' + dataBR(a.teste_ate); d = 'Tudo liberado. Se assinar agora, o período pago começa depois do teste: você não perde nenhum dia.'; }
+    else if (a.motivo === 'pago') { s = 'Plano ' + (a.plano || '') + ' ativo até ' + dataBR(a.pago_ate); d = a.status === 'cancelada' ? 'A renovação está cancelada. Você usa até essa data.' : 'Renova sozinho. A fatura chega no seu e-mail antes do vencimento.'; }
+    else if (a.motivo === 'tolerancia') { s = 'Pagamento atrasado'; d = 'Ainda está liberado por alguns dias. Pague a fatura em aberto abaixo para não ser bloqueado.'; }
+    else if (a.motivo === 'vencido') { s = 'Assinatura vencida'; d = 'Pague a fatura em aberto ou assine de novo para voltar a fazer orçamentos.'; }
+    else { s = 'Teste grátis acabou'; d = 'Assine para continuar fazendo orçamentos.'; }
+    el('plano-situacao').textContent = s; el('plano-detalhe').textContent = d;
+    el('plano-mensal').textContent = 'Mensal · ' + real(a.preco_mensal);
+    el('plano-anual').textContent = 'Anual · ' + real(a.preco_anual) + ' (2 meses grátis)';
+    var renovando = a.motivo === 'pago' && a.status !== 'cancelada';
+    el('plano-botoes').hidden = renovando && a.plano === 'anual';
+    el('plano-mensal').hidden = renovando && a.plano === 'mensal';
+    el('plano-cancelar').hidden = !(a.status === 'ativa' || a.status === 'pendente' || a.status === 'atrasada');
+    var box = el('plano-faturas'); box.textContent = '';
+    faturas.forEach(function (f) {
+      var it = document.createElement('div'); it.className = 'hist-item';
+      it.innerHTML = '<div class="hist-topo"><b></b><span></span></div><div class="hist-acoes"></div>';
+      it.querySelector('b').textContent = 'Fatura de ' + dataBR(f.vencimento + 'T12:00:00');
+      it.querySelector('span').textContent = real(f.valor) + ' · ' + (STATUS[f.status] || f.status);
+      if ((f.status === 'PENDING' || f.status === 'OVERDUE') && f.link) {
+        var b = document.createElement('a'); b.className = 'botao primario'; b.href = f.link; b.target = '_blank'; b.rel = 'noopener'; b.textContent = 'Pagar com Pix, boleto ou cartão';
+        it.querySelector('.hist-acoes').appendChild(b);
+      }
+      box.appendChild(it);
+    });
+  }
+  function chamarFuncao(nome, corpo) {
+    return sb.auth.getSession().then(function (r) {
+      var t = r.data.session && r.data.session.access_token;
+      return fetch(SB_URL + '/functions/v1/' + nome, { method: 'POST', headers: { 'content-type': 'application/json', apikey: SB_KEY, authorization: 'Bearer ' + t }, body: JSON.stringify(corpo || {}) });
+    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j; }); });
+  }
+  var planoEscolhido = 'mensal';
+  function abrirAssinar(plano) {
+    planoEscolhido = plano;
+    var preco = acesso ? (plano === 'anual' ? acesso.preco_anual : acesso.preco_mensal) : 0;
+    el('t-assinar').textContent = 'Assinar plano ' + plano;
+    el('assinar-resumo').textContent = real(preco) + (plano === 'anual' ? ' por ano' : ' por mês') + '. Cancele quando quiser.';
+    if (!el('assinar-nome').value) el('assinar-nome').value = perfil.nome || '';
+    if (!el('assinar-doc').value) el('assinar-doc').value = perfil.doc || '';
+    el('assinar-msg').hidden = true; el('modal-assinar').hidden = false; el('assinar-nome').focus();
+  }
+  el('plano-mensal').addEventListener('click', function () { abrirAssinar('mensal'); });
+  el('plano-anual').addEventListener('click', function () { abrirAssinar('anual'); });
+  el('assinar-fechar').addEventListener('click', function () { el('modal-assinar').hidden = true; });
+  el('assinar-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var m = el('assinar-msg'), b = el('assinar-ok');
+    m.hidden = false; m.className = 'status'; m.textContent = 'Criando sua cobrança…'; b.disabled = true;
+    chamarFuncao('assinar', { plano: planoEscolhido, nome: el('assinar-nome').value, cpfCnpj: el('assinar-doc').value }).then(function (j) {
+      if (j.jaAssinante) { m.textContent = 'Você já está com esse plano ativo.'; return; }
+      if (!j.link) { m.textContent = 'Assinatura criada. A fatura aparece em “Seu plano” em instantes.'; lerAcesso(); return; }
+      m.innerHTML = 'Pronto! <a href="" target="_blank" rel="noopener">Abrir o pagamento</a>. Depois de pagar, volte aqui: libera sozinho.';
+      m.querySelector('a').href = j.link;
+      window.open(j.link, '_blank', 'noopener');
+      lerAcesso();
+    }).catch(function (e) { m.className = 'aviso'; m.textContent = e.message; }).then(function () { b.disabled = false; });
+  });
+  var cancelarArmado = false;
+  el('plano-cancelar').addEventListener('click', function () {
+    var b = el('plano-cancelar');
+    if (!cancelarArmado) { cancelarArmado = true; b.textContent = 'Toque de novo para cancelar a renovação'; setTimeout(function () { cancelarArmado = false; b.textContent = 'Cancelar a renovação'; }, 6000); return; }
+    b.disabled = true;
+    chamarFuncao('cancelar').then(function (j) {
+      el('plano-msg').textContent = j.ate ? 'Renovação cancelada. Você usa até ' + dataBR(j.ate) + '.' : 'Renovação cancelada.';
+      lerAcesso();
+    }).catch(function (e) { el('plano-msg').textContent = e.message; })
+      .then(function () { b.disabled = false; cancelarArmado = false; b.textContent = 'Cancelar a renovação'; });
+  });
+  // pagou em outra aba: ao voltar para o app, confere de novo
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') lerAcesso(); });
+  var entrouOriginal = entrou, saiuOriginal = saiu;
+  entrou = function (u) { entrouOriginal(u); lerAcesso(); };
+  saiu = function () { saiuOriginal(); el('plano-sec').hidden = true; lerAcesso(); };
+  var guardarAnterior = window.guardarJSON;
+  window.guardarJSON = function (k, v) { guardarAnterior(k, v); if (k === 'orc-docs' && !usuario) aplicarAcesso(); };
+  lerAcesso();
+  if (location.hash === '#assinar') { history.replaceState(null, '', location.pathname); setTimeout(function () { irPara('perfil'); }, 0); }
 })();

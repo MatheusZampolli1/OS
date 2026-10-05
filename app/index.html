@@ -132,6 +132,10 @@ footer { color: var(--muted); font-size: .85rem; text-align: center; padding-blo
 .hist-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
 .hist-acoes button { padding: 8px 10px; font-size: .88rem; }
 .vazio { color: var(--muted); font-size: .92rem; margin: 0; }
+.bloqueio { border: 2px solid var(--accent); }
+#tela-novo.bloqueado > section:not(#bloqueio) { display: none; }
+.bloqueio h2 { margin: 0; }
+.chip.pendente { color: var(--muted); }
 
 /* ----- v3: abas de app, chips, assinatura ----- */
 body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
@@ -193,6 +197,12 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
   <!-- ===================== NOVO ===================== -->
   <div class="tela" id="tela-novo">
+    <section id="bloqueio" class="bloco bloqueio" hidden>
+      <h2 id="bloqueio-tit">Seu teste grátis acabou</h2>
+      <p id="bloqueio-txt" class="dica"></p>
+      <button id="bloqueio-btn" class="primario" type="button">Assinar</button>
+      <p class="dica">Seus orçamentos, clientes e a cópia de segurança continuam disponíveis nas outras abas.</p>
+    </section>
     <section aria-labelledby="t-falar">
       <h2 id="t-falar">1. Fale o serviço</h2>
       <div class="bloco">
@@ -369,6 +379,20 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
         <p id="nuvem" class="status" role="status"></p>
       </div>
     </section>
+    <section id="plano-sec" aria-labelledby="t-plano" hidden>
+      <h2 id="t-plano">Seu plano</h2>
+      <div class="bloco">
+        <p id="plano-situacao" style="margin:0;font-weight:600"></p>
+        <p id="plano-detalhe" class="dica"></p>
+        <div id="plano-botoes" class="linha-botoes">
+          <button id="plano-mensal" class="primario" type="button"></button>
+          <button id="plano-anual" type="button"></button>
+        </div>
+        <div id="plano-faturas" class="hist"></div>
+        <button id="plano-cancelar" class="remover" type="button" style="justify-self:start;padding-inline:0" hidden>Cancelar a renovação</button>
+        <p id="plano-msg" class="status" role="status"></p>
+      </div>
+    </section>
     <section aria-labelledby="t-perfil">
       <h2 id="t-perfil">Seus dados</h2>
       <div class="bloco">
@@ -427,6 +451,18 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   <button type="button" data-aba="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Perfil</button>
 </nav>
 
+<div id="modal-assinar" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-assinar">
+  <form id="assinar-form" class="modal-caixa" novalidate>
+    <h2 id="t-assinar">Assinar</h2>
+    <p id="assinar-resumo" class="dica"></p>
+    <label for="assinar-nome">Nome completo ou da empresa<input id="assinar-nome" autocomplete="name"></label>
+    <label for="assinar-doc">CPF ou CNPJ<input id="assinar-doc" inputmode="numeric" autocomplete="off"></label>
+    <p class="dica">Usados só para emitir a cobrança. Na próxima tela você paga com Pix, boleto ou cartão.</p>
+    <button id="assinar-ok" class="primario" type="submit">Ir para o pagamento</button>
+    <p id="assinar-msg" class="status" role="status" hidden></p>
+    <button id="assinar-fechar" type="button">Fechar</button>
+  </form>
+</div>
 <div id="modal-conta" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-conta">
   <form id="conta-form" class="modal-caixa" novalidate>
     <h2 id="t-conta">Entrar</h2>

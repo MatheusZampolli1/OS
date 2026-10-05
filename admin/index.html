@@ -69,7 +69,19 @@
       <div class="kpi"><span class="etiqueta">Taxa de aprovação</span><b id="k-taxa"></b><small id="k-taxa-s"></small></div>
       <div class="kpi"><span class="etiqueta">Valor orçado</span><b id="k-orcado"></b><small>soma dos orçamentos de todos</small></div>
       <div class="kpi"><span class="etiqueta">Recebido pelos usuários</span><b id="k-recebido"></b><small>pagamentos registrados no app</small></div>
-      <div class="kpi"><span class="etiqueta">Receita sua</span><b>R$ 0</b><small>cobrança ainda não ligada</small></div>
+      <div class="kpi"><span class="etiqueta">Receita por mês (MRR)</span><b id="k-mrr">—</b><small id="k-mrr-s"></small></div>
+    </section>
+    <section class="caixa-p" id="cobranca" hidden>
+      <div class="cab-painel"><h2>Assinaturas</h2><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span id="cob-estado" class="selo-p"></span><button id="cob-botao" class="botao peq" type="button"></button></div></div>
+      <p id="cob-aviso" class="nota-p"></p>
+      <div class="kpis">
+        <div class="kpi"><span class="etiqueta">Assinantes pagos</span><b id="c-ativas"></b><small id="c-ativas-s"></small></div>
+        <div class="kpi"><span class="etiqueta">Em teste grátis</span><b id="c-teste"></b><small>sem pagamento ainda</small></div>
+        <div class="kpi"><span class="etiqueta">Atrasados</span><b id="c-atraso"></b><small id="c-atraso-s"></small></div>
+        <div class="kpi"><span class="etiqueta">Você recebeu</span><b id="c-receb"></b><small id="c-receb-s"></small></div>
+      </div>
+      <div class="tabela"><table><thead><tr><th>Quando</th><th>E-mail</th><th>Forma</th><th>Situação</th><th class="num">Valor</th></tr></thead><tbody id="c-ultimas"></tbody></table></div>
+      <p id="c-ultimas-vazio" class="miudo">Nenhuma cobrança ainda.</p>
     </section>
     <section class="duas">
       <div class="caixa-p"><h2>Cadastros por dia (30 dias)</h2><div id="grafico"></div></div>
@@ -78,7 +90,7 @@
     <section class="caixa-p">
       <div class="cab-painel"><h2>Contas</h2><input id="busca" class="busca" type="search" placeholder="Buscar por e-mail, empresa ou cidade" style="max-width:320px"></div>
       <div class="tabela"><table>
-        <thead><tr><th>E-mail</th><th>Empresa</th><th>Cidade</th><th>Criada</th><th>Último uso</th><th class="num">Orçamentos</th><th class="num">Orçado</th><th class="num">Recebido</th><th>Situação</th></tr></thead>
+        <thead><tr><th>E-mail</th><th>Empresa</th><th>Cidade</th><th>Criada</th><th>Último uso</th><th>Plano</th><th class="num">Orçamentos</th><th class="num">Orçado</th><th class="num">Recebido</th><th>Situação</th></tr></thead>
         <tbody id="linhas"></tbody>
       </table></div>
       <p class="nota-p">O painel mostra totais e dados de cadastro. O conteúdo dos orçamentos e os clientes de cada usuário não aparecem aqui, como promete a política de privacidade.</p>
@@ -104,12 +116,15 @@
   }
   if (!window.supabase) { $('msg').textContent = 'Não carregou a biblioteca de login. Confira a internet.'; return; }
   var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'orc-admin-auth' } });
-  var dados = null;
+  var dados = null, cob = null, ligarArmado = false;
+  var FORMA = { PIX: 'Pix', BOLETO: 'Boleto', CREDIT_CARD: 'Cartão', UNDEFINED: 'a escolher' };
+  var SIT = { PENDING: 'Em aberto', OVERDUE: 'Vencida', CONFIRMED: 'Paga', RECEIVED: 'Paga', REFUNDED: 'Estornada', DELETED: 'Cancelada' };
 
   function mostrarLogin(t) { $('login').hidden = false; $('conteudo').hidden = true; $('sair').hidden = true; $('atualizar').hidden = true; $('login-msg').textContent = t || ''; }
   function carregar() {
     $('msg').textContent = 'Carregando…';
-    sb.rpc('painel_admin').then(function (r) {
+    Promise.all([sb.rpc('painel_admin'), sb.rpc('painel_cobranca')]).then(function (rs) {
+      var r = rs[0]; cob = rs[1].error ? null : rs[1].data;
       if (r.error) {
         $('msg').textContent = /acesso negado/.test(r.error.message) ? 'Esta conta não é de administrador.' : 'Erro: ' + r.error.message;
         $('conteudo').hidden = true; $('sair').hidden = false; return;
@@ -128,8 +143,38 @@
     $('k-taxa').textContent = d.orcamentos ? Math.round(100 * d.aprovados / d.orcamentos) + '%' : '—';
     $('k-taxa-s').textContent = inteiro.format(d.aprovados) + ' aprovados ou com pagamento';
     $('k-orcado').textContent = real.format(Number(d.valor_orcado)); $('k-recebido').textContent = real.format(Number(d.valor_recebido));
-    grafico(d.cadastros_dia); cidades(d.cidades); tabela();
+    grafico(d.cadastros_dia); cidades(d.cidades); tabela(); cobranca();
   }
+  function cobranca() {
+    $('cobranca').hidden = !cob;
+    if (!cob) { $('k-mrr-s').textContent = 'rode o SQL da cobrança'; return; }
+    var ligada = !!cob.config.ligada_em;
+    $('k-mrr').textContent = real.format(Number(cob.mrr)); $('k-mrr-s').textContent = ligada ? 'assinaturas ativas, anual dividido por 12' : 'cobrança desligada';
+    $('cob-estado').textContent = ligada ? 'cobrança ligada desde ' + dataCurta(cob.config.ligada_em) : 'cobrança desligada';
+    $('cob-estado').className = 'selo-p' + (ligada ? ' ok' : '');
+    $('cob-botao').textContent = ligada ? 'Desligar cobrança' : 'Ligar cobrança';
+    $('cob-aviso').textContent = ligada
+      ? 'Quem não paga depois do teste fica sem poder criar orçamentos novos (continua vendo e exportando os dados).'
+      : 'Desligada: todo mundo usa grátis. Ao ligar, cada conta ganha ' + cob.config.dias_teste + ' dias de teste a partir de agora e depois precisa assinar.';
+    $('c-ativas').textContent = inteiro.format(cob.ativas); $('c-ativas-s').textContent = cob.mensais + ' mensais · ' + cob.anuais + ' anuais';
+    $('c-teste').textContent = inteiro.format(cob.em_teste);
+    $('c-atraso').textContent = inteiro.format(cob.atrasadas); $('c-atraso-s').textContent = cob.canceladas + ' cancelaram a renovação';
+    $('c-receb').textContent = real.format(Number(cob.recebido_30d)); $('c-receb-s').textContent = 'nos últimos 30 dias · ' + real.format(Number(cob.recebido_total)) + ' no total (antes das taxas do Asaas)';
+    var tb = $('c-ultimas'); tb.textContent = ''; $('c-ultimas-vazio').hidden = cob.ultimas.length > 0;
+    cob.ultimas.forEach(function (x) {
+      var tr = document.createElement('tr');
+      [dataCurta(x.atualizado), x.email, FORMA[x.forma] || x.forma || '—', SIT[x.status] || x.status, real.format(Number(x.valor))].forEach(function (t, i) {
+        var td = document.createElement('td'); td.textContent = t; if (i === 4) td.className = 'num'; tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    });
+  }
+  $('cob-botao').addEventListener('click', function () {
+    var ligar = !(cob && cob.config.ligada_em), b = $('cob-botao');
+    if (!ligarArmado) { ligarArmado = true; b.textContent = ligar ? 'Confirmar: ligar a cobrança' : 'Confirmar: desligar'; setTimeout(function () { ligarArmado = false; if (cob) cobranca(); }, 6000); return; }
+    ligarArmado = false; b.disabled = true;
+    sb.rpc('admin_cobranca', { p_ligar: ligar }).then(function (r) { b.disabled = false; if (r.error) { $('msg').textContent = 'Erro: ' + r.error.message; return; } carregar(); });
+  });
   function grafico(dias) {
     var W = 600, H = 180, ml = 26, mr = 14, mb = 22, mt = 8, max = Math.max(1, Math.max.apply(null, dias.map(function (x) { return x.n; })));
     var passo = (W - ml - mr) / dias.length, alt = H - mb - mt, s = '';
@@ -156,9 +201,11 @@
     var q = $('busca').value.trim().toLowerCase(), tb = $('linhas'); tb.textContent = '';
     dados.lista.filter(function (u) { return !q || [u.email, u.empresa, u.cidade].join(' ').toLowerCase().indexOf(q) >= 0; }).forEach(function (u) {
       var tr = document.createElement('tr');
-      var cel = [u.email, u.empresa || '—', u.cidade || '—', dataCurta(u.criado), relativo(u.ultima_atividade || u.ultimo_login),
+      var pc = cob && cob.por_usuario[u.email];
+      var planoTxt = !cob || !cob.config.ligada_em ? 'grátis' : !pc ? '—' : pc.pago_ate && new Date(pc.pago_ate) > new Date() ? (pc.plano || '') + (pc.status === 'cancelada' ? ' (cancelou)' : '') : pc.liberado && u.admin ? 'dono' : pc.liberado ? 'em teste' : pc.status === 'atrasada' ? 'atrasado' : 'bloqueado';
+      var cel = [u.email, u.empresa || '—', u.cidade || '—', dataCurta(u.criado), relativo(u.ultima_atividade || u.ultimo_login), planoTxt,
         inteiro.format(u.orcamentos), real.format(Number(u.orcado)), real.format(Number(u.recebido))];
-      cel.forEach(function (t, i) { var td = document.createElement('td'); td.textContent = t; if (i >= 5) td.className = 'num'; tr.appendChild(td); });
+      cel.forEach(function (t, i) { var td = document.createElement('td'); td.textContent = t; if (i >= 6) td.className = 'num'; tr.appendChild(td); });
       var td = document.createElement('td');
       td.innerHTML = (u.admin ? '<span class="selo-p adm">admin</span> ' : '') + (u.confirmada ? '<span class="selo-p ok">confirmada</span>' : '<span class="selo-p">sem confirmar</span>');
       tr.appendChild(td); tb.appendChild(tr);
