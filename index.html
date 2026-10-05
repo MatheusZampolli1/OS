@@ -335,6 +335,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
           </select>
         </label>
         <p class="pequeno">Os serviços entram sem preço. Coloque o seu valor uma vez e ele fica salvo.</p>
+        <p id="modelo-ok" class="status" role="status" hidden></p>
         <div id="precos" class="lista-simples"></div>
         <button id="add-preco" type="button">+ Adicionar serviço</button>
       </div>
@@ -373,6 +374,8 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
         <label for="p-google">Link para o cliente te avaliar no Google (opcional)
           <input id="p-google" inputmode="url" placeholder="https://g.page/r/...">
         </label>
+        <button id="salvar-perfil" class="primario" type="button">Salvar meus dados</button>
+        <p id="perfil-ok" class="status" role="status" hidden></p>
         <p class="dica">Fica salvo só neste celular.</p>
       </div>
     </section>
@@ -951,7 +954,13 @@ $('foto-in').addEventListener('change', function (e) {
 var CAMPOS = { 'p-nome': 'nome', 'p-tel': 'tel', 'p-pix': 'pix', 'p-cidade': 'cidade', 'p-doc': 'doc', 'p-sobre': 'sobre', 'p-google': 'google' };
 Object.keys(CAMPOS).forEach(function (id) {
   $(id).value = perfil[CAMPOS[id]] || '';
-  $(id).addEventListener('input', function () { perfil[CAMPOS[id]] = $(id).value.trim(); guardarJSON('orc-perfil', perfil); atualizarTotal(); });
+  $(id).addEventListener('input', function () { perfil[CAMPOS[id]] = $(id).value.trim(); guardarJSON('orc-perfil', perfil); $('perfil-ok').hidden = true; atualizarTotal(); });
+});
+$('salvar-perfil').addEventListener('click', function () {
+  Object.keys(CAMPOS).forEach(function (id) { perfil[CAMPOS[id]] = $(id).value.trim(); });
+  guardarJSON('orc-perfil', perfil); atualizarTotal();
+  $('perfil-ok').textContent = perfil.nome ? '✓ Dados salvos. Eles já saem nos seus orçamentos.' : 'Salvo, mas falta o seu nome ou da empresa.';
+  $('perfil-ok').hidden = false;
 });
 function mostrarLogo() { $('logo-prev').src = perfil.logo || ''; $('logo-prev').hidden = !perfil.logo; }
 $('logo-in').addEventListener('change', function (e) {
@@ -1317,10 +1326,21 @@ function desenharPrecos() {
 $('add-preco').addEventListener('click', function () { precos.unshift({ id: novoId(), descricao: '', un: 'un', valor: 0, usos: 0 }); desenharPrecos(); $('pd0').focus(); });
 $('modelo').addEventListener('change', function () {
   var m = MODELOS[$('modelo').value]; if (!m) return;
+  var antes = precos.length;
   m.forEach(function (x) {
     if (!precos.some(function (p) { return chave(p.descricao) === chave(x[0]); })) precos.push({ id: novoId(), descricao: x[0], un: x[1], valor: 0, usos: 0 });
   });
-  guardarJSON('orc-precos', precos); desenharPrecos(); desenharChips(); $('modelo').value = '';
+  var qtdNovos = precos.length - antes;
+  var nomeProf = $('modelo').options[$('modelo').selectedIndex].text;
+  // os da profissão escolhida vão para o topo da lista
+  var daProf = m.map(function (x) { return chave(x[0]); });
+  precos.sort(function (a, b) { return (daProf.indexOf(chave(b.descricao)) >= 0) - (daProf.indexOf(chave(a.descricao)) >= 0); });
+  guardarJSON('orc-precos', precos); desenharPrecos(); desenharChips();
+  $('modelo-ok').textContent = qtdNovos
+    ? '✓ ' + qtdNovos + ' serviços de ' + nomeProf.toLowerCase() + ' adicionados aqui embaixo. Ponha o seu preço em cada um.'
+    : '✓ Os serviços de ' + nomeProf.toLowerCase() + ' já estavam na sua tabela, aqui embaixo.';
+  $('modelo-ok').hidden = false;
+  $('precos').scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
 // ---------- aba clientes ----------

@@ -1,5 +1,5 @@
 // Guarda a página e as bibliotecas para abrir sem internet na obra.
-var CACHE = 'orcamento-falado-v3';
+var CACHE = 'orcamento-falado-v3b';
 var ARQUIVOS = [
   './',
   './index.html',
