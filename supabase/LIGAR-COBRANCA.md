@@ -31,7 +31,7 @@ As chaves ficam só no Supabase e no Asaas. Não mande nenhuma delas no chat.
 10. Volte ao app: "Seu plano" deve mostrar **Plano mensal ativo até ...**. O painel do dono mostra o pagamento em "Assinaturas".
 
 ## E. Cobrança real (só depois do teste e do seu OK)
-11. Abra a conta de produção do Asaas em https://www.asaas.com. Confirme lá se precisa de CNPJ (um MEI resolve).
+11. Abra a conta de produção do Asaas em https://www.asaas.com. Atenção: MEI não pode vender software por assinatura (CNAE 6311-9/00 ou 6203-1/00 são vedados ao MEI); o caminho é uma ME no Simples Nacional. Confirme com um contador.
 12. Gere a chave de produção (começa com `$aact_prod_`) e troque o valor de `ASAAS_API_KEY` no Supabase. O código percebe sozinho que é produção.
 13. Crie o mesmo webhook do passo 7 na conta de produção.
 14. No painel do dono, clique em **Ligar cobrança** (dois toques). A partir daí, cada conta ganha 14 dias de teste e depois precisa assinar. A sua conta de dono nunca é bloqueada.
