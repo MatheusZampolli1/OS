@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orçamento Falado</title>
+<meta name="description" content="Fale o serviço e receba o orçamento pronto em PDF para mandar no WhatsApp, com Pix copia e cola.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: uma coluna de celular, como uma prancheta de obra: fala em cima, itens no meio, envio embaixo. */
+:root {
+  --bg: #eef0ee;          /* reboco claro */
+  --surface: #ffffff;
+  --ink: #1d2428;         /* grafite */
+  --muted: #5d676c;
+  --line: #d3d8d6;
+  --accent: #f2b400;      /* amarelo de sinalização de obra */
+  --accent-ink: #1d2428;
+  --go: #1f7a4d;          /* verde Pix/WhatsApp */
+  --danger: #b3261e;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191b; --surface: #1f2528; --ink: #eef1f0; --muted: #a3adb1; --line: #343c40;
+    --accent: #f5c02e; --accent-ink: #15191b; --go: #3fb57a; --danger: #ff8a80; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15191b; --surface: #1f2528; --ink: #eef1f0; --muted: #a3adb1; --line: #343c40;
+  --accent: #f5c02e; --accent-ink: #15191b; --go: #3fb57a; --danger: #ff8a80; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 400 17px/1.5 var(--font-body);
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(32px, env(safe-area-inset-bottom, 0px));
+}
+.wrap { max-width: 560px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 4px; padding-block: 8px 4px; }
+.marca { display: flex; align-items: center; gap: 10px; }
+.faixa { width: 34px; height: 22px; border-radius: 3px;
+  background: repeating-linear-gradient(135deg, var(--accent) 0 7px, var(--ink) 7px 14px); }
+h1 { font: 700 2.1rem/1 var(--font-display); letter-spacing: .01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0; max-width: 46ch; }
+h2 { font: 700 1.35rem/1.1 var(--font-display); margin: 0; letter-spacing: .02em; }
+.etiqueta { font: 600 .78rem/1 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+section { display: grid; gap: 12px; }
+.bloco { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; }
+label { display: grid; gap: 4px; font-weight: 500; font-size: .95rem; }
+input, textarea, select {
+  font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 8px; padding: 10px 12px; width: 100%; min-width: 0;
+}
+textarea { min-height: 120px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 3px solid var(--accent); outline-offset: 2px;
+}
+.grade2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 420px) { .grade2 { grid-template-columns: 1fr; } }
+button, .botao {
+  font: 600 1rem/1 var(--font-body); border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); padding: 14px 16px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
+}
+button:disabled { opacity: .5; cursor: not-allowed; }
+.primario { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.zap { background: var(--go); color: #fff; border-color: var(--go); }
+.linha-botoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.linha-botoes > * { flex: 1 1 160px; }
+.mic {
+  width: 100%; padding: 22px 16px; font: 700 1.5rem/1 var(--font-display); letter-spacing: .03em;
+  background: var(--ink); color: var(--bg); border-color: var(--ink); border-radius: 14px;
+}
+.mic .ponto { width: 14px; height: 14px; border-radius: 50%; background: var(--accent); }
+.mic.gravando { background: var(--danger); border-color: var(--danger); color: #fff; }
+.mic.gravando .ponto { background: #fff; animation: pulso 1s infinite; }
+@keyframes pulso { 50% { opacity: .2; } }
+@media (prefers-reduced-motion: reduce) { .mic.gravando .ponto { animation: none; } }
+.dica { color: var(--muted); font-size: .9rem; margin: 0; }
+.aviso { color: var(--danger); font-size: .9rem; margin: 0; }
+details > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+details > summary::after { content: "editar"; font-weight: 500; color: var(--muted); font-size: .9rem; }
+details[open] > summary::after { content: "fechar"; }
+.itens { display: grid; gap: 10px; }
+.item { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 8px; background: var(--bg); }
+.item .desc { font-weight: 600; }
+.item .nums { display: grid; grid-template-columns: 1fr .8fr 1.3fr auto; gap: 8px; align-items: end; }
+.item .nums label { font-size: .8rem; color: var(--muted); }
+.item .sub-total { font: 500 .95rem var(--font-data); text-align: right; font-variant-numeric: tabular-nums; }
+.remover { padding: 10px; border-color: transparent; background: transparent; color: var(--danger); font-size: .9rem; }
+.total {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  border-top: 2px solid var(--ink); padding-top: 10px;
+}
+.total strong { font: 700 2rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.pix { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; }
+.pix #qr { background: #fff; padding: 6px; border-radius: 6px; width: 132px; height: 132px; }
+.pix #qr img, .pix #qr canvas { width: 120px !important; height: 120px !important; }
+.codigo { font: 500 .72rem/1.35 var(--font-data); word-break: break-all; color: var(--muted); max-height: 5.4em; overflow: auto; }
+@media (max-width: 380px) { .pix { grid-template-columns: 1fr; } }
+.status { min-height: 1.4em; font-size: .92rem; color: var(--go); margin: 0; }
+footer { color: var(--muted); font-size: .85rem; text-align: center; padding-block: 8px; }
+.exemplo { font-size: .78rem; font-weight: 600; background: var(--accent); color: var(--accent-ink); padding: 2px 8px; border-radius: 99px; justify-self: start; }
+
+.fotos { display: flex; flex-wrap: wrap; gap: 8px; }
+.fotos figure { margin: 0; position: relative; width: 72px; height: 72px; }
+.fotos img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+.fotos button { position: absolute; top: -8px; right: -8px; width: 26px; height: 26px; padding: 0; border-radius: 50%; font-size: .9rem; background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.arquivo { position: relative; overflow: hidden; }
+.arquivo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.logo-prev { max-height: 48px; max-width: 140px; border-radius: 6px; }
+.resumo-pend { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.resumo-pend div { display: grid; gap: 2px; }
+.resumo-pend strong { font: 700 1.4rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.hist { display: grid; gap: 8px; }
+.hist-item { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 8px; background: var(--bg); }
+.hist-topo { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.hist-topo b { font-weight: 600; }
+.hist-topo span { font: 500 .95rem var(--font-data); font-variant-numeric: tabular-nums; }
+.chip { font-size: .75rem; font-weight: 600; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line); text-transform: uppercase; letter-spacing: .05em; }
+.chip.enviado { color: var(--muted); }
+.chip.aprovado { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.chip.pago { background: var(--go); color: #fff; border-color: var(--go); }
+.hist-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
+.hist-acoes button { padding: 8px 10px; font-size: .88rem; }
+.vazio { color: var(--muted); font-size: .92rem; margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="marca"><span class="faixa" aria-hidden="true"></span><span class="etiqueta">Para pedreiro, pintor, eletricista</span></div>
+    <h1>Orçamento Falado</h1>
+    <p class="sub">Fale o serviço do jeito que você explica pro cliente. O orçamento sai pronto em PDF, com fotos e Pix, para mandar no WhatsApp.</p>
+  </header>
+
+  <section aria-labelledby="t-falar">
+    <h2 id="t-falar">1. Fale o serviço</h2>
+    <div class="bloco">
+      <button id="mic" class="mic" type="button"><span class="ponto" aria-hidden="true"></span><span id="mic-txt">Toque e fale</span></button>
+      <p id="mic-aviso" class="aviso" hidden>Seu navegador não reconhece fala. Use o Chrome no Android ou digite abaixo.</p>
+      <label for="fala">O que você falou (dá para corrigir)
+        <textarea id="fala">Orçamento para o cliente João Silva, reboco de parede 30 metros quadrados a 25 reais o metro, pintura com duas demãos 60 metros a 18 reais, troca de 4 tomadas a 30 reais cada, mão de obra de instalação do chuveiro 150 reais</textarea>
+      </label>
+      <p class="dica">Exemplo: "cliente dona Maria, piso 45 metros quadrados a 40 reais o metro, rodapé 20 metros a 15 reais, retirada de entulho 1.200 reais".</p>
+      <button id="montar" class="primario" type="button">Montar orçamento</button>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-itens">
+    <h2 id="t-itens">2. Confira os itens</h2>
+    <div class="bloco">
+      <span id="selo-exemplo" class="exemplo">Exemplo, troque pelo seu serviço</span>
+      <label for="cliente">Cliente
+        <input id="cliente" autocomplete="off" placeholder="Nome do cliente">
+      </label>
+      <div id="itens" class="itens"></div>
+      <button id="add" type="button">+ Adicionar item</button>
+      <div class="total"><span class="etiqueta">Total</span><strong id="total">R$ 0,00</strong></div>
+      <div class="grade2">
+        <label for="entrada">Pagamento
+          <select id="entrada">
+            <option value="0">À vista na entrega</option>
+            <option value="30">30% de sinal</option>
+            <option value="50" selected>50% de sinal</option>
+            <option value="100">100% antes de começar</option>
+          </select>
+        </label>
+        <label for="validade">Validade (dias)
+          <input id="validade" type="number" min="1" value="15" inputmode="numeric">
+        </label>
+        <label for="prazo">Prazo do serviço
+          <input id="prazo" placeholder="Ex.: 5 dias úteis">
+        </label>
+        <label for="garantia">Garantia
+          <input id="garantia" placeholder="Ex.: 90 dias no serviço">
+        </label>
+      </div>
+      <label for="obs">Observações
+        <input id="obs" placeholder="Ex.: material por conta do cliente">
+      </label>
+      <div style="display:grid;gap:8px">
+        <span class="etiqueta">Fotos do local (até 5)</span>
+        <div id="fotos" class="fotos"></div>
+        <label class="botao arquivo" for="foto-in">+ Tirar ou escolher foto<input id="foto-in" type="file" accept="image/*" multiple></label>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-enviar">
+    <h2 id="t-enviar">3. Mande pro cliente</h2>
+    <div class="bloco">
+      <details id="perfil">
+        <summary>Seus dados no orçamento</summary>
+        <div class="grade2" style="margin-top:12px">
+          <label for="p-nome">Seu nome ou empresa<input id="p-nome" autocomplete="name"></label>
+          <label for="p-tel">WhatsApp<input id="p-tel" inputmode="tel" autocomplete="tel"></label>
+          <label for="p-pix">Chave Pix<input id="p-pix" placeholder="Celular com +55, CPF, e-mail ou aleatória"></label>
+          <label for="p-cidade">Cidade<input id="p-cidade" autocomplete="address-level2"></label>
+          <label for="p-doc">CPF ou CNPJ (opcional)<input id="p-doc" inputmode="numeric"></label>
+          <div style="display:grid;gap:6px;align-content:end">
+            <img id="logo-prev" class="logo-prev" alt="Sua logo" hidden>
+            <label class="botao arquivo" for="logo-in">Pôr minha logo<input id="logo-in" type="file" accept="image/*"></label>
+          </div>
+        </div>
+        <p class="dica" style="margin-top:8px">Fica salvo só neste celular.</p>
+      </details>
+      <div class="pix" id="pix-box" hidden>
+        <div id="qr" aria-label="QR code do Pix"></div>
+        <div style="display:grid;gap:6px;min-width:0">
+          <span class="etiqueta" id="pix-rotulo">Pix copia e cola</span>
+          <div id="pix-codigo" class="codigo"></div>
+          <button id="copiar-pix" type="button">Copiar Pix</button>
+        </div>
+      </div>
+      <div class="linha-botoes">
+        <button id="pdf" class="primario" type="button">Baixar PDF</button>
+        <button id="zap" class="zap" type="button">Mandar no WhatsApp</button>
+      </div>
+      <p id="status" class="status" role="status"></p>
+    </div>
+  </section>
+
+  <section aria-labelledby="t-meus">
+    <h2 id="t-meus">Meus orçamentos</h2>
+    <div class="bloco">
+      <div class="resumo-pend">
+        <div><span class="etiqueta">Esperando resposta</span><strong id="r-enviado">R$ 0,00</strong></div>
+        <div><span class="etiqueta">Aprovado, a receber</span><strong id="r-aprovado">R$ 0,00</strong></div>
+        <div><span class="etiqueta">Recebido</span><strong id="r-pago">R$ 0,00</strong></div>
+      </div>
+      <div id="hist" class="hist"></div>
+      <p id="hist-vazio" class="vazio">Os orçamentos que você mandar aparecem aqui, para você saber quem ainda não respondeu e quem falta pagar.</p>
+    </div>
+  </section>
+
+  <section id="lista" aria-labelledby="t-lista" hidden>
+    <div class="bloco">
+      <h2 id="t-lista">Quer o app completo?</h2>
+      <p class="dica">Estamos fazendo o app com aprovação do cliente pelo link, lembrete de cobrança e nota fiscal. Entre na lista e use grátis no lançamento.</p>
+      <a id="lista-link" class="botao primario" href="#" target="_blank" rel="noopener">Quero entrar na lista</a>
+    </div>
+  </section>
+
+  <footer>Os valores são os que você falou. Confira antes de mandar.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// ===== núcleo: leitor de fala → itens, e Pix copia-e-cola =====
+var NUM_PALAVRAS = {
+  'um': 1, 'uma': 1, 'dois': 2, 'duas': 2, 'três': 3, 'tres': 3, 'quatro': 4, 'cinco': 5,
+  'seis': 6, 'sete': 7, 'oito': 8, 'nove': 9, 'dez': 10, 'onze': 11, 'doze': 12,
+  'treze': 13, 'catorze': 14, 'quatorze': 14, 'quinze': 15, 'dezesseis': 16,
+  'dezessete': 17, 'dezoito': 18, 'dezenove': 19, 'vinte': 20, 'trinta': 30,
+  'quarenta': 40, 'cinquenta': 50, 'sessenta': 60, 'setenta': 70, 'oitenta': 80,
+  'noventa': 90, 'cem': 100, 'duzentos': 200, 'trezentos': 300, 'quatrocentos': 400,
+  'quinhentos': 500
+};
+
+var UNIDADES = [
+  [/^(metros? quadrados?|m2|m²|metro\(s\) quadrado\(s\))\b/, 'm²'],
+  [/^(metros? lineares?|metros?|m)\b/, 'm'],
+  [/^(pontos?)\b/, 'pt'],
+  [/^(horas?)\b/, 'h'],
+  [/^(dias?|diárias?|diarias?)\b/, 'dia'],
+  [/^(sacos?)\b/, 'sc'],
+  [/^(latas?)\b/, 'lata'],
+  [/^(unidades?|peças?|pecas?)\b/, 'un']
+];
+
+var POR_UNIDADE = /(?<![a-zà-ú])(cada uma|cada um|cada|o metro quadrado|por metro quadrado|o metro linear|por metro linear|o metro|por metro|o m2|o m²|a unidade|por unidade|o ponto|por ponto|a hora|por hora|o dia|por dia|a diária|por diária|a diaria|por diaria|a peça|por peça)(?![a-zà-ú])/;
+var SO_CONVERSA = /^(orçamento|orcamento|ok|então|entao|bom|bom dia|boa tarde|olá|ola|oi|é isso|e isso|só isso|so isso)$/;
+var L = '(?<![a-zà-ú])', R = '(?![a-zà-ú])';
+
+function palavrasParaNumeros(t) {
+  // "vinte e cinco" → 25, "dois" → 2
+  t = t.replace(/\b(vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa) e (um|uma|dois|duas|três|tres|quatro|cinco|seis|sete|oito|nove)\b/g,
+    function (_, a, b) { return String(NUM_PALAVRAS[a] + NUM_PALAVRAS[b]); });
+  t = t.replace(/\b(cem|duzentos|trezentos|quatrocentos|quinhentos) e (\d+)\b/g,
+    function (_, a, b) { return String(NUM_PALAVRAS[a] + Number(b)); });
+  t = t.replace(/\b[a-zà-ú]+\b/g, function (w) {
+    return Object.prototype.hasOwnProperty.call(NUM_PALAVRAS, w) ? String(NUM_PALAVRAS[w]) : w;
+  });
+  return t;
+}
+
+function normalizarNumeros(t) {
+  // "r$ 1.500,00" → "r$ 1500.00"; "2,5" → "2.5"
+  t = t.replace(/(\d{1,3})(?:\.(\d{3}))+(?:,(\d+))?/g, function (m) {
+    return m.replace(/\./g, '').replace(',', '.');
+  });
+  t = t.replace(/(\d+),(\d+)/g, '$1.$2');
+  // "1 mil e 500" / "mil e 500" / "2 mil"
+  t = t.replace(/(\d+(?:\.\d+)?)?\s*mil(?: e (\d+))?\b/g, function (_, a, b) {
+    var base = a ? Number(a) : 1;
+    return ' ' + String(base * 1000 + (b ? Number(b) : 0)) + ' ';
+  });
+  return t;
+}
+
+function capitalizar(s) {
+  s = s.trim();
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+function lerFala(texto) {
+  var t = ' ' + texto.toLowerCase().replace(/\s+/g, ' ') + ' ';
+  t = palavrasParaNumeros(t);
+  t = normalizarNumeros(t);
+
+  var cliente = '';
+  var mCli = texto.match(/(?:para o cliente|pra o cliente|para a cliente|cliente|para dona|pra dona|para seu|pra seu|para o seu|para a dona)\s+(?:é\s+|o\s+|a\s+|dona\s+|seu\s+)?([A-Za-zÀ-ú]+)(\s+[A-ZÀ-Ú][a-zà-ú]+)?/i);
+  if (mCli) {
+    var segundo = mCli[2] && /^\s+[A-ZÀ-Ú]/.test(mCli[2]) ? mCli[2] : '';
+    cliente = capitalizar(mCli[1]) + (segundo ? ' ' + segundo.trim() : '');
+    var alvo = mCli[0].replace(mCli[2] && !segundo ? mCli[2] : '', '').toLowerCase();
+    alvo = normalizarNumeros(palavrasParaNumeros(alvo));
+    t = t.replace(alvo.trim(), ' , ');
+  }
+
+  var partes = t.split(/[,;.\n]| e depois | depois | mais | também | tambem | outro item | próximo item | proximo item /);
+  var itens = [];
+  partes.forEach(function (p) {
+    p = ' ' + p.trim() + ' ';
+    if (!p.trim()) return;
+
+    var preco = null, unitario = false;
+    var mPreco = p.match(/r\$\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:reais|real|conto|contos|pila)\b/);
+    var resto = p;
+    if (mPreco) {
+      preco = Number(mPreco[1] || mPreco[2]);
+      var antes = p.slice(0, mPreco.index);
+      var depois = p.slice(mPreco.index + mPreco[0].length);
+      if (POR_UNIDADE.test(depois.slice(0, 30)) || /\b(por|a)\s+(?:cada|unidade)\s*$/.test(antes)) unitario = true;
+      resto = antes + ' ' + depois;
+      resto = resto.replace(POR_UNIDADE, ' ');
+      var precoComA = /\b(a|por)\s*$/.test(antes);
+      p = { antes: antes, precoComA: precoComA };
+    } else {
+      p = { antes: p, precoComA: false };
+    }
+
+    var qtd = null, un = 'un';
+    var re = /(\d+(?:\.\d+)?)/g, m, primeiro = null, achou = false;
+    while ((m = re.exec(resto)) && !achou) {
+      if (!primeiro) primeiro = m;
+      var apos = resto.slice(m.index + m[1].length).trim();
+      for (var i = 0; i < UNIDADES.length; i++) {
+        var u = apos.match(UNIDADES[i][0]);
+        if (u) {
+          qtd = Number(m[1]); un = UNIDADES[i][1]; achou = true;
+          var manter = un === 'pt' ? ' ' + u[0] : '';
+          resto = resto.slice(0, m.index) + manter + ' ' + apos.slice(u[0].length);
+          break;
+        }
+      }
+    }
+    if (!achou && primeiro) {
+      // "4 tomadas": a quantidade é o primeiro número, o substantivo fica na descrição
+      qtd = Number(primeiro[1]);
+      resto = resto.slice(0, primeiro.index) + ' ' + resto.slice(primeiro.index + primeiro[1].length);
+    }
+
+    if (preco !== null && qtd !== null && !unitario && p.precoComA && /^(m²|m|h|dia|pt)$/.test(un)) unitario = true;
+
+    var fimFraco = new RegExp(L + '(a|por|de|do|da|no|na|com|e|o|os|as|em|pra|para|valor|preço|preco|fica|vai ficar|sai|total|no total|de serviço|de servico)\\s*$');
+    var inicioFraco = new RegExp('^\\s*(de|do|da|e|o|a|um|uma|com|pra|para|tem|vai ter|vou fazer|fazer|faço|faco)' + R);
+    var desc = resto.replace(new RegExp(L + '(reais|real|conto|contos|pila)' + R, 'g'), ' ').replace(/\s+/g, ' ').trim();
+    for (var k = 0; k < 4; k++) desc = desc.replace(fimFraco, '').replace(inicioFraco, '').replace(/\s+/g, ' ').trim();
+
+    if (!desc && preco === null) return;
+    if (preco === null && SO_CONVERSA.test(desc)) return;
+    if (!desc) desc = 'Serviço';
+    if (qtd === null || qtd === 0) qtd = 1;
+    var valorUnit = preco === null ? 0 : (unitario ? preco : preco / qtd);
+    itens.push({ descricao: capitalizar(desc), qtd: qtd, un: un, valorUnit: Math.round(valorUnit * 100) / 100 });
+  });
+  return { cliente: cliente, itens: itens };
+}
+
+// ----- Pix copia-e-cola (BR Code estático, padrão EMV do Banco Central) -----
+function semAcento(s) {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9 ]/g, '').trim();
+}
+function tlv(id, valor) {
+  return id + String(valor.length).padStart(2, '0') + valor;
+}
+function crc16(str) {
+  var crc = 0xFFFF;
+  for (var i = 0; i < str.length; i++) {
+    crc ^= str.charCodeAt(i) << 8;
+    for (var j = 0; j < 8; j++) {
+      crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1);
+      crc &= 0xFFFF;
+    }
+  }
+  return crc.toString(16).toUpperCase().padStart(4, '0');
+}
+function normalizarChave(chave) {
+  var c = chave.trim();
+  if (c.indexOf('@') > 0) return c.toLowerCase();
+  var digitos = c.replace(/\D/g, '');
+  if (/^\+/.test(c)) return '+' + digitos;
+  if (/^[0-9a-f-]{32,36}$/i.test(c)) return c.toLowerCase();
+  return digitos || c; // CPF/CNPJ só com números
+}
+function pixCopiaECola(o) {
+  var payload =
+    tlv('00', '01') +
+    tlv('26', tlv('00', 'br.gov.bcb.pix') + tlv('01', normalizarChave(o.chave))) +
+    tlv('52', '0000') +
+    tlv('53', '986') +
+    (o.valor > 0 ? tlv('54', o.valor.toFixed(2)) : '') +
+    tlv('58', 'BR') +
+    tlv('59', (semAcento(o.nome) || 'RECEBEDOR').slice(0, 25)) +
+    tlv('60', (semAcento(o.cidade) || 'BRASIL').slice(0, 15)) +
+    tlv('62', tlv('05', (o.txid || '***').replace(/[^A-Za-z0-9]/g, '').slice(0, 25) || '***')) +
+    '6304';
+  return payload + crc16(payload);
+}
+// ===== fim do núcleo =====
+
+// ===== página =====
+// Link do formulário da lista de espera (Google Forms ou Tally). Vazio = seção escondida.
+var LISTA_URL = '';
+
+var $ = function (id) { return document.getElementById(id); };
+var itens = [];
+var fotos = [];          // dataURLs JPEG, só na memória
+var atualId = null;      // orçamento do histórico em edição
+var fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+var CAMPOS_PERFIL = ['p-nome', 'p-tel', 'p-pix', 'p-cidade', 'p-doc'];
+
+function guardar(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+function ler(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lerJSON(k, padrao) { try { return JSON.parse(ler(k)) || padrao; } catch (e) { return padrao; } }
+
+function total() { return itens.reduce(function (s, i) { return s + i.qtd * i.valorUnit; }, 0); }
+function pctEntrada() { return Number($('entrada').value) || 0; }
+function valorPix() { var p = pctEntrada(); return p > 0 ? Math.round(total() * p) / 100 : total(); }
+
+function desenharItens() {
+  var box = $('itens');
+  box.textContent = '';
+  itens.forEach(function (it, idx) {
+    var d = document.createElement('div');
+    d.className = 'item';
+    d.innerHTML =
+      '<label>Serviço<input class="desc" id="d' + idx + '"></label>' +
+      '<div class="nums">' +
+      '<label>Qtd<input id="q' + idx + '" type="number" step="any" inputmode="decimal"></label>' +
+      '<label>Un.<input id="u' + idx + '"></label>' +
+      '<label>Valor unit. (R$)<input id="v' + idx + '" type="number" step="any" inputmode="decimal"></label>' +
+      '<button class="remover" type="button" aria-label="Remover item">Remover</button>' +
+      '</div><div class="sub-total" id="s' + idx + '"></div>';
+    box.appendChild(d);
+    var di = $('d' + idx), qi = $('q' + idx), ui = $('u' + idx), vi = $('v' + idx);
+    di.value = it.descricao; qi.value = it.qtd; ui.value = it.un; vi.value = it.valorUnit || '';
+    function atualizar() {
+      it.descricao = di.value; it.qtd = Number(qi.value) || 0; it.un = ui.value; it.valorUnit = Number(vi.value) || 0;
+      $('s' + idx).textContent = String(it.qtd).replace('.', ',') + ' ' + it.un + ' × ' + fmt.format(it.valorUnit) + ' = ' + fmt.format(it.qtd * it.valorUnit);
+      atualizarTotal();
+    }
+    [di, qi, ui, vi].forEach(function (el) { el.addEventListener('input', atualizar); });
+    d.querySelector('.remover').addEventListener('click', function () { itens.splice(idx, 1); desenharItens(); });
+    atualizar();
+  });
+  atualizarTotal();
+}
+
+function perfil() {
+  return { nome: $('p-nome').value.trim(), tel: $('p-tel').value.trim(), pix: $('p-pix').value.trim(),
+    cidade: $('p-cidade').value.trim(), doc: $('p-doc').value.trim(), logo: ler('orc-logo') || '' };
+}
+
+function proximoNumero() { return (Number(ler('orc-seq')) || 0) + 1; }
+function numeroTexto(n) { return String(n).padStart(4, '0'); }
+
+var qr = null;
+function codigoPix(valor, ref) {
+  var p = perfil();
+  if (!p.pix) return '';
+  return pixCopiaECola({ chave: p.pix, nome: p.nome, cidade: p.cidade, valor: valor, txid: ref });
+}
+function atualizarTotal() {
+  $('total').textContent = fmt.format(total());
+  var cod = codigoPix(valorPix(), 'ORC' + numeroTexto(proximoNumero()));
+  $('pix-box').hidden = !cod;
+  if (cod) {
+    $('pix-rotulo').textContent = pctEntrada() > 0 && pctEntrada() < 100
+      ? 'Pix do sinal (' + pctEntrada() + '%): ' + fmt.format(valorPix())
+      : 'Pix: ' + fmt.format(valorPix());
+    $('pix-codigo').textContent = cod;
+    if (window.QRCode) {
+      if (!qr) qr = new QRCode($('qr'), { text: cod, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
+      else { qr.clear(); qr.makeCode(cod); }
+    }
+  }
+}
+
+function montar() {
+  var r = lerFala($('fala').value);
+  if (r.cliente) $('cliente').value = r.cliente;
+  itens = r.itens;
+  if (!itens.length) itens = [{ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }];
+  atualId = null;
+  desenharItens();
+}
+
+// ----- voz -----
+var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+var rec = null, gravando = false, base = '';
+if (!Rec) { $('mic').disabled = true; $('mic-aviso').hidden = false; }
+$('mic').addEventListener('click', function () {
+  if (!Rec) return;
+  if (gravando) { rec.stop(); return; }
+  rec = new Rec();
+  rec.lang = 'pt-BR'; rec.continuous = true; rec.interimResults = true;
+  base = $('selo-exemplo').hidden ? $('fala').value.trim() : '';
+  rec.onresult = function (e) {
+    var texto = '';
+    for (var i = 0; i < e.results.length; i++) texto += e.results[i][0].transcript + (e.results[i].isFinal ? ', ' : ' ');
+    $('fala').value = (base ? base + ', ' : '') + texto.trim().replace(/,$/, '');
+  };
+  rec.onerror = function (e) {
+    $('status').textContent = e.error === 'not-allowed' ? 'Libere o microfone para este site nas configurações do navegador.' : 'Não deu para ouvir. Tente de novo ou digite.';
+  };
+  rec.onend = function () {
+    gravando = false; $('mic').classList.remove('gravando'); $('mic-txt').textContent = 'Toque e fale';
+    if ($('fala').value.trim()) { $('selo-exemplo').hidden = true; montar(); }
+  };
+  rec.start();
+  gravando = true; $('mic').classList.add('gravando'); $('mic-txt').textContent = 'Ouvindo… toque para parar';
+  $('status').textContent = '';
+});
+
+$('montar').addEventListener('click', function () { $('selo-exemplo').hidden = true; montar(); });
+$('add').addEventListener('click', function () { itens.push({ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }); desenharItens(); });
+$('entrada').addEventListener('change', atualizarTotal);
+
+// ----- imagens: reduz no aparelho antes de usar -----
+function reduzirImagem(arquivo, lado, qualidade, cb) {
+  var leitor = new FileReader();
+  leitor.onload = function () {
+    var img = new Image();
+    img.onload = function () {
+      var esc = Math.min(1, lado / Math.max(img.width, img.height));
+      var c = document.createElement('canvas');
+      c.width = Math.round(img.width * esc); c.height = Math.round(img.height * esc);
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      cb(c.toDataURL('image/jpeg', qualidade), c.width, c.height);
+    };
+    img.onerror = function () { $('status').textContent = 'Não deu para abrir essa imagem.'; };
+    img.src = leitor.result;
+  };
+  leitor.readAsDataURL(arquivo);
+}
+
+function desenharFotos() {
+  var box = $('fotos'); box.textContent = '';
+  fotos.forEach(function (f, i) {
+    var fig = document.createElement('figure');
+    var img = document.createElement('img'); img.src = f.url; img.alt = 'Foto ' + (i + 1);
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = '×'; b.setAttribute('aria-label', 'Tirar foto ' + (i + 1));
+    b.addEventListener('click', function () { fotos.splice(i, 1); desenharFotos(); });
+    fig.appendChild(img); fig.appendChild(b); box.appendChild(fig);
+  });
+}
+$('foto-in').addEventListener('change', function (e) {
+  Array.prototype.slice.call(e.target.files, 0, 5 - fotos.length).forEach(function (f) {
+    reduzirImagem(f, 1200, 0.75, function (url, w, h) { fotos.push({ url: url, w: w, h: h }); desenharFotos(); });
+  });
+  e.target.value = '';
+});
+$('logo-in').addEventListener('change', function (e) {
+  var f = e.target.files[0]; if (!f) return;
+  reduzirImagem(f, 400, 0.85, function (url) {
+    if (!guardar('orc-logo', url)) $('status').textContent = 'Não deu para salvar a logo neste celular; ela vale só agora.';
+    mostrarLogo(url);
+  });
+});
+var logoAtual = '';
+function mostrarLogo(url) { logoAtual = url; $('logo-prev').src = url; $('logo-prev').hidden = !url; }
+
+// ----- perfil salvo no aparelho -----
+CAMPOS_PERFIL.forEach(function (id) {
+  var v = ler('orc-' + id); if (v) $(id).value = v;
+  $(id).addEventListener('input', function () { guardar('orc-' + id, $(id).value); atualizarTotal(); });
+});
+mostrarLogo(ler('orc-logo') || '');
+if (!perfil().nome) $('perfil').open = true;
+
+// ----- PDF (orçamento ou recibo) -----
+function dadosAtuais() {
+  return {
+    cliente: $('cliente').value.trim(), itens: itens.map(function (i) { return Object.assign({}, i); }),
+    entrada: pctEntrada(), validade: $('validade').value || 15, prazo: $('prazo').value.trim(),
+    garantia: $('garantia').value.trim(), obs: $('obs').value.trim(), total: total()
+  };
+}
+
+function pdfCabecalho(doc, p, titulo, numero, data) {
+  var W = 210, M = 16, x = M;
+  doc.setFillColor(242, 180, 0); doc.rect(0, 0, W, 6, 'F');
+  var logo = logoAtual || p.logo;
+  if (logo) { try { doc.addImage(logo, 'JPEG', M, 12, 24, 24, undefined, 'FAST'); x = M + 28; } catch (e) {} }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(29, 36, 40);
+  doc.text(p.nome || 'Prestador de serviço', x, 20);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(93, 103, 108);
+  var l1 = [p.tel && 'WhatsApp ' + p.tel, p.cidade].filter(Boolean).join('  ·  ');
+  if (l1) doc.text(l1, x, 26);
+  if (p.doc) doc.text('CPF/CNPJ ' + p.doc, x, 31);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(29, 36, 40);
+  doc.text(titulo + ' Nº ' + numero, W - M, 18, { align: 'right' });
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(93, 103, 108);
+  doc.text(data, W - M, 23, { align: 'right' });
+  return 44;
+}
+
+function pdfItens(doc, d, y) {
+  var W = 210, M = 16;
+  doc.setTextColor(29, 36, 40); doc.setFontSize(11);
+  doc.text('Cliente: ' + (d.cliente || '—'), M, y); y += 7;
+  doc.setDrawColor(29, 36, 40); doc.setLineWidth(0.4); doc.line(M, y, W - M, y); y += 6;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+  doc.text('SERVIÇO', M, y); doc.text('QTD', 122, y, { align: 'right' }); doc.text('UNIT.', 158, y, { align: 'right' }); doc.text('TOTAL', W - M, y, { align: 'right' });
+  y += 3; doc.setLineWidth(0.2); doc.setDrawColor(211, 216, 214); doc.line(M, y, W - M, y); y += 6;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+  d.itens.forEach(function (it) {
+    var linhas = doc.splitTextToSize(it.descricao || 'Serviço', 90);
+    if (y + linhas.length * 5 > 260) { doc.addPage(); y = 20; }
+    doc.text(linhas, M, y);
+    doc.text(String(it.qtd).replace('.', ',') + ' ' + it.un, 122, y, { align: 'right' });
+    doc.text(fmt.format(it.valorUnit), 158, y, { align: 'right' });
+    doc.text(fmt.format(it.qtd * it.valorUnit), W - M, y, { align: 'right' });
+    y += linhas.length * 5 + 3; doc.line(M, y - 2, W - M, y - 2); y += 2;
+  });
+  y += 2; doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+  doc.text('TOTAL  ' + fmt.format(d.total), W - M, y, { align: 'right' });
+  return y + 10;
+}
+
+function pdfPix(doc, cod, rotulo, y) {
+  var M = 16, W = 210;
+  if (!cod) return y;
+  if (y > 225) { doc.addPage(); y = 20; }
+  doc.setTextColor(29, 36, 40); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+  doc.text(rotulo, M, y);
+  var qrTmp = document.createElement('div');
+  new QRCode(qrTmp, { text: cod, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
+  var canvas = qrTmp.querySelector('canvas');
+  if (canvas) doc.addImage(canvas.toDataURL('image/png'), 'PNG', M, y + 3, 36, 36);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(93, 103, 108);
+  doc.text('Abra o app do banco, escolha Pix e leia o QR code, ou use o copia e cola:', M + 42, y + 7);
+  doc.setFont('courier', 'normal'); doc.setFontSize(7); doc.setTextColor(29, 36, 40);
+  doc.text(doc.splitTextToSize(cod, W - 2 * M - 42), M + 42, y + 13);
+  return y + 44;
+}
+
+function pdfFotos(doc, lista) {
+  if (!lista.length) return;
+  doc.addPage();
+  var M = 16, W = 210, y = 20;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(29, 36, 40);
+  doc.text('Fotos do local', M, y); y += 6;
+  var col = 0, larg = (W - 2 * M - 6) / 2;
+  lista.forEach(function (f) {
+    var alt = larg * f.h / f.w;
+    if (alt > 110) alt = 110;
+    var lw = alt * f.w / f.h;
+    if (y + alt > 285) { doc.addPage(); y = 20; col = 0; }
+    doc.addImage(f.url, 'JPEG', M + col * (larg + 6), y, lw, alt, undefined, 'FAST');
+    if (col === 1) { y += alt + 6; col = 0; } else col = 1;
+  });
+}
+
+function gerarOrcamentoPDF(d, numero, data) {
+  var jsPDF = window.jspdf && window.jspdf.jsPDF;
+  if (!jsPDF) throw new Error('sem-pdf');
+  var p = perfil(), doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = 16, W = 210;
+  var y = pdfCabecalho(doc, p, 'ORÇAMENTO', numero, data);
+  y = pdfItens(doc, d, y);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(60, 68, 72);
+  var cond = [];
+  if (d.entrada > 0 && d.entrada < 100) cond.push('Pagamento: ' + d.entrada + '% de sinal (' + fmt.format(d.total * d.entrada / 100) + ') para começar e o restante na entrega.');
+  else if (d.entrada === 100) cond.push('Pagamento: valor total antes de começar.');
+  else cond.push('Pagamento: à vista na entrega do serviço.');
+  if (d.prazo) cond.push('Prazo do serviço: ' + d.prazo + '.');
+  if (d.garantia) cond.push('Garantia: ' + d.garantia + '.');
+  cond.push('Validade deste orçamento: ' + d.validade + ' dias.');
+  if (d.obs) cond.push('Observações: ' + d.obs);
+  cond.forEach(function (l) { var ls = doc.splitTextToSize(l, W - 2 * M); doc.text(ls, M, y); y += ls.length * 5 + 1; });
+  var vPix = d.entrada > 0 ? Math.round(d.total * d.entrada) / 100 : d.total;
+  y = pdfPix(doc, codigoPix(vPix, 'ORC' + numero), d.entrada > 0 && d.entrada < 100 ? 'Pague o sinal com Pix: ' + fmt.format(vPix) : 'Pague com Pix: ' + fmt.format(vPix), y + 4);
+  if (y > 250) { doc.addPage(); y = 30; }
+  doc.setDrawColor(150, 155, 158); doc.setLineWidth(0.2);
+  doc.line(M, y + 14, 95, y + 14); doc.line(115, y + 14, W - M, y + 14);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(93, 103, 108);
+  doc.text('De acordo (cliente)', M, y + 19); doc.text(p.nome || 'Prestador', 115, y + 19);
+  pdfFotos(doc, fotos);
+  return { doc: doc, nome: 'orcamento-' + numero + '.pdf' };
+}
+
+function gerarReciboPDF(reg, valor) {
+  var jsPDF = window.jspdf && window.jspdf.jsPDF;
+  if (!jsPDF) throw new Error('sem-pdf');
+  var p = perfil(), doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = 16, W = 210;
+  var hoje = new Date().toLocaleDateString('pt-BR');
+  var y = pdfCabecalho(doc, p, 'RECIBO', reg.numero, hoje);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(29, 36, 40);
+  doc.text(fmt.format(valor), M, y + 4); y += 16;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+  var servicos = reg.dados.itens.map(function (i) { return (i.descricao || 'serviço').toLowerCase(); }).join(', ');
+  var texto = 'Recebi de ' + (reg.dados.cliente || '________________') + ' a quantia de ' + fmt.format(valor) +
+    ', referente a ' + servicos + ', conforme orçamento nº ' + reg.numero + ' de ' + reg.data + '.';
+  var ls = doc.splitTextToSize(texto, W - 2 * M); doc.text(ls, M, y); y += ls.length * 6 + 6;
+  if (reg.dados.garantia) { doc.text('Garantia: ' + reg.dados.garantia + '.', M, y); y += 8; }
+  doc.text((p.cidade || '') + (p.cidade ? ', ' : '') + hoje + '.', M, y + 6);
+  doc.line(M, y + 30, 110, y + 30);
+  doc.setFontSize(9); doc.setTextColor(93, 103, 108);
+  doc.text((p.nome || 'Prestador') + (p.doc ? '  ·  CPF/CNPJ ' + p.doc : ''), M, y + 35);
+  return { doc: doc, nome: 'recibo-' + reg.numero + '.pdf' };
+}
+
+// ----- histórico -----
+function historico() { return lerJSON('orc-hist', []); }
+function salvarHistorico(h) {
+  if (!guardar('orc-hist', JSON.stringify(h))) $('status').textContent = 'Este celular não deixou salvar o histórico.';
+  desenharHistorico();
+}
+function registrarEnvio() {
+  var h = historico(), d = dadosAtuais(), agora = new Date();
+  if (atualId) {
+    var reg = h.filter(function (r) { return r.id === atualId; })[0];
+    if (reg) { reg.dados = d; salvarHistorico(h); return reg; }
+  }
+  var n = proximoNumero(); guardar('orc-seq', String(n));
+  var novo = { id: String(agora.getTime()), numero: numeroTexto(n), data: agora.toLocaleDateString('pt-BR'), status: 'enviado', dados: d };
+  h.unshift(novo); atualId = novo.id;
+  salvarHistorico(h.slice(0, 200));
+  return novo;
+}
+function desenharHistorico() {
+  var h = historico(), box = $('hist'), soma = { enviado: 0, aprovado: 0, pago: 0 };
+  box.textContent = '';
+  h.forEach(function (r) {
+    soma[r.status] += r.dados.total;
+    var el = document.createElement('div'); el.className = 'hist-item';
+    var rotulo = { enviado: 'Enviado', aprovado: 'Aprovado', pago: 'Pago' }[r.status];
+    el.innerHTML = '<div class="hist-topo"><b></b><span></span></div>' +
+      '<div class="hist-topo"><small></small><span class="chip ' + r.status + '">' + rotulo + '</span></div>' +
+      '<div class="hist-acoes"></div>';
+    el.querySelector('b').textContent = (r.dados.cliente || 'Sem nome') ;
+    el.querySelector('.hist-topo span').textContent = fmt.format(r.dados.total);
+    el.querySelector('small').textContent = 'Nº ' + r.numero + ' · ' + r.data;
+    var acoes = el.querySelector('.hist-acoes');
+    function botao(txt, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.addEventListener('click', fn); acoes.appendChild(b); }
+    if (r.status === 'enviado') botao('Cliente aprovou', function () { r.status = 'aprovado'; salvarHistorico(h); });
+    if (r.status !== 'pago') botao('Recebi o pagamento', function () { r.status = 'pago'; salvarHistorico(h); });
+    botao('Gerar recibo', function () {
+      try { var x = gerarReciboPDF(r, r.dados.total); compartilharOuBaixar(x, 'Recibo ' + r.numero + ' — ' + fmt.format(r.dados.total)); }
+      catch (e) { $('status').textContent = 'Não deu para gerar o recibo. Verifique a internet e tente de novo.'; }
+    });
+    botao('Abrir', function () {
+      var d = r.dados; atualId = r.id;
+      $('cliente').value = d.cliente; $('entrada').value = String(d.entrada); $('validade').value = d.validade;
+      $('prazo').value = d.prazo; $('garantia').value = d.garantia; $('obs').value = d.obs;
+      itens = d.itens.map(function (i) { return Object.assign({}, i); }); $('selo-exemplo').hidden = true; desenharItens();
+      $('t-itens').scrollIntoView({ behavior: 'smooth' });
+    });
+    box.appendChild(el);
+  });
+  $('hist-vazio').hidden = h.length > 0;
+  $('r-enviado').textContent = fmt.format(soma.enviado);
+  $('r-aprovado').textContent = fmt.format(soma.aprovado);
+  $('r-pago').textContent = fmt.format(soma.pago);
+}
+
+// ----- envio -----
+function resumoTexto(reg) {
+  var d = reg.dados;
+  var linhas = ['*Orçamento nº ' + reg.numero + (d.cliente ? ' para ' + d.cliente : '') + '*'];
+  d.itens.forEach(function (it) { linhas.push('• ' + (it.descricao || 'Serviço') + ': ' + fmt.format(it.qtd * it.valorUnit)); });
+  linhas.push('*Total: ' + fmt.format(d.total) + '*');
+  if (d.entrada > 0 && d.entrada < 100) linhas.push('Sinal de ' + d.entrada + '% para começar: ' + fmt.format(d.total * d.entrada / 100));
+  linhas.push('', 'Para aprovar, é só responder *OK* aqui.');
+  var vPix = d.entrada > 0 ? Math.round(d.total * d.entrada) / 100 : d.total;
+  var cod = codigoPix(vPix, 'ORC' + reg.numero); if (cod) linhas.push('', 'Pix copia e cola:', cod);
+  if (perfil().nome) linhas.push('', perfil().nome);
+  return linhas.join('\n');
+}
+
+function compartilharOuBaixar(x, texto) {
+  try {
+    var arquivo = new File([x.doc.output('blob')], x.nome, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+      navigator.share({ files: [arquivo], text: texto }).then(function () { $('status').textContent = 'Escolha o WhatsApp e o contato.'; }).catch(function () {});
+      return;
+    }
+  } catch (e) {}
+  x.doc.save(x.nome);
+  $('status').textContent = 'PDF baixado. Anexe no WhatsApp do cliente.';
+}
+
+$('pdf').addEventListener('click', function () {
+  try { var reg = registrarEnvio(); var x = gerarOrcamentoPDF(reg.dados, reg.numero, reg.data); x.doc.save(x.nome); $('status').textContent = 'PDF baixado e guardado em Meus orçamentos.'; }
+  catch (e) { $('status').textContent = 'Não deu para gerar o PDF. Verifique a internet e tente de novo.'; }
+});
+
+$('zap').addEventListener('click', function () {
+  var reg = registrarEnvio(), texto = resumoTexto(reg);
+  try {
+    var x = gerarOrcamentoPDF(reg.dados, reg.numero, reg.data);
+    var arquivo = new File([x.doc.output('blob')], x.nome, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
+      navigator.share({ files: [arquivo], text: texto }).then(function () { $('status').textContent = 'Escolha o WhatsApp e o contato.'; }).catch(function () {});
+      return;
+    }
+  } catch (e) {}
+  window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank', 'noopener');
+  $('status').textContent = 'Abrimos o WhatsApp com o resumo e o Pix. Baixe o PDF para anexar.';
+});
+
+$('copiar-pix').addEventListener('click', function () {
+  var cod = $('pix-codigo').textContent;
+  navigator.clipboard.writeText(cod).then(function () { $('status').textContent = 'Pix copiado.'; })
+    .catch(function () {
+      var r = document.createRange(); r.selectNodeContents($('pix-codigo'));
+      var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      $('status').textContent = 'Selecionamos o código. Copie pelo menu do celular.';
+    });
+});
+
+if (LISTA_URL) { $('lista').hidden = false; $('lista-link').href = LISTA_URL; }
+
+montar();
+desenharHistorico();
+</script>
+</body>
+</html>
