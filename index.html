@@ -132,6 +132,55 @@ footer { color: var(--muted); font-size: .85rem; text-align: center; padding-blo
 .hist-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
 .hist-acoes button { padding: 8px 10px; font-size: .88rem; }
 .vazio { color: var(--muted); font-size: .92rem; margin: 0; }
+
+/* ----- v3: abas de app, chips, assinatura ----- */
+body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.abas {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  background: var(--surface); border-top: 1px solid var(--line);
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+}
+.abas button {
+  border: 0; background: transparent; border-radius: 8px; padding: 8px 2px; gap: 3px;
+  flex-direction: column; font: 600 .74rem/1.1 var(--font-body); color: var(--muted);
+}
+.abas button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
+.abas button[aria-current="page"] { color: var(--ink); background: var(--bg); }
+.abas button[aria-current="page"] svg { stroke: var(--ink); }
+.tela[hidden] { display: none !important; }
+.tela { display: grid; gap: 18px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-btn { padding: 8px 12px; border-radius: 99px; font-size: .88rem; font-weight: 500; background: var(--bg); }
+.chip-btn b { font-family: var(--font-data); font-weight: 500; font-size: .8rem; color: var(--muted); }
+.filtros { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.filtros button { padding: 8px 12px; border-radius: 99px; font-size: .85rem; white-space: nowrap; flex: none; }
+.filtros button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.painel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.painel div { display: grid; gap: 4px; background: var(--bg); border-radius: 10px; padding: 10px 12px; border: 1px solid var(--line); }
+.painel strong { font: 700 1.35rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.chip.recusado { color: var(--danger); border-color: var(--danger); }
+.chip.parcial { background: transparent; color: var(--go); border-color: var(--go); }
+.linha-total { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; color: var(--muted); }
+.lista-simples { display: grid; gap: 8px; }
+.linha-edit { display: grid; grid-template-columns: minmax(0, 1fr) 70px 96px auto; gap: 6px; align-items: end; }
+.linha-edit label { font-size: .78rem; color: var(--muted); }
+@media (max-width: 420px) { .linha-edit { grid-template-columns: minmax(0, 1fr) 64px 86px; } .linha-edit .remover { grid-column: 1 / -1; justify-self: end; } }
+.modal {
+  position: fixed; inset: 0; z-index: 40; background: rgba(10, 14, 16, .55);
+  display: grid; align-items: end; padding: 0;
+}
+.modal-caixa {
+  background: var(--surface); border-radius: 16px 16px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  display: grid; gap: 12px; max-width: 640px; width: 100%; margin: 0 auto; max-height: 92vh; overflow: auto;
+}
+#assina-canvas { width: 100%; height: 190px; background: #fff; border: 1px dashed var(--muted); border-radius: 10px; touch-action: none; }
+.assinado { display: flex; gap: 10px; align-items: center; color: var(--go); font-weight: 600; font-size: .92rem; }
+.assinado img { height: 40px; background: #fff; border-radius: 6px; border: 1px solid var(--line); }
+.cliente-linha { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+@media (max-width: 420px) { .cliente-linha { grid-template-columns: 1fr; } }
+.desconto { display: grid; grid-template-columns: minmax(0, 1fr) 90px; gap: 8px; }
+.pequeno { font-size: .85rem; color: var(--muted); }
 </style>
 </head>
 <body>
@@ -139,70 +188,177 @@ footer { color: var(--muted); font-size: .85rem; text-align: center; padding-blo
   <header>
     <div class="marca"><span class="faixa" aria-hidden="true"></span><span class="etiqueta">Para pedreiro, pintor, eletricista</span></div>
     <h1>Orçamento Falado</h1>
-    <p class="sub">Fale o serviço do jeito que você explica pro cliente. O orçamento sai pronto em PDF, com fotos e Pix, para mandar no WhatsApp.</p>
+    <p class="sub" id="sub-novo">Fale o serviço do jeito que você explica pro cliente. O orçamento sai em PDF, com fotos e Pix, e o cliente pode assinar na hora.</p>
   </header>
 
-  <section aria-labelledby="t-falar">
-    <h2 id="t-falar">1. Fale o serviço</h2>
-    <div class="bloco">
-      <button id="mic" class="mic" type="button"><span class="ponto" aria-hidden="true"></span><span id="mic-txt">Toque e fale</span></button>
-      <p id="mic-aviso" class="aviso" hidden>Seu navegador não reconhece fala. Use o Chrome no Android ou digite abaixo.</p>
-      <label for="fala">O que você falou (dá para corrigir)
-        <textarea id="fala">Orçamento para o cliente João Silva, reboco de parede 30 metros quadrados a 25 reais o metro, pintura com duas demãos 60 metros a 18 reais, troca de 4 tomadas a 30 reais cada, mão de obra de instalação do chuveiro 150 reais</textarea>
-      </label>
-      <p class="dica">Exemplo: "cliente dona Maria, piso 45 metros quadrados a 40 reais o metro, rodapé 20 metros a 15 reais, retirada de entulho 1.200 reais".</p>
-      <button id="montar" class="primario" type="button">Montar orçamento</button>
-    </div>
-  </section>
+  <!-- ===================== NOVO ===================== -->
+  <div class="tela" id="tela-novo">
+    <section aria-labelledby="t-falar">
+      <h2 id="t-falar">1. Fale o serviço</h2>
+      <div class="bloco">
+        <button id="mic" class="mic" type="button"><span class="ponto" aria-hidden="true"></span><span id="mic-txt">Toque e fale</span></button>
+        <p id="mic-aviso" class="aviso" hidden>Seu navegador não reconhece fala. Use o Chrome no Android ou digite abaixo.</p>
+        <label for="fala">O que você falou (dá para corrigir)
+          <textarea id="fala">Orçamento para o cliente João Silva, reboco de parede 30 metros quadrados a 25 reais o metro, pintura com duas demãos 60 metros a 18 reais, troca de 4 tomadas a 30 reais cada, mão de obra de instalação do chuveiro 150 reais</textarea>
+        </label>
+        <p class="dica">Se você não falar o preço, usamos o valor da sua tabela de preços.</p>
+        <button id="montar" class="primario" type="button">Montar orçamento</button>
+      </div>
+    </section>
 
-  <section aria-labelledby="t-itens">
-    <h2 id="t-itens">2. Confira os itens</h2>
-    <div class="bloco">
-      <span id="selo-exemplo" class="exemplo">Exemplo, troque pelo seu serviço</span>
-      <label for="cliente">Cliente
-        <input id="cliente" autocomplete="off" placeholder="Nome do cliente">
-      </label>
-      <div id="itens" class="itens"></div>
-      <button id="add" type="button">+ Adicionar item</button>
-      <div class="total"><span class="etiqueta">Total</span><strong id="total">R$ 0,00</strong></div>
-      <div class="grade2">
-        <label for="entrada">Pagamento
-          <select id="entrada">
-            <option value="0">À vista na entrega</option>
-            <option value="30">30% de sinal</option>
-            <option value="50" selected>50% de sinal</option>
-            <option value="100">100% antes de começar</option>
+    <section aria-labelledby="t-itens">
+      <h2 id="t-itens">2. Confira os itens</h2>
+      <div class="bloco">
+        <span id="selo-exemplo" class="exemplo">Exemplo, troque pelo seu serviço</span>
+        <div class="cliente-linha">
+          <label for="cliente">Cliente
+            <input id="cliente" list="clientes-dl" autocomplete="off" placeholder="Nome do cliente">
+          </label>
+          <label for="cliente-tel">WhatsApp do cliente
+            <input id="cliente-tel" inputmode="tel" placeholder="(11) 90000-0000">
+          </label>
+        </div>
+        <label for="cliente-end">Endereço da obra
+          <input id="cliente-end" placeholder="Rua, número, bairro">
+        </label>
+        <datalist id="clientes-dl"></datalist>
+        <div id="itens" class="itens"></div>
+        <div style="display:grid;gap:8px">
+          <span class="etiqueta">Da sua tabela de preços</span>
+          <div id="chips-precos" class="chips"></div>
+        </div>
+        <button id="add" type="button">+ Adicionar item vazio</button>
+        <div class="desconto">
+          <label for="desc-valor">Desconto
+            <input id="desc-valor" type="number" step="any" min="0" inputmode="decimal" placeholder="0">
+          </label>
+          <label for="desc-tipo">Tipo
+            <select id="desc-tipo"><option value="R$">R$</option><option value="%">%</option></select>
+          </label>
+        </div>
+        <div class="linha-total"><span>Subtotal</span><span id="subtotal">R$ 0,00</span></div>
+        <div class="linha-total" id="linha-desc" hidden><span>Desconto</span><span id="desconto-mostra">R$ 0,00</span></div>
+        <div class="total"><span class="etiqueta">Total</span><strong id="total">R$ 0,00</strong></div>
+        <div class="grade2">
+          <label for="entrada">Pagamento
+            <select id="entrada">
+              <option value="0">À vista na entrega</option>
+              <option value="30">30% de sinal</option>
+              <option value="50" selected>50% de sinal</option>
+              <option value="100">100% antes de começar</option>
+            </select>
+          </label>
+          <label for="validade">Validade (dias)
+            <input id="validade" type="number" min="1" value="15" inputmode="numeric">
+          </label>
+          <label for="prazo">Prazo do serviço
+            <input id="prazo" placeholder="Ex.: 5 dias úteis">
+          </label>
+          <label for="garantia">Garantia
+            <input id="garantia" placeholder="Ex.: 90 dias no serviço">
+          </label>
+        </div>
+        <label for="obs">Observações
+          <input id="obs" placeholder="Ex.: material por conta do cliente">
+        </label>
+        <div style="display:grid;gap:8px">
+          <span class="etiqueta">Fotos do local (até 5)</span>
+          <div id="fotos" class="fotos"></div>
+          <label class="botao arquivo" for="foto-in">+ Tirar ou escolher foto<input id="foto-in" type="file" accept="image/*" multiple></label>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="t-enviar">
+      <h2 id="t-enviar">3. Feche com o cliente</h2>
+      <div class="bloco">
+        <p id="aviso-perfil" class="aviso" hidden>Preencha seus dados na aba Perfil para eles saírem no orçamento.</p>
+        <div id="assinatura-mostra" class="assinado" hidden></div>
+        <button id="assinar" type="button">✍ Cliente assina aqui no celular</button>
+        <div class="pix" id="pix-box" hidden>
+          <div id="qr" aria-label="QR code do Pix"></div>
+          <div style="display:grid;gap:6px;min-width:0">
+            <span class="etiqueta" id="pix-rotulo">Pix copia e cola</span>
+            <div id="pix-codigo" class="codigo"></div>
+            <button id="copiar-pix" type="button">Copiar Pix</button>
+          </div>
+        </div>
+        <div class="linha-botoes">
+          <button id="pdf" class="primario" type="button">Baixar PDF</button>
+          <button id="zap" class="zap" type="button">Mandar no WhatsApp</button>
+        </div>
+        <button id="novo" type="button">Começar outro orçamento</button>
+        <p id="status" class="status" role="status"></p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== ORÇAMENTOS ===================== -->
+  <div class="tela" id="tela-orcs" hidden>
+    <section aria-labelledby="t-painel">
+      <h2 id="t-painel">Seu mês</h2>
+      <div class="painel">
+        <div><span class="etiqueta">Esperando resposta</span><strong id="p-esperando">R$ 0,00</strong></div>
+        <div><span class="etiqueta">A receber</span><strong id="p-receber">R$ 0,00</strong></div>
+        <div><span class="etiqueta">Recebido no mês</span><strong id="p-recebido">R$ 0,00</strong></div>
+        <div><span class="etiqueta">Taxa de aprovação</span><strong id="p-taxa">—</strong></div>
+      </div>
+    </section>
+    <section aria-labelledby="t-lista-orcs">
+      <h2 id="t-lista-orcs">Orçamentos</h2>
+      <div class="filtros" role="group" aria-label="Filtrar">
+        <button type="button" data-f="todos" aria-pressed="true">Todos</button>
+        <button type="button" data-f="enviado" aria-pressed="false">Esperando</button>
+        <button type="button" data-f="receber" aria-pressed="false">A receber</button>
+        <button type="button" data-f="pago" aria-pressed="false">Pagos</button>
+        <button type="button" data-f="recusado" aria-pressed="false">Recusados</button>
+      </div>
+      <div id="hist" class="hist"></div>
+      <p id="hist-vazio" class="vazio">Os orçamentos que você mandar aparecem aqui, com quem ainda não respondeu e quem falta pagar.</p>
+    </section>
+  </div>
+
+  <!-- ===================== PREÇOS ===================== -->
+  <div class="tela" id="tela-precos" hidden>
+    <section aria-labelledby="t-precos">
+      <h2 id="t-precos">Minha tabela de preços</h2>
+      <p class="dica">Cada serviço que você manda num orçamento entra aqui sozinho. Depois é só tocar nele para usar de novo, ou falar o serviço sem o preço.</p>
+      <div class="bloco">
+        <label for="modelo">Começar com serviços comuns de
+          <select id="modelo">
+            <option value="">Escolha sua profissão</option>
+            <option value="pedreiro">Pedreiro</option>
+            <option value="pintor">Pintor</option>
+            <option value="eletricista">Eletricista</option>
+            <option value="encanador">Encanador</option>
+            <option value="gesseiro">Gesseiro / drywall</option>
           </select>
         </label>
-        <label for="validade">Validade (dias)
-          <input id="validade" type="number" min="1" value="15" inputmode="numeric">
-        </label>
-        <label for="prazo">Prazo do serviço
-          <input id="prazo" placeholder="Ex.: 5 dias úteis">
-        </label>
-        <label for="garantia">Garantia
-          <input id="garantia" placeholder="Ex.: 90 dias no serviço">
-        </label>
+        <p class="pequeno">Os serviços entram sem preço. Coloque o seu valor uma vez e ele fica salvo.</p>
+        <div id="precos" class="lista-simples"></div>
+        <button id="add-preco" type="button">+ Adicionar serviço</button>
       </div>
-      <label for="obs">Observações
-        <input id="obs" placeholder="Ex.: material por conta do cliente">
-      </label>
-      <div style="display:grid;gap:8px">
-        <span class="etiqueta">Fotos do local (até 5)</span>
-        <div id="fotos" class="fotos"></div>
-        <label class="botao arquivo" for="foto-in">+ Tirar ou escolher foto<input id="foto-in" type="file" accept="image/*" multiple></label>
-      </div>
-    </div>
-  </section>
+    </section>
+  </div>
 
-  <section aria-labelledby="t-enviar">
-    <h2 id="t-enviar">3. Mande pro cliente</h2>
-    <div class="bloco">
-      <details id="perfil">
-        <summary>Seus dados no orçamento</summary>
-        <div class="grade2" style="margin-top:12px">
+  <!-- ===================== CLIENTES ===================== -->
+  <div class="tela" id="tela-clientes" hidden>
+    <section aria-labelledby="t-clientes">
+      <h2 id="t-clientes">Clientes</h2>
+      <p class="dica">Quem recebe orçamento entra aqui sozinho. Toque para fazer um orçamento novo para a pessoa.</p>
+      <div id="clientes" class="hist"></div>
+      <p id="clientes-vazio" class="vazio">Nenhum cliente ainda.</p>
+    </section>
+  </div>
+
+  <!-- ===================== PERFIL ===================== -->
+  <div class="tela" id="tela-perfil" hidden>
+    <section aria-labelledby="t-perfil">
+      <h2 id="t-perfil">Seus dados</h2>
+      <div class="bloco">
+        <div class="grade2">
           <label for="p-nome">Seu nome ou empresa<input id="p-nome" autocomplete="name"></label>
-          <label for="p-tel">WhatsApp<input id="p-tel" inputmode="tel" autocomplete="tel"></label>
+          <label for="p-tel">Seu WhatsApp<input id="p-tel" inputmode="tel" autocomplete="tel"></label>
           <label for="p-pix">Chave Pix<input id="p-pix" placeholder="Celular com +55, CPF, e-mail ou aleatória"></label>
           <label for="p-cidade">Cidade<input id="p-cidade" autocomplete="address-level2"></label>
           <label for="p-doc">CPF ou CNPJ (opcional)<input id="p-doc" inputmode="numeric"></label>
@@ -211,46 +367,78 @@ footer { color: var(--muted); font-size: .85rem; text-align: center; padding-blo
             <label class="botao arquivo" for="logo-in">Pôr minha logo<input id="logo-in" type="file" accept="image/*"></label>
           </div>
         </div>
-        <p class="dica" style="margin-top:8px">Fica salvo só neste celular.</p>
-      </details>
-      <div class="pix" id="pix-box" hidden>
-        <div id="qr" aria-label="QR code do Pix"></div>
-        <div style="display:grid;gap:6px;min-width:0">
-          <span class="etiqueta" id="pix-rotulo">Pix copia e cola</span>
-          <div id="pix-codigo" class="codigo"></div>
-          <button id="copiar-pix" type="button">Copiar Pix</button>
+        <label for="p-sobre">Sobre você (sai no orçamento)
+          <textarea id="p-sobre" style="min-height:80px" placeholder="Ex.: 15 anos em reformas na zona sul. Trabalho limpo, entrego no prazo e deixo a obra varrida."></textarea>
+        </label>
+        <label for="p-google">Link para o cliente te avaliar no Google (opcional)
+          <input id="p-google" inputmode="url" placeholder="https://g.page/r/...">
+        </label>
+        <p class="dica">Fica salvo só neste celular.</p>
+      </div>
+    </section>
+    <section aria-labelledby="t-backup">
+      <h2 id="t-backup">Cópia de segurança</h2>
+      <div class="bloco">
+        <p class="dica">Seus orçamentos ficam guardados só neste celular. Baixe uma cópia de vez em quando para não perder nada se trocar de aparelho.</p>
+        <div class="linha-botoes">
+          <button id="backup-baixar" type="button">Baixar cópia</button>
+          <label class="botao arquivo" for="backup-in">Restaurar cópia<input id="backup-in" type="file" accept="application/json,.json"></label>
         </div>
+        <button id="csv" type="button">Planilha para o contador (CSV)</button>
+        <p id="status-perfil" class="status" role="status"></p>
       </div>
-      <div class="linha-botoes">
-        <button id="pdf" class="primario" type="button">Baixar PDF</button>
-        <button id="zap" class="zap" type="button">Mandar no WhatsApp</button>
-      </div>
-      <p id="status" class="status" role="status"></p>
-    </div>
-  </section>
-
-  <section aria-labelledby="t-meus">
-    <h2 id="t-meus">Meus orçamentos</h2>
-    <div class="bloco">
-      <div class="resumo-pend">
-        <div><span class="etiqueta">Esperando resposta</span><strong id="r-enviado">R$ 0,00</strong></div>
-        <div><span class="etiqueta">Aprovado, a receber</span><strong id="r-aprovado">R$ 0,00</strong></div>
-        <div><span class="etiqueta">Recebido</span><strong id="r-pago">R$ 0,00</strong></div>
-      </div>
-      <div id="hist" class="hist"></div>
-      <p id="hist-vazio" class="vazio">Os orçamentos que você mandar aparecem aqui, para você saber quem ainda não respondeu e quem falta pagar.</p>
-    </div>
-  </section>
+    </section>
+  </div>
 
   <section id="lista" aria-labelledby="t-lista" hidden>
     <div class="bloco">
       <h2 id="t-lista">Quer o app completo?</h2>
-      <p class="dica">Estamos fazendo o app com aprovação do cliente pelo link, lembrete de cobrança e nota fiscal. Entre na lista e use grátis no lançamento.</p>
+      <p class="dica">Estamos fazendo o app com assinatura pelo link, aviso quando o cliente abrir o orçamento e nota fiscal. Entre na lista e use grátis no lançamento.</p>
       <a id="lista-link" class="botao primario" href="#" target="_blank" rel="noopener">Quero entrar na lista</a>
     </div>
   </section>
 
-  <footer>Os valores são os que você falou. Confira antes de mandar.</footer>
+  <footer>Os valores são os que você informou. Confira antes de mandar.</footer>
+</div>
+
+<nav class="abas" aria-label="Seções">
+  <button type="button" data-aba="novo" aria-current="page"><svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Novo</button>
+  <button type="button" data-aba="orcs"><svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></svg>Orçamentos</button>
+  <button type="button" data-aba="precos"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M10 10v9"/></svg>Preços</button>
+  <button type="button" data-aba="clientes"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Clientes</button>
+  <button type="button" data-aba="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Perfil</button>
+</nav>
+
+<div id="modal-assina" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-assina">
+  <div class="modal-caixa">
+    <h2 id="t-assina">Aprovação do cliente</h2>
+    <p class="dica" id="assina-resumo"></p>
+    <label for="assina-nome">Nome de quem assina<input id="assina-nome" autocomplete="off"></label>
+    <span class="etiqueta">Assine com o dedo</span>
+    <canvas id="assina-canvas" width="900" height="285"></canvas>
+    <div class="linha-botoes">
+      <button id="assina-limpar" type="button">Limpar</button>
+      <button id="assina-ok" class="primario" type="button">Confirmar aprovação</button>
+    </div>
+    <button id="assina-fechar" type="button">Cancelar</button>
+  </div>
+</div>
+
+<div id="modal-pag" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-pag">
+  <div class="modal-caixa">
+    <h2 id="t-pag">Registrar pagamento</h2>
+    <p class="dica" id="pag-resumo"></p>
+    <div class="grade2">
+      <label for="pag-valor">Valor recebido (R$)<input id="pag-valor" type="number" step="any" min="0" inputmode="decimal"></label>
+      <label for="pag-forma">Forma
+        <select id="pag-forma"><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Transferência</option></select>
+      </label>
+    </div>
+    <div class="linha-botoes">
+      <button id="pag-ok" class="primario" type="button">Salvar e gerar recibo</button>
+      <button id="pag-fechar" type="button">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -430,31 +618,150 @@ function pixCopiaECola(o) {
 }
 // ===== fim do núcleo =====
 
-// ===== página =====
+// ===== aplicativo =====
 // Link do formulário da lista de espera (Google Forms ou Tally). Vazio = seção escondida.
 var LISTA_URL = '';
 
 var $ = function (id) { return document.getElementById(id); };
-var itens = [];
-var fotos = [];          // dataURLs JPEG, só na memória
-var atualId = null;      // orçamento do histórico em edição
 var fmt = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
-var CAMPOS_PERFIL = ['p-nome', 'p-tel', 'p-pix', 'p-cidade', 'p-doc'];
+var dinheiro = function (v) { return fmt.format(v || 0); };
 
-function guardar(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+// ---------- armazenamento no aparelho ----------
 function ler(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-function lerJSON(k, padrao) { try { return JSON.parse(ler(k)) || padrao; } catch (e) { return padrao; } }
+function guardar(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+function lerJSON(k, padrao) { try { var v = JSON.parse(ler(k)); return v == null ? padrao : v; } catch (e) { return padrao; } }
+function guardarJSON(k, v) {
+  if (!guardar(k, JSON.stringify(v))) avisar('Este celular não deixou salvar. Libere espaço ou baixe uma cópia na aba Perfil.');
+}
+function novoId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function avisar(t) { $('status').textContent = t; $('status-perfil').textContent = t; }
 
-function total() { return itens.reduce(function (s, i) { return s + i.qtd * i.valorUnit; }, 0); }
-function pctEntrada() { return Number($('entrada').value) || 0; }
-function valorPix() { var p = pctEntrada(); return p > 0 ? Math.round(total() * p) / 100 : total(); }
+// migração da versão anterior
+(function migrar() {
+  if (ler('orc-perfil')) return;
+  var p = {};
+  ['nome', 'tel', 'pix', 'cidade', 'doc'].forEach(function (c) { var v = ler('orc-p-' + c); if (v) p[c] = v; });
+  if (ler('orc-logo')) p.logo = ler('orc-logo');
+  if (Object.keys(p).length) guardarJSON('orc-perfil', p);
+  var h = lerJSON('orc-hist', []);
+  if (h.length && !ler('orc-docs')) {
+    guardarJSON('orc-docs', h.map(function (r) {
+      var d = r.dados;
+      return { id: r.id, numero: r.numero, data: r.data, criadoEm: Number(r.id) || Date.now(),
+        cliente: { nome: d.cliente || '', tel: '', endereco: '' }, itens: d.itens, desconto: { tipo: 'R$', valor: 0 },
+        entrada: d.entrada, validade: d.validade, prazo: d.prazo, garantia: d.garantia, obs: d.obs,
+        status: r.status === 'pago' ? 'aprovado' : r.status, assinatura: null,
+        pagamentos: r.status === 'pago' ? [{ valor: d.total, data: r.data, forma: 'Pix' }] : [] };
+    }));
+  }
+})();
+
+var perfil = lerJSON('orc-perfil', {});
+var docs = lerJSON('orc-docs', []);
+var precos = lerJSON('orc-precos', []);
+var clientes = lerJSON('orc-clientes', []);
+
+// ---------- estado do orçamento em edição ----------
+var atual = null;      // documento em edição
+var fotos = [];        // fotos só na memória (pesadas demais para guardar)
+
+function docVazio() {
+  return { id: null, numero: null, data: null, criadoEm: null, cliente: { nome: '', tel: '', endereco: '' }, itens: [],
+    desconto: { tipo: 'R$', valor: 0 }, entrada: 50, validade: 15, prazo: '', garantia: '', obs: '',
+    status: 'rascunho', assinatura: null, pagamentos: [] };
+}
+function subtotalDe(d) { return d.itens.reduce(function (s, i) { return s + (Number(i.qtd) || 0) * (Number(i.valorUnit) || 0); }, 0); }
+function descontoDe(d) {
+  var st = subtotalDe(d), v = Number(d.desconto && d.desconto.valor) || 0;
+  if (!v) return 0;
+  return Math.min(st, d.desconto.tipo === '%' ? st * v / 100 : v);
+}
+function totalDe(d) { return Math.round((subtotalDe(d) - descontoDe(d)) * 100) / 100; }
+function pagoDe(d) { return (d.pagamentos || []).reduce(function (s, p) { return s + Number(p.valor || 0); }, 0); }
+function restanteDe(d) { return Math.max(0, Math.round((totalDe(d) - pagoDe(d)) * 100) / 100); }
+function sinalDe(d) { return d.entrada > 0 ? Math.round(totalDe(d) * d.entrada) / 100 : totalDe(d); }
+function situacao(d) {
+  if (d.status === 'recusado') return 'recusado';
+  if (pagoDe(d) > 0 && restanteDe(d) <= 0.009) return 'pago';
+  if (pagoDe(d) > 0) return 'parcial';
+  if (d.status === 'aprovado') return 'aprovado';
+  return 'enviado';
+}
+var ROTULO = { enviado: 'Esperando', aprovado: 'Aprovado', parcial: 'Pago em parte', pago: 'Pago', recusado: 'Recusado' };
+
+// ---------- tabela de preços ----------
+var MODELOS = {
+  pedreiro: [['Reboco de parede', 'm²'], ['Contrapiso', 'm²'], ['Assentamento de piso', 'm²'], ['Assentamento de revestimento de parede', 'm²'], ['Levantar parede de bloco', 'm²'], ['Rodapé', 'm'], ['Demolição de parede', 'm²'], ['Retirada de entulho', 'un']],
+  pintor: [['Pintura de parede com 2 demãos', 'm²'], ['Pintura de teto', 'm²'], ['Massa corrida', 'm²'], ['Textura', 'm²'], ['Lixamento e preparação', 'm²'], ['Pintura de porta', 'un'], ['Pintura de grade ou portão', 'm²']],
+  eletricista: [['Instalação de tomada', 'pt'], ['Instalação de interruptor', 'pt'], ['Ponto de luz', 'pt'], ['Instalação de chuveiro', 'un'], ['Troca de disjuntor', 'un'], ['Montagem de quadro de distribuição', 'un'], ['Passagem de fiação', 'm'], ['Instalação de luminária', 'un']],
+  encanador: [['Troca de torneira', 'un'], ['Instalação de vaso sanitário', 'un'], ['Desentupimento', 'un'], ['Troca de sifão', 'un'], ['Ponto de água', 'pt'], ['Ponto de esgoto', 'pt'], ['Caça vazamento', 'un'], ['Instalação de caixa d\'água', 'un']],
+  gesseiro: [['Forro de drywall', 'm²'], ['Parede de drywall', 'm²'], ['Forro de gesso', 'm²'], ['Sanca de gesso', 'm'], ['Moldura de gesso', 'm'], ['Tratamento de juntas', 'm²']]
+};
+var PARADAS = { de: 1, do: 1, da: 1, dos: 1, das: 1, e: 1, com: 1, a: 1, o: 1, em: 1, no: 1, na: 1, para: 1, pra: 1, um: 1, uma: 1 };
+function palavras(t) {
+  return (t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ')
+    .split(/\s+/).filter(function (w) { return w && !PARADAS[w]; })
+    .map(function (w) { return w.length > 4 ? w.replace(/(oes|aes|s)$/, '') : w; });
+}
+function chave(t) { return palavras(t).join(' '); }
+function acharPreco(desc) {
+  var a = palavras(desc); if (!a.length) return null;
+  var melhor = null, nota = 0;
+  precos.forEach(function (p) {
+    var b = palavras(p.descricao); if (!b.length) return;
+    var comum = a.filter(function (w) { return b.indexOf(w) >= 0; }).length;
+    var n = comum / Math.max(a.length, b.length);
+    if (n > nota) { nota = n; melhor = p; }
+  });
+  return nota >= 0.5 ? melhor : null;
+}
+function aprenderPrecos(d) {
+  d.itens.forEach(function (it) {
+    if (!it.descricao || !(it.valorUnit > 0)) return;
+    var k = chave(it.descricao);
+    var p = precos.filter(function (x) { return chave(x.descricao) === k; })[0];
+    if (p) { p.valor = it.valorUnit; p.un = it.un || p.un; p.usos = (p.usos || 0) + 1; }
+    else precos.push({ id: novoId(), descricao: it.descricao, un: it.un || 'un', valor: it.valorUnit, usos: 1 });
+  });
+  guardarJSON('orc-precos', precos);
+}
+
+// ---------- clientes ----------
+function lembrarCliente(c) {
+  if (!c.nome) return;
+  var k = c.nome.trim().toLowerCase();
+  var x = clientes.filter(function (y) { return y.nome.trim().toLowerCase() === k; })[0];
+  if (x) { if (c.tel) x.tel = c.tel; if (c.endereco) x.endereco = c.endereco; }
+  else clientes.push({ id: novoId(), nome: c.nome.trim(), tel: c.tel || '', endereco: c.endereco || '' });
+  guardarJSON('orc-clientes', clientes);
+}
+function telWhats(t) {
+  var d = (t || '').replace(/\D/g, '');
+  if (!d) return '';
+  if (d.length <= 11) d = '55' + d;
+  return d;
+}
+
+// ---------- tela: itens ----------
+function lerCampos() {
+  atual.cliente = { nome: $('cliente').value.trim(), tel: $('cliente-tel').value.trim(), endereco: $('cliente-end').value.trim() };
+  atual.desconto = { tipo: $('desc-tipo').value, valor: Number($('desc-valor').value) || 0 };
+  atual.entrada = Number($('entrada').value) || 0;
+  atual.validade = Number($('validade').value) || 15;
+  atual.prazo = $('prazo').value.trim(); atual.garantia = $('garantia').value.trim(); atual.obs = $('obs').value.trim();
+}
+function preencherCampos() {
+  $('cliente').value = atual.cliente.nome; $('cliente-tel').value = atual.cliente.tel; $('cliente-end').value = atual.cliente.endereco;
+  $('desc-tipo').value = atual.desconto.tipo; $('desc-valor').value = atual.desconto.valor || '';
+  $('entrada').value = String(atual.entrada); $('validade').value = atual.validade;
+  $('prazo').value = atual.prazo; $('garantia').value = atual.garantia; $('obs').value = atual.obs;
+  desenharItens(); desenharAssinatura();
+}
 
 function desenharItens() {
-  var box = $('itens');
-  box.textContent = '';
-  itens.forEach(function (it, idx) {
-    var d = document.createElement('div');
-    d.className = 'item';
+  var box = $('itens'); box.textContent = '';
+  atual.itens.forEach(function (it, idx) {
+    var d = document.createElement('div'); d.className = 'item';
     d.innerHTML =
       '<label>Serviço<input class="desc" id="d' + idx + '"></label>' +
       '<div class="nums">' +
@@ -468,71 +775,90 @@ function desenharItens() {
     di.value = it.descricao; qi.value = it.qtd; ui.value = it.un; vi.value = it.valorUnit || '';
     function atualizar() {
       it.descricao = di.value; it.qtd = Number(qi.value) || 0; it.un = ui.value; it.valorUnit = Number(vi.value) || 0;
-      $('s' + idx).textContent = String(it.qtd).replace('.', ',') + ' ' + it.un + ' × ' + fmt.format(it.valorUnit) + ' = ' + fmt.format(it.qtd * it.valorUnit);
+      $('s' + idx).textContent = String(it.qtd).replace('.', ',') + ' ' + it.un + ' × ' + dinheiro(it.valorUnit) + ' = ' + dinheiro(it.qtd * it.valorUnit);
       atualizarTotal();
     }
+    di.addEventListener('change', function () {
+      if (!(Number(vi.value) > 0)) { var p = acharPreco(di.value); if (p && p.valor) { vi.value = p.valor; if (!ui.value || ui.value === 'un') ui.value = p.un; atualizar(); } }
+    });
     [di, qi, ui, vi].forEach(function (el) { el.addEventListener('input', atualizar); });
-    d.querySelector('.remover').addEventListener('click', function () { itens.splice(idx, 1); desenharItens(); });
+    d.querySelector('.remover').addEventListener('click', function () { atual.itens.splice(idx, 1); desenharItens(); });
     atualizar();
   });
   atualizarTotal();
 }
 
-function perfil() {
-  return { nome: $('p-nome').value.trim(), tel: $('p-tel').value.trim(), pix: $('p-pix').value.trim(),
-    cidade: $('p-cidade').value.trim(), doc: $('p-doc').value.trim(), logo: ler('orc-logo') || '' };
-}
-
-function proximoNumero() { return (Number(ler('orc-seq')) || 0) + 1; }
-function numeroTexto(n) { return String(n).padStart(4, '0'); }
-
 var qr = null;
 function codigoPix(valor, ref) {
-  var p = perfil();
-  if (!p.pix) return '';
-  return pixCopiaECola({ chave: p.pix, nome: p.nome, cidade: p.cidade, valor: valor, txid: ref });
+  if (!perfil.pix) return '';
+  return pixCopiaECola({ chave: perfil.pix, nome: perfil.nome || '', cidade: perfil.cidade || '', valor: valor, txid: ref });
 }
 function atualizarTotal() {
-  $('total').textContent = fmt.format(total());
-  var cod = codigoPix(valorPix(), 'ORC' + numeroTexto(proximoNumero()));
+  lerCampos();
+  var st = subtotalDe(atual), ds = descontoDe(atual), tt = totalDe(atual);
+  $('subtotal').textContent = dinheiro(st);
+  $('linha-desc').hidden = !ds; $('desconto-mostra').textContent = '− ' + dinheiro(ds);
+  $('total').textContent = dinheiro(tt);
+  var cod = codigoPix(sinalDe(atual), 'ORC' + (atual.numero || numeroTexto(proximoNumero())));
   $('pix-box').hidden = !cod;
   if (cod) {
-    $('pix-rotulo').textContent = pctEntrada() > 0 && pctEntrada() < 100
-      ? 'Pix do sinal (' + pctEntrada() + '%): ' + fmt.format(valorPix())
-      : 'Pix: ' + fmt.format(valorPix());
+    $('pix-rotulo').textContent = atual.entrada > 0 && atual.entrada < 100 ? 'Pix do sinal (' + atual.entrada + '%): ' + dinheiro(sinalDe(atual)) : 'Pix: ' + dinheiro(sinalDe(atual));
     $('pix-codigo').textContent = cod;
     if (window.QRCode) {
       if (!qr) qr = new QRCode($('qr'), { text: cod, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
       else { qr.clear(); qr.makeCode(cod); }
     }
   }
+  $('aviso-perfil').hidden = !!perfil.nome;
+  if (atual.id) salvarAtual(false);
+}
+
+function desenharChips() {
+  var box = $('chips-precos'); box.textContent = '';
+  var lista = precos.slice().sort(function (a, b) { return (b.usos || 0) - (a.usos || 0); }).slice(0, 12);
+  if (!lista.length) { box.innerHTML = '<span class="pequeno">Sua tabela está vazia. Ela se enche sozinha, ou monte na aba Preços.</span>'; return; }
+  lista.forEach(function (p) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'chip-btn';
+    b.textContent = p.descricao + ' '; var s = document.createElement('b'); s.textContent = p.valor ? dinheiro(p.valor) + '/' + p.un : 'sem preço'; b.appendChild(s);
+    b.addEventListener('click', function () {
+      atual.itens.push({ descricao: p.descricao, qtd: 1, un: p.un, valorUnit: p.valor || 0 });
+      $('selo-exemplo').hidden = true; desenharItens();
+      var ult = $('q' + (atual.itens.length - 1)); if (ult) ult.focus();
+    });
+    box.appendChild(b);
+  });
 }
 
 function montar() {
   var r = lerFala($('fala').value);
-  if (r.cliente) $('cliente').value = r.cliente;
-  itens = r.itens;
-  if (!itens.length) itens = [{ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }];
-  atualId = null;
-  desenharItens();
+  var cli = atual.cliente;
+  atual = docVazio(); fotos = []; desenharFotos();
+  if (r.cliente) {
+    var c = clientes.filter(function (x) { return x.nome.toLowerCase() === r.cliente.toLowerCase(); })[0];
+    atual.cliente = c ? { nome: c.nome, tel: c.tel, endereco: c.endereco } : { nome: r.cliente, tel: '', endereco: '' };
+  } else if (cli && cli.nome && $('selo-exemplo').hidden) atual.cliente = cli;
+  atual.itens = r.itens.map(function (it) {
+    if (!(it.valorUnit > 0)) { var p = acharPreco(it.descricao); if (p && p.valor) { it.valorUnit = p.valor; if (it.un === 'un') it.un = p.un; } }
+    return it;
+  });
+  if (!atual.itens.length) atual.itens = [{ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }];
+  preencherCampos();
 }
 
-// ----- voz -----
+// ---------- voz ----------
 // O Chrome do Android repete o trecho já falado quando a escuta é contínua.
 // Por isso cada frase é ouvida numa sessão curta, que reinicia sozinha até a pessoa tocar para parar.
 var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
 var rec = null, querOuvir = false, base = '', frases = [], parcial = '';
 if (!Rec) { $('mic').disabled = true; $('mic-aviso').hidden = false; }
-
 function limparRepeticao(t) {
-  // "piso piso piso 45" → "piso 45"
   return t.replace(/(^|\s)([a-zà-ú]+)(?:\s+\2)+(?=\s|$)/gi, '$1$2').replace(/\s+/g, ' ').trim();
 }
 function guardarFrase(t) {
   t = limparRepeticao(t);
   if (!t) return;
   var ultima = frases[frases.length - 1];
-  if (ultima && t.toLowerCase().indexOf(ultima.toLowerCase()) === 0) frases[frases.length - 1] = t; // versão mais completa da mesma frase
+  if (ultima && t.toLowerCase().indexOf(ultima.toLowerCase()) === 0) frases[frases.length - 1] = t;
   else if (!ultima || ultima.toLowerCase().indexOf(t.toLowerCase()) !== 0) frases.push(t);
 }
 function mostrarFala() {
@@ -545,17 +871,12 @@ function ouvir() {
   rec.lang = 'pt-BR'; rec.continuous = false; rec.interimResults = true; rec.maxAlternatives = 1;
   rec.onresult = function (e) {
     var r = e.results[e.results.length - 1];
-    if (r.isFinal) { guardarFrase(r[0].transcript); parcial = ''; }
-    else parcial = r[0].transcript;
+    if (r.isFinal) { guardarFrase(r[0].transcript); parcial = ''; } else parcial = r[0].transcript;
     mostrarFala();
   };
   rec.onerror = function (e) {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-      querOuvir = false;
-      $('status').textContent = 'Libere o microfone para este site nas configurações do navegador.';
-    } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
-      $('status').textContent = 'Não deu para ouvir. Tente de novo ou digite.';
-    }
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { querOuvir = false; avisar('Libere o microfone para este site nas configurações do navegador.'); }
+    else if (e.error !== 'no-speech' && e.error !== 'aborted') avisar('Não deu para ouvir. Tente de novo ou digite.');
   };
   rec.onend = function () {
     if (parcial) { guardarFrase(parcial); parcial = ''; mostrarFala(); }
@@ -574,34 +895,41 @@ $('mic').addEventListener('click', function () {
   base = $('selo-exemplo').hidden ? $('fala').value.trim() : '';
   frases = []; parcial = ''; querOuvir = true;
   $('mic').classList.add('gravando'); $('mic-txt').textContent = 'Ouvindo… toque para parar';
-  $('status').textContent = '';
-  try { ouvir(); } catch (err) { pararVisual(); $('status').textContent = 'Não deu para ligar o microfone. Tente de novo.'; }
+  avisar('');
+  try { ouvir(); } catch (err) { pararVisual(); avisar('Não deu para ligar o microfone. Tente de novo.'); }
 });
 
 $('montar').addEventListener('click', function () { $('selo-exemplo').hidden = true; montar(); });
-$('add').addEventListener('click', function () { itens.push({ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }); desenharItens(); });
-$('entrada').addEventListener('change', atualizarTotal);
+$('add').addEventListener('click', function () { atual.itens.push({ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }); $('selo-exemplo').hidden = true; desenharItens(); });
+['entrada', 'desc-tipo'].forEach(function (id) { $(id).addEventListener('change', atualizarTotal); });
+['desc-valor', 'validade', 'prazo', 'garantia', 'obs', 'cliente-tel', 'cliente-end'].forEach(function (id) { $(id).addEventListener('input', atualizarTotal); });
+$('cliente').addEventListener('input', function () {
+  var c = clientes.filter(function (x) { return x.nome.toLowerCase() === $('cliente').value.trim().toLowerCase(); })[0];
+  if (c) { if (!$('cliente-tel').value) $('cliente-tel').value = c.tel; if (!$('cliente-end').value) $('cliente-end').value = c.endereco; }
+  atualizarTotal();
+});
+$('novo').addEventListener('click', function () {
+  atual = docVazio(); fotos = []; desenharFotos(); $('fala').value = ''; $('selo-exemplo').hidden = true;
+  atual.itens = [{ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }];
+  preencherCampos(); avisar(''); window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
-// ----- imagens: reduz no aparelho antes de usar -----
+// ---------- imagens ----------
 function reduzirImagem(arquivo, lado, qualidade, cb) {
   var leitor = new FileReader();
   leitor.onload = function () {
     var img = new Image();
     img.onload = function () {
       var esc = Math.min(1, lado / Math.max(img.width, img.height));
-      var c = document.createElement('canvas');
-      c.width = Math.round(img.width * esc); c.height = Math.round(img.height * esc);
-      var ctx = c.getContext('2d');
-      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
-      ctx.drawImage(img, 0, 0, c.width, c.height);
+      var c = document.createElement('canvas'); c.width = Math.round(img.width * esc); c.height = Math.round(img.height * esc);
+      var ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
       cb(c.toDataURL('image/jpeg', qualidade), c.width, c.height);
     };
-    img.onerror = function () { $('status').textContent = 'Não deu para abrir essa imagem.'; };
+    img.onerror = function () { avisar('Não deu para abrir essa imagem.'); };
     img.src = leitor.result;
   };
   leitor.readAsDataURL(arquivo);
 }
-
 function desenharFotos() {
   var box = $('fotos'); box.textContent = '';
   fotos.forEach(function (f, i) {
@@ -618,269 +946,470 @@ $('foto-in').addEventListener('change', function (e) {
   });
   e.target.value = '';
 });
+
+// ---------- perfil ----------
+var CAMPOS = { 'p-nome': 'nome', 'p-tel': 'tel', 'p-pix': 'pix', 'p-cidade': 'cidade', 'p-doc': 'doc', 'p-sobre': 'sobre', 'p-google': 'google' };
+Object.keys(CAMPOS).forEach(function (id) {
+  $(id).value = perfil[CAMPOS[id]] || '';
+  $(id).addEventListener('input', function () { perfil[CAMPOS[id]] = $(id).value.trim(); guardarJSON('orc-perfil', perfil); atualizarTotal(); });
+});
+function mostrarLogo() { $('logo-prev').src = perfil.logo || ''; $('logo-prev').hidden = !perfil.logo; }
 $('logo-in').addEventListener('change', function (e) {
   var f = e.target.files[0]; if (!f) return;
-  reduzirImagem(f, 400, 0.85, function (url) {
-    if (!guardar('orc-logo', url)) $('status').textContent = 'Não deu para salvar a logo neste celular; ela vale só agora.';
-    mostrarLogo(url);
-  });
+  reduzirImagem(f, 400, 0.85, function (url) { perfil.logo = url; guardarJSON('orc-perfil', perfil); mostrarLogo(); });
 });
-var logoAtual = '';
-function mostrarLogo(url) { logoAtual = url; $('logo-prev').src = url; $('logo-prev').hidden = !url; }
+mostrarLogo();
 
-// ----- perfil salvo no aparelho -----
-CAMPOS_PERFIL.forEach(function (id) {
-  var v = ler('orc-' + id); if (v) $(id).value = v;
-  $(id).addEventListener('input', function () { guardar('orc-' + id, $(id).value); atualizarTotal(); });
-});
-mostrarLogo(ler('orc-logo') || '');
-if (!perfil().nome) $('perfil').open = true;
-
-// ----- PDF (orçamento ou recibo) -----
-function dadosAtuais() {
-  return {
-    cliente: $('cliente').value.trim(), itens: itens.map(function (i) { return Object.assign({}, i); }),
-    entrada: pctEntrada(), validade: $('validade').value || 15, prazo: $('prazo').value.trim(),
-    garantia: $('garantia').value.trim(), obs: $('obs').value.trim(), total: total()
-  };
+// ---------- numeração e gravação ----------
+function proximoNumero() { return (Number(ler('orc-seq')) || 0) + 1; }
+function numeroTexto(n) { return String(n).padStart(4, '0'); }
+function salvarAtual(aprender) {
+  lerCampos();
+  if (!atual.id) {
+    var n = proximoNumero(); guardar('orc-seq', String(n));
+    atual.id = novoId(); atual.numero = numeroTexto(n); atual.criadoEm = Date.now();
+    atual.data = new Date().toLocaleDateString('pt-BR');
+    if (atual.status === 'rascunho') atual.status = 'enviado';
+    docs.unshift(atual);
+  }
+  if (aprender) {
+    var marca = JSON.stringify(atual.itens);
+    if (atual._aprendido !== marca) { aprenderPrecos(atual); atual._aprendido = marca; }
+    lembrarCliente(atual.cliente); desenharChips();
+  }
+  guardarJSON('orc-docs', docs.slice(0, 300));
 }
 
-function pdfCabecalho(doc, p, titulo, numero, data) {
-  var W = 210, M = 16, x = M;
+// ---------- assinatura na tela ----------
+var tela = $('assina-canvas'), ctx = tela.getContext('2d'), riscou = false, desenhando = false;
+function limparTela() { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, tela.width, tela.height); ctx.strokeStyle = '#1d2428'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; riscou = false; }
+function ponto(e) { var r = tela.getBoundingClientRect(); return { x: (e.clientX - r.left) * tela.width / r.width, y: (e.clientY - r.top) * tela.height / r.height }; }
+tela.addEventListener('pointerdown', function (e) { desenhando = true; tela.setPointerCapture(e.pointerId); var p = ponto(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); });
+tela.addEventListener('pointermove', function (e) { if (!desenhando) return; var p = ponto(e); ctx.lineTo(p.x, p.y); ctx.stroke(); riscou = true; });
+['pointerup', 'pointercancel'].forEach(function (ev) { tela.addEventListener(ev, function () { desenhando = false; }); });
+$('assina-limpar').addEventListener('click', limparTela);
+$('assina-fechar').addEventListener('click', function () { $('modal-assina').hidden = true; });
+$('assinar').addEventListener('click', function () {
+  lerCampos();
+  if (!atual.itens.length || !totalDe(atual)) { avisar('Monte o orçamento antes de pedir a assinatura.'); return; }
+  $('assina-resumo').textContent = 'Ao assinar, ' + (atual.cliente.nome || 'o cliente') + ' aprova o orçamento de ' + dinheiro(totalDe(atual)) + ' com as condições combinadas.';
+  $('assina-nome').value = atual.cliente.nome; limparTela(); $('modal-assina').hidden = false;
+});
+$('assina-ok').addEventListener('click', function () {
+  if (!riscou) { $('assina-resumo').textContent = 'Falta a assinatura com o dedo no quadro branco.'; return; }
+  var c = document.createElement('canvas'); c.width = 450; c.height = 142;
+  c.getContext('2d').drawImage(tela, 0, 0, c.width, c.height);
+  var agora = new Date();
+  atual.assinatura = { img: c.toDataURL('image/png'), nome: $('assina-nome').value.trim() || atual.cliente.nome,
+    quando: agora.toLocaleDateString('pt-BR') + ' às ' + agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) };
+  atual.status = 'aprovado';
+  salvarAtual(true); $('modal-assina').hidden = true; desenharAssinatura(); desenharOrcs();
+  avisar('Orçamento aprovado e assinado. Mande o PDF assinado para o cliente.');
+});
+function desenharAssinatura() {
+  var a = atual.assinatura, box = $('assinatura-mostra');
+  box.hidden = !a; box.textContent = '';
+  if (a) { var img = document.createElement('img'); img.src = a.img; img.alt = 'Assinatura'; box.appendChild(img);
+    box.appendChild(document.createTextNode('Aprovado por ' + a.nome + ' em ' + a.quando)); }
+  $('assinar').textContent = a ? '✍ Assinar de novo' : '✍ Cliente assina aqui no celular';
+}
+
+// ---------- PDF ----------
+var M = 16, W = 210;
+function pdfNovo() { var J = window.jspdf && window.jspdf.jsPDF; if (!J) throw new Error('sem-pdf'); return new J({ unit: 'mm', format: 'a4' }); }
+function pdfCabecalho(doc, titulo, numero, data) {
+  var x = M;
   doc.setFillColor(242, 180, 0); doc.rect(0, 0, W, 6, 'F');
-  var logo = logoAtual || p.logo;
-  if (logo) { try { doc.addImage(logo, 'JPEG', M, 12, 24, 24, undefined, 'FAST'); x = M + 28; } catch (e) {} }
+  if (perfil.logo) { try { doc.addImage(perfil.logo, 'JPEG', M, 12, 24, 24, undefined, 'FAST'); x = M + 28; } catch (e) {} }
   doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(29, 36, 40);
-  doc.text(p.nome || 'Prestador de serviço', x, 20);
+  doc.text(perfil.nome || 'Prestador de serviço', x, 20);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(93, 103, 108);
-  var l1 = [p.tel && 'WhatsApp ' + p.tel, p.cidade].filter(Boolean).join('  ·  ');
+  var l1 = [perfil.tel && 'WhatsApp ' + perfil.tel, perfil.cidade].filter(Boolean).join('  ·  ');
   if (l1) doc.text(l1, x, 26);
-  if (p.doc) doc.text('CPF/CNPJ ' + p.doc, x, 31);
+  if (perfil.doc) doc.text('CPF/CNPJ ' + perfil.doc, x, 31);
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(29, 36, 40);
   doc.text(titulo + ' Nº ' + numero, W - M, 18, { align: 'right' });
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(93, 103, 108);
-  doc.text(data, W - M, 23, { align: 'right' });
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(93, 103, 108); doc.text(data, W - M, 23, { align: 'right' });
   return 44;
 }
-
+function pdfTexto(doc, linhas, y, tam, cor) {
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(tam || 10); doc.setTextColor.apply(doc, cor || [60, 68, 72]);
+  linhas.forEach(function (l) { var ls = doc.splitTextToSize(l, W - 2 * M); if (y + ls.length * 5 > 280) { doc.addPage(); y = 20; } doc.text(ls, M, y); y += ls.length * 5 + 1; });
+  return y;
+}
+function pdfCliente(doc, d, y) {
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(29, 36, 40); doc.setFontSize(11);
+  doc.text('Cliente: ' + (d.cliente.nome || '—'), M, y);
+  if (d.cliente.tel) { doc.setFontSize(9.5); doc.setTextColor(93, 103, 108); doc.text('WhatsApp ' + d.cliente.tel, W - M, y, { align: 'right' }); }
+  y += 6;
+  if (d.cliente.endereco) { doc.setFontSize(9.5); doc.setTextColor(93, 103, 108); doc.text('Local: ' + d.cliente.endereco, M, y); y += 6; }
+  return y + 1;
+}
 function pdfItens(doc, d, y) {
-  var W = 210, M = 16;
-  doc.setTextColor(29, 36, 40); doc.setFontSize(11);
-  doc.text('Cliente: ' + (d.cliente || '—'), M, y); y += 7;
   doc.setDrawColor(29, 36, 40); doc.setLineWidth(0.4); doc.line(M, y, W - M, y); y += 6;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(29, 36, 40);
   doc.text('SERVIÇO', M, y); doc.text('QTD', 122, y, { align: 'right' }); doc.text('UNIT.', 158, y, { align: 'right' }); doc.text('TOTAL', W - M, y, { align: 'right' });
   y += 3; doc.setLineWidth(0.2); doc.setDrawColor(211, 216, 214); doc.line(M, y, W - M, y); y += 6;
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
   d.itens.forEach(function (it) {
     var linhas = doc.splitTextToSize(it.descricao || 'Serviço', 90);
-    if (y + linhas.length * 5 > 260) { doc.addPage(); y = 20; }
+    if (y + linhas.length * 5 > 262) { doc.addPage(); y = 20; }
     doc.text(linhas, M, y);
     doc.text(String(it.qtd).replace('.', ',') + ' ' + it.un, 122, y, { align: 'right' });
-    doc.text(fmt.format(it.valorUnit), 158, y, { align: 'right' });
-    doc.text(fmt.format(it.qtd * it.valorUnit), W - M, y, { align: 'right' });
+    doc.text(dinheiro(it.valorUnit), 158, y, { align: 'right' });
+    doc.text(dinheiro(it.qtd * it.valorUnit), W - M, y, { align: 'right' });
     y += linhas.length * 5 + 3; doc.line(M, y - 2, W - M, y - 2); y += 2;
   });
-  y += 2; doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
-  doc.text('TOTAL  ' + fmt.format(d.total), W - M, y, { align: 'right' });
+  var ds = descontoDe(d);
+  if (ds) {
+    doc.setFontSize(10); doc.setTextColor(93, 103, 108);
+    doc.text('Subtotal  ' + dinheiro(subtotalDe(d)), W - M, y, { align: 'right' }); y += 5;
+    doc.text('Desconto' + (d.desconto.tipo === '%' ? ' (' + d.desconto.valor + '%)' : '') + '  - ' + dinheiro(ds), W - M, y, { align: 'right' }); y += 7;
+  } else y += 2;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(29, 36, 40);
+  doc.text('TOTAL  ' + dinheiro(totalDe(d)), W - M, y, { align: 'right' });
   return y + 10;
 }
-
 function pdfPix(doc, cod, rotulo, y) {
-  var M = 16, W = 210;
   if (!cod) return y;
-  if (y > 225) { doc.addPage(); y = 20; }
-  doc.setTextColor(29, 36, 40); doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-  doc.text(rotulo, M, y);
-  var qrTmp = document.createElement('div');
-  new QRCode(qrTmp, { text: cod, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
-  var canvas = qrTmp.querySelector('canvas');
-  if (canvas) doc.addImage(canvas.toDataURL('image/png'), 'PNG', M, y + 3, 36, 36);
+  if (y > 228) { doc.addPage(); y = 20; }
+  doc.setTextColor(29, 36, 40); doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text(rotulo, M, y);
+  var tmp = document.createElement('div');
+  new QRCode(tmp, { text: cod, width: 240, height: 240, correctLevel: QRCode.CorrectLevel.M });
+  var cv = tmp.querySelector('canvas'); if (cv) doc.addImage(cv.toDataURL('image/png'), 'PNG', M, y + 3, 36, 36);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(93, 103, 108);
   doc.text('Abra o app do banco, escolha Pix e leia o QR code, ou use o copia e cola:', M + 42, y + 7);
   doc.setFont('courier', 'normal'); doc.setFontSize(7); doc.setTextColor(29, 36, 40);
   doc.text(doc.splitTextToSize(cod, W - 2 * M - 42), M + 42, y + 13);
   return y + 44;
 }
-
-function pdfFotos(doc, lista) {
+function pdfAssinaturas(doc, d, y) {
+  if (y > 245) { doc.addPage(); y = 30; }
+  var a = d.assinatura;
+  if (a) { try { doc.addImage(a.img, 'PNG', M, y, 60, 19); } catch (e) {} }
+  doc.setDrawColor(150, 155, 158); doc.setLineWidth(0.2);
+  doc.line(M, y + 20, 95, y + 20); doc.line(115, y + 20, W - M, y + 20);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(93, 103, 108);
+  doc.text(a ? 'Aprovado por ' + a.nome + ' em ' + a.quando : 'De acordo (cliente)', M, y + 25);
+  doc.text(perfil.nome || 'Prestador', 115, y + 25);
+  return y + 32;
+}
+function pdfFotos(doc, lista, titulo) {
   if (!lista.length) return;
   doc.addPage();
-  var M = 16, W = 210, y = 20;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(29, 36, 40);
-  doc.text('Fotos do local', M, y); y += 6;
-  var col = 0, larg = (W - 2 * M - 6) / 2;
+  var y = 20, col = 0, larg = (W - 2 * M - 6) / 2;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(29, 36, 40); doc.text(titulo, M, y); y += 6;
   lista.forEach(function (f) {
-    var alt = larg * f.h / f.w;
-    if (alt > 110) alt = 110;
-    var lw = alt * f.w / f.h;
+    var alt = Math.min(110, larg * f.h / f.w), lw = alt * f.w / f.h;
     if (y + alt > 285) { doc.addPage(); y = 20; col = 0; }
     doc.addImage(f.url, 'JPEG', M + col * (larg + 6), y, lw, alt, undefined, 'FAST');
     if (col === 1) { y += alt + 6; col = 0; } else col = 1;
   });
 }
-
-function gerarOrcamentoPDF(d, numero, data) {
-  var jsPDF = window.jspdf && window.jspdf.jsPDF;
-  if (!jsPDF) throw new Error('sem-pdf');
-  var p = perfil(), doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = 16, W = 210;
-  var y = pdfCabecalho(doc, p, 'ORÇAMENTO', numero, data);
+function pdfOrcamento(d) {
+  var doc = pdfNovo();
+  var y = pdfCabecalho(doc, 'ORÇAMENTO', d.numero, d.data);
+  y = pdfCliente(doc, d, y);
   y = pdfItens(doc, d, y);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(60, 68, 72);
   var cond = [];
-  if (d.entrada > 0 && d.entrada < 100) cond.push('Pagamento: ' + d.entrada + '% de sinal (' + fmt.format(d.total * d.entrada / 100) + ') para começar e o restante na entrega.');
+  if (d.entrada > 0 && d.entrada < 100) cond.push('Pagamento: ' + d.entrada + '% de sinal (' + dinheiro(sinalDe(d)) + ') para começar e o restante na entrega.');
   else if (d.entrada === 100) cond.push('Pagamento: valor total antes de começar.');
   else cond.push('Pagamento: à vista na entrega do serviço.');
   if (d.prazo) cond.push('Prazo do serviço: ' + d.prazo + '.');
   if (d.garantia) cond.push('Garantia: ' + d.garantia + '.');
   cond.push('Validade deste orçamento: ' + d.validade + ' dias.');
   if (d.obs) cond.push('Observações: ' + d.obs);
-  cond.forEach(function (l) { var ls = doc.splitTextToSize(l, W - 2 * M); doc.text(ls, M, y); y += ls.length * 5 + 1; });
-  var vPix = d.entrada > 0 ? Math.round(d.total * d.entrada) / 100 : d.total;
-  y = pdfPix(doc, codigoPix(vPix, 'ORC' + numero), d.entrada > 0 && d.entrada < 100 ? 'Pague o sinal com Pix: ' + fmt.format(vPix) : 'Pague com Pix: ' + fmt.format(vPix), y + 4);
-  if (y > 250) { doc.addPage(); y = 30; }
-  doc.setDrawColor(150, 155, 158); doc.setLineWidth(0.2);
-  doc.line(M, y + 14, 95, y + 14); doc.line(115, y + 14, W - M, y + 14);
+  y = pdfTexto(doc, cond, y);
+  if (perfil.sobre) { y += 3; doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(29, 36, 40); doc.text('Quem vai fazer o serviço', M, y); y = pdfTexto(doc, [perfil.sobre], y + 5); }
+  var rot = d.entrada > 0 && d.entrada < 100 ? 'Pague o sinal com Pix: ' + dinheiro(sinalDe(d)) : 'Pague com Pix: ' + dinheiro(sinalDe(d));
+  y = pdfPix(doc, codigoPix(sinalDe(d), 'ORC' + d.numero), rot, y + 4);
+  pdfAssinaturas(doc, d, y + 2);
+  pdfFotos(doc, d === atual ? fotos : [], 'Fotos do local');
+  return { doc: doc, nome: 'orcamento-' + d.numero + '.pdf' };
+}
+function pdfRecibo(d, pag, idx) {
+  var doc = pdfNovo(), hoje = pag.data;
+  var y = pdfCabecalho(doc, 'RECIBO', d.numero + '-' + (idx + 1), hoje);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(29, 36, 40); doc.text(dinheiro(pag.valor), M, y + 4); y += 16;
+  var servicos = d.itens.map(function (i) { return (i.descricao || 'serviço').toLowerCase(); }).join(', ');
+  var parte = restanteDe(d) <= 0.009 && idx === d.pagamentos.length - 1 && d.pagamentos.length > 1 ? 'saldo final' : (pag.valor < totalDe(d) - 0.009 ? 'pagamento parcial' : 'pagamento total');
+  y = pdfTexto(doc, ['Recebi de ' + (d.cliente.nome || '________________') + ' a quantia de ' + dinheiro(pag.valor) + ' (' + parte + ', via ' + pag.forma + '), referente a ' + servicos + ', conforme orçamento nº ' + d.numero + ' de ' + d.data + '.'], y, 11, [29, 36, 40]);
+  y += 4;
+  y = pdfTexto(doc, ['Valor do serviço: ' + dinheiro(totalDe(d)) + '  ·  Já pago: ' + dinheiro(pagoDe(d)) + '  ·  Falta: ' + dinheiro(restanteDe(d))], y, 10);
+  if (d.garantia) y = pdfTexto(doc, ['Garantia: ' + d.garantia + '.'], y + 2, 10);
+  y = pdfTexto(doc, [(perfil.cidade ? perfil.cidade + ', ' : '') + hoje + '.'], y + 6, 11, [29, 36, 40]);
+  doc.setDrawColor(150, 155, 158); doc.line(M, y + 22, 110, y + 22);
+  doc.setFontSize(9); doc.setTextColor(93, 103, 108); doc.text((perfil.nome || 'Prestador') + (perfil.doc ? '  ·  CPF/CNPJ ' + perfil.doc : ''), M, y + 27);
+  return { doc: doc, nome: 'recibo-' + d.numero + '-' + (idx + 1) + '.pdf' };
+}
+function pdfRelatorio(d, lista) {
+  var doc = pdfNovo(), hoje = new Date().toLocaleDateString('pt-BR');
+  var y = pdfCabecalho(doc, 'RELATÓRIO DE SERVIÇO', d.numero, hoje);
+  y = pdfCliente(doc, d, y);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(29, 36, 40); doc.text('Serviços executados', M, y + 2); y += 8;
+  y = pdfTexto(doc, d.itens.map(function (i) { return '• ' + (i.descricao || 'Serviço') + ' — ' + String(i.qtd).replace('.', ',') + ' ' + i.un; }), y, 10.5, [29, 36, 40]);
+  if (d.garantia) y = pdfTexto(doc, ['Garantia: ' + d.garantia + ', a contar de ' + hoje + '.'], y + 3);
+  if (d.obs) y = pdfTexto(doc, ['Observações: ' + d.obs], y + 1);
+  y += 6;
+  if (y > 245) { doc.addPage(); y = 30; }
+  doc.setDrawColor(150, 155, 158); doc.line(M, y + 20, 95, y + 20); doc.line(115, y + 20, W - M, y + 20);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(93, 103, 108);
-  doc.text('De acordo (cliente)', M, y + 19); doc.text(p.nome || 'Prestador', 115, y + 19);
-  pdfFotos(doc, fotos);
-  return { doc: doc, nome: 'orcamento-' + numero + '.pdf' };
+  doc.text('Serviço recebido (cliente)', M, y + 25); doc.text(perfil.nome || 'Prestador', 115, y + 25);
+  pdfFotos(doc, lista, 'Fotos do serviço');
+  return { doc: doc, nome: 'relatorio-' + d.numero + '.pdf' };
 }
 
-function gerarReciboPDF(reg, valor) {
-  var jsPDF = window.jspdf && window.jspdf.jsPDF;
-  if (!jsPDF) throw new Error('sem-pdf');
-  var p = perfil(), doc = new jsPDF({ unit: 'mm', format: 'a4' }), M = 16, W = 210;
-  var hoje = new Date().toLocaleDateString('pt-BR');
-  var y = pdfCabecalho(doc, p, 'RECIBO', reg.numero, hoje);
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(22); doc.setTextColor(29, 36, 40);
-  doc.text(fmt.format(valor), M, y + 4); y += 16;
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
-  var servicos = reg.dados.itens.map(function (i) { return (i.descricao || 'serviço').toLowerCase(); }).join(', ');
-  var texto = 'Recebi de ' + (reg.dados.cliente || '________________') + ' a quantia de ' + fmt.format(valor) +
-    ', referente a ' + servicos + ', conforme orçamento nº ' + reg.numero + ' de ' + reg.data + '.';
-  var ls = doc.splitTextToSize(texto, W - 2 * M); doc.text(ls, M, y); y += ls.length * 6 + 6;
-  if (reg.dados.garantia) { doc.text('Garantia: ' + reg.dados.garantia + '.', M, y); y += 8; }
-  doc.text((p.cidade || '') + (p.cidade ? ', ' : '') + hoje + '.', M, y + 6);
-  doc.line(M, y + 30, 110, y + 30);
-  doc.setFontSize(9); doc.setTextColor(93, 103, 108);
-  doc.text((p.nome || 'Prestador') + (p.doc ? '  ·  CPF/CNPJ ' + p.doc : ''), M, y + 35);
-  return { doc: doc, nome: 'recibo-' + reg.numero + '.pdf' };
+// ---------- envio ----------
+function abrirWhats(tel, texto) {
+  var n = telWhats(tel);
+  window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(texto), '_blank', 'noopener');
 }
-
-// ----- histórico -----
-function historico() { return lerJSON('orc-hist', []); }
-function salvarHistorico(h) {
-  if (!guardar('orc-hist', JSON.stringify(h))) $('status').textContent = 'Este celular não deixou salvar o histórico.';
-  desenharHistorico();
-}
-function registrarEnvio() {
-  var h = historico(), d = dadosAtuais(), agora = new Date();
-  if (atualId) {
-    var reg = h.filter(function (r) { return r.id === atualId; })[0];
-    if (reg) { reg.dados = d; salvarHistorico(h); return reg; }
-  }
-  var n = proximoNumero(); guardar('orc-seq', String(n));
-  var novo = { id: String(agora.getTime()), numero: numeroTexto(n), data: agora.toLocaleDateString('pt-BR'), status: 'enviado', dados: d };
-  h.unshift(novo); atualId = novo.id;
-  salvarHistorico(h.slice(0, 200));
-  return novo;
-}
-function desenharHistorico() {
-  var h = historico(), box = $('hist'), soma = { enviado: 0, aprovado: 0, pago: 0 };
-  box.textContent = '';
-  h.forEach(function (r) {
-    soma[r.status] += r.dados.total;
-    var el = document.createElement('div'); el.className = 'hist-item';
-    var rotulo = { enviado: 'Enviado', aprovado: 'Aprovado', pago: 'Pago' }[r.status];
-    el.innerHTML = '<div class="hist-topo"><b></b><span></span></div>' +
-      '<div class="hist-topo"><small></small><span class="chip ' + r.status + '">' + rotulo + '</span></div>' +
-      '<div class="hist-acoes"></div>';
-    el.querySelector('b').textContent = (r.dados.cliente || 'Sem nome') ;
-    el.querySelector('.hist-topo span').textContent = fmt.format(r.dados.total);
-    el.querySelector('small').textContent = 'Nº ' + r.numero + ' · ' + r.data;
-    var acoes = el.querySelector('.hist-acoes');
-    function botao(txt, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.addEventListener('click', fn); acoes.appendChild(b); }
-    if (r.status === 'enviado') botao('Cliente aprovou', function () { r.status = 'aprovado'; salvarHistorico(h); });
-    if (r.status !== 'pago') botao('Recebi o pagamento', function () { r.status = 'pago'; salvarHistorico(h); });
-    botao('Gerar recibo', function () {
-      try { var x = gerarReciboPDF(r, r.dados.total); compartilharOuBaixar(x, 'Recibo ' + r.numero + ' — ' + fmt.format(r.dados.total)); }
-      catch (e) { $('status').textContent = 'Não deu para gerar o recibo. Verifique a internet e tente de novo.'; }
-    });
-    botao('Abrir', function () {
-      var d = r.dados; atualId = r.id;
-      $('cliente').value = d.cliente; $('entrada').value = String(d.entrada); $('validade').value = d.validade;
-      $('prazo').value = d.prazo; $('garantia').value = d.garantia; $('obs').value = d.obs;
-      itens = d.itens.map(function (i) { return Object.assign({}, i); }); $('selo-exemplo').hidden = true; desenharItens();
-      $('t-itens').scrollIntoView({ behavior: 'smooth' });
-    });
-    box.appendChild(el);
-  });
-  $('hist-vazio').hidden = h.length > 0;
-  $('r-enviado').textContent = fmt.format(soma.enviado);
-  $('r-aprovado').textContent = fmt.format(soma.aprovado);
-  $('r-pago').textContent = fmt.format(soma.pago);
-}
-
-// ----- envio -----
-function resumoTexto(reg) {
-  var d = reg.dados;
-  var linhas = ['*Orçamento nº ' + reg.numero + (d.cliente ? ' para ' + d.cliente : '') + '*'];
-  d.itens.forEach(function (it) { linhas.push('• ' + (it.descricao || 'Serviço') + ': ' + fmt.format(it.qtd * it.valorUnit)); });
-  linhas.push('*Total: ' + fmt.format(d.total) + '*');
-  if (d.entrada > 0 && d.entrada < 100) linhas.push('Sinal de ' + d.entrada + '% para começar: ' + fmt.format(d.total * d.entrada / 100));
-  linhas.push('', 'Para aprovar, é só responder *OK* aqui.');
-  var vPix = d.entrada > 0 ? Math.round(d.total * d.entrada) / 100 : d.total;
-  var cod = codigoPix(vPix, 'ORC' + reg.numero); if (cod) linhas.push('', 'Pix copia e cola:', cod);
-  if (perfil().nome) linhas.push('', perfil().nome);
-  return linhas.join('\n');
-}
-
-function compartilharOuBaixar(x, texto) {
+function compartilhar(x, texto, tel, msgOk) {
   try {
-    var arquivo = new File([x.doc.output('blob')], x.nome, { type: 'application/pdf' });
-    if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
-      navigator.share({ files: [arquivo], text: texto }).then(function () { $('status').textContent = 'Escolha o WhatsApp e o contato.'; }).catch(function () {});
+    var arq = new File([x.doc.output('blob')], x.nome, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [arq] })) {
+      navigator.share({ files: [arq], text: texto }).then(function () { avisar(msgOk || 'Escolha o WhatsApp e o contato.'); }).catch(function () {});
       return;
     }
   } catch (e) {}
   x.doc.save(x.nome);
-  $('status').textContent = 'PDF baixado. Anexe no WhatsApp do cliente.';
+  abrirWhats(tel, texto);
+  avisar('Baixamos o PDF e abrimos o WhatsApp. Anexe o PDF na conversa.');
 }
-
+function textoOrcamento(d) {
+  var l = ['*Orçamento nº ' + d.numero + (d.cliente.nome ? ' para ' + d.cliente.nome : '') + '*'];
+  d.itens.forEach(function (it) { l.push('• ' + (it.descricao || 'Serviço') + ': ' + dinheiro(it.qtd * it.valorUnit)); });
+  if (descontoDe(d)) l.push('Desconto: − ' + dinheiro(descontoDe(d)));
+  l.push('*Total: ' + dinheiro(totalDe(d)) + '*');
+  if (d.entrada > 0 && d.entrada < 100) l.push('Sinal de ' + d.entrada + '% para começar: ' + dinheiro(sinalDe(d)));
+  if (!d.assinatura) l.push('', 'Para aprovar, é só responder *OK* aqui.');
+  var cod = codigoPix(sinalDe(d), 'ORC' + d.numero); if (cod) l.push('', 'Pix copia e cola:', cod);
+  if (perfil.nome) l.push('', perfil.nome);
+  return l.join('\n');
+}
 $('pdf').addEventListener('click', function () {
-  try { var reg = registrarEnvio(); var x = gerarOrcamentoPDF(reg.dados, reg.numero, reg.data); x.doc.save(x.nome); $('status').textContent = 'PDF baixado e guardado em Meus orçamentos.'; }
-  catch (e) { $('status').textContent = 'Não deu para gerar o PDF. Verifique a internet e tente de novo.'; }
+  try { salvarAtual(true); var x = pdfOrcamento(atual); x.doc.save(x.nome); avisar('PDF baixado e guardado em Orçamentos.'); desenharOrcs(); }
+  catch (e) { avisar('Não deu para gerar o PDF. Verifique a internet e tente de novo.'); }
 });
-
 $('zap').addEventListener('click', function () {
-  var reg = registrarEnvio(), texto = resumoTexto(reg);
-  try {
-    var x = gerarOrcamentoPDF(reg.dados, reg.numero, reg.data);
-    var arquivo = new File([x.doc.output('blob')], x.nome, { type: 'application/pdf' });
-    if (navigator.canShare && navigator.canShare({ files: [arquivo] })) {
-      navigator.share({ files: [arquivo], text: texto }).then(function () { $('status').textContent = 'Escolha o WhatsApp e o contato.'; }).catch(function () {});
-      return;
-    }
-  } catch (e) {}
-  window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank', 'noopener');
-  $('status').textContent = 'Abrimos o WhatsApp com o resumo e o Pix. Baixe o PDF para anexar.';
+  try { salvarAtual(true); desenharOrcs(); compartilhar(pdfOrcamento(atual), textoOrcamento(atual), atual.cliente.tel); }
+  catch (e) { salvarAtual(true); abrirWhats(atual.cliente.tel, textoOrcamento(atual)); avisar('Abrimos o WhatsApp com o resumo e o Pix.'); }
 });
-
 $('copiar-pix').addEventListener('click', function () {
   var cod = $('pix-codigo').textContent;
-  navigator.clipboard.writeText(cod).then(function () { $('status').textContent = 'Pix copiado.'; })
-    .catch(function () {
-      var r = document.createRange(); r.selectNodeContents($('pix-codigo'));
-      var s = getSelection(); s.removeAllRanges(); s.addRange(r);
-      $('status').textContent = 'Selecionamos o código. Copie pelo menu do celular.';
-    });
+  navigator.clipboard.writeText(cod).then(function () { avisar('Pix copiado.'); }).catch(function () {
+    var r = document.createRange(); r.selectNodeContents($('pix-codigo')); var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+    avisar('Selecionamos o código. Copie pelo menu do celular.');
+  });
 });
+
+// ---------- aba orçamentos ----------
+var filtro = 'todos', docPag = null;
+document.querySelectorAll('.filtros button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    filtro = b.dataset.f;
+    document.querySelectorAll('.filtros button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    desenharOrcs();
+  });
+});
+function desenharOrcs() {
+  var box = $('hist'); box.textContent = '';
+  var agora = new Date(), esperando = 0, receber = 0, recebidoMes = 0, decididos = 0, aprovados = 0;
+  docs.forEach(function (d) {
+    var s = situacao(d);
+    if (s === 'enviado') esperando += totalDe(d);
+    if (s === 'aprovado' || s === 'parcial') receber += restanteDe(d);
+    if (s !== 'enviado') { decididos++; if (s !== 'recusado') aprovados++; }
+    (d.pagamentos || []).forEach(function (p) {
+      var partes = (p.data || '').split('/');
+      if (Number(partes[1]) === agora.getMonth() + 1 && Number(partes[2]) === agora.getFullYear()) recebidoMes += Number(p.valor);
+    });
+  });
+  $('p-esperando').textContent = dinheiro(esperando); $('p-receber').textContent = dinheiro(receber);
+  $('p-recebido').textContent = dinheiro(recebidoMes);
+  $('p-taxa').textContent = decididos ? Math.round(100 * aprovados / decididos) + '%' : '—';
+
+  var lista = docs.filter(function (d) {
+    var s = situacao(d);
+    if (filtro === 'todos') return true;
+    if (filtro === 'receber') return s === 'aprovado' || s === 'parcial';
+    return s === filtro;
+  });
+  $('hist-vazio').hidden = lista.length > 0;
+  lista.forEach(function (d) {
+    var s = situacao(d), el = document.createElement('div'); el.className = 'hist-item';
+    el.innerHTML = '<div class="hist-topo"><b></b><span class="v"></span></div><div class="hist-topo"><small></small><span class="chip ' + s + '">' + ROTULO[s] + '</span></div><div class="hist-acoes"></div>';
+    el.querySelector('b').textContent = d.cliente.nome || 'Sem nome';
+    el.querySelector('.v').textContent = dinheiro(totalDe(d));
+    el.querySelector('small').textContent = 'Nº ' + d.numero + ' · ' + d.data + (pagoDe(d) > 0 && s !== 'pago' ? ' · falta ' + dinheiro(restanteDe(d)) : '');
+    var ac = el.querySelector('.hist-acoes');
+    function botao(t, fn, cls) { var b = document.createElement('button'); b.type = 'button'; b.textContent = t; if (cls) b.className = cls; b.addEventListener('click', fn); ac.appendChild(b); }
+    botao('Abrir', function () { abrirDoc(d); });
+    if (s === 'enviado') {
+      botao('Cliente aprovou', function () { d.status = 'aprovado'; guardarJSON('orc-docs', docs); desenharOrcs(); });
+      botao('Cobrar resposta', function () {
+        abrirWhats(d.cliente.tel, 'Olá' + (d.cliente.nome ? ', ' + d.cliente.nome.split(' ')[0] : '') + '! Passando para saber se deu para ver o orçamento nº ' + d.numero + ' de ' + dinheiro(totalDe(d)) + '. Posso reservar a data para você?' + (perfil.nome ? '\n\n' + perfil.nome : ''));
+      });
+      botao('Recusado', function () { d.status = 'recusado'; guardarJSON('orc-docs', docs); desenharOrcs(); });
+    }
+    if (s === 'aprovado' || s === 'parcial') {
+      botao('Recebi pagamento', function () { abrirPagamento(d); }, 'zap');
+      botao('Lembrar cobrança', function () {
+        var falta = restanteDe(d), cod = codigoPix(falta, 'ORC' + d.numero);
+        abrirWhats(d.cliente.tel, 'Olá' + (d.cliente.nome ? ', ' + d.cliente.nome.split(' ')[0] : '') + '! Segue o valor em aberto do serviço (orçamento nº ' + d.numero + '): ' + dinheiro(falta) + '.' + (cod ? '\n\nPix copia e cola:\n' + cod : '') + (perfil.nome ? '\n\nObrigado!\n' + perfil.nome : ''));
+      });
+    }
+    (d.pagamentos || []).forEach(function (p, i) {
+      botao('Recibo ' + (d.pagamentos.length > 1 ? i + 1 : ''), function () {
+        try { compartilhar(pdfRecibo(d, p, i), 'Recibo de ' + dinheiro(p.valor) + ' — orçamento nº ' + d.numero, d.cliente.tel); } catch (e) { avisar('Não deu para gerar o recibo.'); }
+      });
+    });
+    if (s !== 'enviado' && s !== 'recusado') {
+      botao('Relatório do serviço', function () {
+        try { compartilhar(pdfRelatorio(d, d === atual ? fotos : []), 'Relatório do serviço — orçamento nº ' + d.numero, d.cliente.tel); } catch (e) { avisar('Não deu para gerar o relatório.'); }
+      });
+    }
+    if (s === 'pago' && perfil.google) {
+      botao('Pedir avaliação', function () {
+        abrirWhats(d.cliente.tel, 'Olá' + (d.cliente.nome ? ', ' + d.cliente.nome.split(' ')[0] : '') + '! Obrigado pela confiança. Se gostou do serviço, sua avaliação me ajuda muito: ' + perfil.google + (perfil.nome ? '\n\n' + perfil.nome : ''));
+      });
+    }
+    box.appendChild(el);
+  });
+}
+function abrirDoc(d) {
+  atual = d; fotos = []; desenharFotos(); $('selo-exemplo').hidden = true; $('fala').value = '';
+  preencherCampos(); irPara('novo'); $('t-itens').scrollIntoView({ behavior: 'smooth' });
+}
+function abrirPagamento(d) {
+  docPag = d; $('pag-valor').value = String(restanteDe(d) === totalDe(d) && d.entrada > 0 && d.entrada < 100 ? sinalDe(d) : restanteDe(d));
+  $('pag-resumo').textContent = (d.cliente.nome || 'Cliente') + ' · orçamento nº ' + d.numero + ' · falta ' + dinheiro(restanteDe(d));
+  $('modal-pag').hidden = false;
+}
+$('pag-fechar').addEventListener('click', function () { $('modal-pag').hidden = true; });
+$('pag-ok').addEventListener('click', function () {
+  var v = Number($('pag-valor').value) || 0; if (v <= 0) { $('pag-resumo').textContent = 'Digite o valor recebido.'; return; }
+  var d = docPag; d.pagamentos = d.pagamentos || [];
+  var p = { valor: Math.round(v * 100) / 100, data: new Date().toLocaleDateString('pt-BR'), forma: $('pag-forma').value };
+  d.pagamentos.push(p); if (d.status === 'enviado') d.status = 'aprovado';
+  guardarJSON('orc-docs', docs); $('modal-pag').hidden = true; desenharOrcs();
+  try { compartilhar(pdfRecibo(d, p, d.pagamentos.length - 1), 'Recibo de ' + dinheiro(p.valor) + ' — orçamento nº ' + d.numero, d.cliente.tel, 'Pagamento salvo. Escolha o WhatsApp para mandar o recibo.'); }
+  catch (e) { avisar('Pagamento salvo. Não deu para gerar o recibo agora.'); }
+});
+
+// ---------- aba preços ----------
+function desenharPrecos() {
+  var box = $('precos'); box.textContent = '';
+  precos.forEach(function (p, i) {
+    var el = document.createElement('div'); el.className = 'linha-edit';
+    el.innerHTML = '<label>Serviço<input id="pd' + i + '"></label><label>Un.<input id="pu' + i + '"></label><label>Preço (R$)<input id="pv' + i + '" type="number" step="any" inputmode="decimal"></label><button class="remover" type="button">Remover</button>';
+    box.appendChild(el);
+    $('pd' + i).value = p.descricao; $('pu' + i).value = p.un; $('pv' + i).value = p.valor || '';
+    ['pd', 'pu', 'pv'].forEach(function (k) {
+      $(k + i).addEventListener('change', function () {
+        p.descricao = $('pd' + i).value.trim(); p.un = $('pu' + i).value.trim() || 'un'; p.valor = Number($('pv' + i).value) || 0;
+        guardarJSON('orc-precos', precos); desenharChips();
+      });
+    });
+    el.querySelector('.remover').addEventListener('click', function () { precos.splice(i, 1); guardarJSON('orc-precos', precos); desenharPrecos(); desenharChips(); });
+  });
+}
+$('add-preco').addEventListener('click', function () { precos.unshift({ id: novoId(), descricao: '', un: 'un', valor: 0, usos: 0 }); desenharPrecos(); $('pd0').focus(); });
+$('modelo').addEventListener('change', function () {
+  var m = MODELOS[$('modelo').value]; if (!m) return;
+  m.forEach(function (x) {
+    if (!precos.some(function (p) { return chave(p.descricao) === chave(x[0]); })) precos.push({ id: novoId(), descricao: x[0], un: x[1], valor: 0, usos: 0 });
+  });
+  guardarJSON('orc-precos', precos); desenharPrecos(); desenharChips(); $('modelo').value = '';
+});
+
+// ---------- aba clientes ----------
+function desenharClientes() {
+  var box = $('clientes'), dl = $('clientes-dl'); box.textContent = ''; dl.textContent = '';
+  $('clientes-vazio').hidden = clientes.length > 0;
+  clientes.slice().sort(function (a, b) { return a.nome.localeCompare(b.nome); }).forEach(function (c) {
+    var o = document.createElement('option'); o.value = c.nome; dl.appendChild(o);
+    var seus = docs.filter(function (d) { return d.cliente.nome.toLowerCase() === c.nome.toLowerCase(); });
+    var el = document.createElement('div'); el.className = 'hist-item';
+    el.innerHTML = '<div class="hist-topo"><b></b><span></span></div><small></small><div class="hist-acoes"></div>';
+    el.querySelector('b').textContent = c.nome;
+    el.querySelector('.hist-topo span').textContent = seus.length + (seus.length === 1 ? ' orçamento' : ' orçamentos');
+    el.querySelector('small').textContent = [c.tel, c.endereco].filter(Boolean).join(' · ') || 'Sem contato salvo';
+    var ac = el.querySelector('.hist-acoes');
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Novo orçamento';
+    b.addEventListener('click', function () {
+      atual = docVazio(); atual.cliente = { nome: c.nome, tel: c.tel, endereco: c.endereco };
+      atual.itens = [{ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }]; fotos = []; desenharFotos();
+      $('fala').value = ''; $('selo-exemplo').hidden = true; preencherCampos(); irPara('novo');
+    });
+    ac.appendChild(b);
+    if (c.tel) { var z = document.createElement('button'); z.type = 'button'; z.textContent = 'WhatsApp'; z.addEventListener('click', function () { abrirWhats(c.tel, ''); }); ac.appendChild(z); }
+    box.appendChild(el);
+  });
+}
+
+// ---------- cópia de segurança ----------
+function baixarArquivo(nome, conteudo, tipo) {
+  var url = URL.createObjectURL(new Blob([conteudo], { type: tipo }));
+  var a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+$('backup-baixar').addEventListener('click', function () {
+  baixarArquivo('orcamento-falado-copia-' + new Date().toISOString().slice(0, 10) + '.json',
+    JSON.stringify({ versao: 3, perfil: perfil, docs: docs, precos: precos, clientes: clientes, seq: ler('orc-seq') }), 'application/json');
+  avisar('Cópia baixada. Guarde no Google Drive ou mande para você no WhatsApp.');
+});
+$('backup-in').addEventListener('change', function (e) {
+  var f = e.target.files[0]; if (!f) return;
+  var r = new FileReader();
+  r.onload = function () {
+    try {
+      var c = JSON.parse(r.result);
+      if (!c || !Array.isArray(c.docs)) throw new Error('formato');
+      perfil = c.perfil || {}; docs = c.docs; precos = c.precos || []; clientes = c.clientes || [];
+      guardarJSON('orc-perfil', perfil); guardarJSON('orc-docs', docs); guardarJSON('orc-precos', precos); guardarJSON('orc-clientes', clientes);
+      if (c.seq) guardar('orc-seq', c.seq);
+      Object.keys(CAMPOS).forEach(function (id) { $(id).value = perfil[CAMPOS[id]] || ''; });
+      mostrarLogo(); tudo(); avisar('Cópia restaurada: ' + docs.length + ' orçamentos.');
+    } catch (err) { avisar('Esse arquivo não é uma cópia do Orçamento Falado.'); }
+  };
+  r.readAsText(f); e.target.value = '';
+});
+$('csv').addEventListener('click', function () {
+  var linhas = [['numero', 'data', 'cliente', 'situacao', 'subtotal', 'desconto', 'total', 'pago', 'falta'].join(';')];
+  docs.forEach(function (d) {
+    var n = function (v) { return String((Math.round(v * 100) / 100).toFixed(2)).replace('.', ','); };
+    linhas.push([d.numero, d.data, '"' + (d.cliente.nome || '').replace(/"/g, '""') + '"', ROTULO[situacao(d)], n(subtotalDe(d)), n(descontoDe(d)), n(totalDe(d)), n(pagoDe(d)), n(restanteDe(d))].join(';'));
+  });
+  baixarArquivo('orcamentos.csv', '﻿' + linhas.join('\n'), 'text/csv');
+  avisar('Planilha baixada. Abre no Excel e no Google Planilhas.');
+});
+
+// ---------- abas ----------
+var TITULOS = { novo: 'Orçamento Falado', orcs: 'Orçamentos', precos: 'Tabela de preços', clientes: 'Clientes', perfil: 'Perfil' };
+function irPara(aba) {
+  ['novo', 'orcs', 'precos', 'clientes', 'perfil'].forEach(function (a) { $('tela-' + a).hidden = a !== aba; });
+  document.querySelectorAll('.abas button').forEach(function (b) { if (b.dataset.aba === aba) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  document.querySelector('header h1').textContent = TITULOS[aba];
+  $('sub-novo').hidden = aba !== 'novo';
+  if (aba === 'orcs') desenharOrcs(); if (aba === 'precos') desenharPrecos(); if (aba === 'clientes') desenharClientes();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('.abas button').forEach(function (b) { b.addEventListener('click', function () { irPara(b.dataset.aba); }); });
+
+function tudo() { desenharChips(); desenharOrcs(); desenharClientes(); desenharPrecos(); if (atual) preencherCampos(); }
 
 if (LISTA_URL) { $('lista').hidden = false; $('lista-link').href = LISTA_URL; }
 
+// funciona sem internet depois da primeira visita
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(function () {});
+}
+
+atual = docVazio();
 montar();
-desenharHistorico();
+tudo();
+if (!perfil.nome) $('aviso-perfil').hidden = false;
 </script>
 </body>
 </html>
