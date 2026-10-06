@@ -47,7 +47,23 @@
     } catch (e) {}
   }
 
+  // ---------- entrar com Google ----------
+  // O botão só aparece se o Google estiver ligado em Authentication → Providers no Supabase.
+  var gb = el('google-box');
+  if (gb) {
+    fetch(SB_URL + '/auth/v1/settings', { headers: { apikey: SB_KEY } }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.external && j.external.google && !(el('ja-dentro') && !el('ja-dentro').hidden)) gb.hidden = false;
+    }).catch(function () {});
+    el('google').addEventListener('click', function () {
+      var b = el('google'); b.disabled = true;
+      sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: APP } }).then(function (r) {
+        if (r.error) throw r.error;
+      }).catch(function (e) { b.disabled = false; msg('msg', traduzir(e), 'erro'); });
+    });
+  }
+
   function mostrarJaDentro(u) {
+    if (el('google-box')) el('google-box').hidden = true;
     var box = el('ja-dentro'); if (!box) return;
     el('ja-email').textContent = u.email || '';
     box.hidden = false;

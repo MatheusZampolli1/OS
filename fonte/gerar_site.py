@@ -481,6 +481,7 @@ def privacidade(base):
 <li><b>Seu perfil:</b> nome da empresa, telefone, chave Pix, logo e profissão, que você mesmo informa.</li>
 <li><b>Seu trabalho:</b> orçamentos, preços, clientes (nome, telefone, endereço), fotos e assinaturas que você coloca no app.</li>
 <li><b>Uso do app:</b> contagens anônimas de quando o app é aberto e de quando um PDF é gerado, ligadas a um número aleatório do aparelho. Não incluem nada do orçamento (cliente, itens ou valores) e servem só para sabermos se o app está ajudando.</li>
+<li><b>Entrar com Google:</b> se você escolher entrar com o Google, recebemos do Google só o seu nome, e-mail e foto do perfil, para criar e identificar a conta. Não temos acesso à sua senha do Google.</li>
 <li><b>Link de aprovação:</b> quando você manda um orçamento com link, guardamos uma cópia do que o seu cliente vê (seus dados de contato, nome do cliente, serviços, valores e condições), quantas vezes o link foi aberto e a resposta dele (aprovou ou pediu alteração, com o nome e o comentário que ele escrever). Quem tem o link consegue ver o orçamento. A cópia é apagada quando você apaga o orçamento ou a conta.</li>
 </ul>
 <h2>Voz</h2>
@@ -619,7 +620,8 @@ def ja_dentro(base, acao):
 def pag_entrar(base):
     return f'''<section class="conta-pag"><div class="wrap">
 <div class="cab"><h1>Entrar</h1><p class="sub">Use o e-mail e a senha da sua conta.</p></div>
-{ja_dentro(base, 'trocar de conta')}<form id="form-entrar" class="form-conta" novalidate>
+{ja_dentro(base, 'trocar de conta')}<div id="google-box" class="google-box" hidden><button id="google" class="botao google" type="button"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.2-8.5 2.2-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg> Entrar com Google</button><p class="ou"><span>ou com e-mail</span></p></div>
+<form id="form-entrar" class="form-conta" novalidate>
 <label for="email">E-mail<input id="email" type="email" autocomplete="email" inputmode="email" required></label>
 <label for="senha">Senha<input id="senha" type="password" autocomplete="current-password" minlength="6" required></label>
 <label class="ver-senha"><input id="ver" type="checkbox"> Mostrar senha</label>
@@ -642,7 +644,8 @@ def pag_entrar(base):
 def pag_criar(base):
     return f'''<section class="conta-pag"><div class="wrap">
 <div class="cab"><h1>Criar conta grátis</h1><p class="sub">Seus orçamentos ficam guardados na nuvem e aparecem em qualquer celular em que você entrar.</p></div>
-{ja_dentro(base, 'criar outra conta')}<form id="form-criar" class="form-conta" novalidate>
+{ja_dentro(base, 'criar outra conta')}<div id="google-box" class="google-box" hidden><button id="google" class="botao google" type="button"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.2-8.5 2.2-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg> Continuar com Google</button><p class="miudo" style="margin:0;text-align:center">Ao continuar com o Google, você aceita os <a href="{base}termos.html" target="_blank" rel="noopener">termos de uso</a> e a <a href="{base}privacidade.html" target="_blank" rel="noopener">política de privacidade</a>.</p><p class="ou"><span>ou com e-mail</span></p></div>
+<form id="form-criar" class="form-conta" novalidate>
 <label for="email">E-mail<input id="email" type="email" autocomplete="email" inputmode="email" required></label>
 <label for="senha">Senha<input id="senha" type="password" autocomplete="new-password" minlength="6" required></label>
 <label class="ver-senha"><input id="ver" type="checkbox"> Mostrar senha</label>

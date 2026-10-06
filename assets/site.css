@@ -189,3 +189,11 @@ p { margin: 0; }
 .tabela.comparar th:first-child, .tabela.comparar td:first-child { text-align: left; color: var(--muted); width: 30%; }
 .tabela.comparar td[colspan] { text-align: left; }
 @media (max-width: 520px) { .tabela.comparar table { font-size: .82rem; } }
+
+/* Entrar com Google: só aparece quando o provedor está ligado no Supabase */
+.google-box { display: grid; gap: 12px; margin-bottom: 16px; }
+.botao.google { width: 100%; justify-content: center; gap: 10px; background: #fff; color: #1f1f1f; border: 1px solid #747775; cursor: pointer; }
+.botao.google:hover { background: #f2f2f2; }
+.botao.google[disabled] { opacity: .6; cursor: wait; }
+.ou { display: flex; align-items: center; gap: 12px; margin: 0; color: var(--muted); font-size: .9rem; }
+.ou::before, .ou::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
