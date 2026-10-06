@@ -1,10 +1,13 @@
 // Guarda o app e as bibliotecas para abrir sem internet na obra.
 // Pedidos ao servidor de contas (supabase.co) nunca passam pelo cache: são dados pessoais.
-var CACHE = 'ta-orcado-v15';
+var CACHE = 'ta-orcado-v16';
 var ARQUIVOS = [
   './',
   './index.html',
   './conta.js',
+  './manifest.webmanifest',
+  './icone-192.png',
+  './icone-512.png',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
   'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js'
