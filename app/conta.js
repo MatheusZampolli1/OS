@@ -9,6 +9,32 @@
   // Endereço de cada função no Supabase (o painel pode dar um nome de endereço diferente do nome da função).
   var FUNCOES = { assinar: 'bright-responder', cancelar: 'clever-function' };
 
+  // ---------- medição de ativação (contagem anônima por aparelho, ver supabase/ativacao.sql) ----------
+  // Só o tipo do evento e a hora; nada do orçamento sai daqui.
+  var fila = [];
+  function aparelho() {
+    var id = ler('orc-aparelho');
+    if (!id) {
+      id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, function () { return (Math.random() * 16 | 0).toString(16); });
+      guardarTexto('orc-aparelho', id);
+    }
+    return id;
+  }
+  function marcar(tipo) {
+    if (!sb) { fila.push(tipo); return; }
+    sb.from('eventos_app').insert({ aparelho: aparelho(), tipo: tipo, user_id: usuario ? usuario.id : null }).then(function () {}, function () {});
+  }
+  window.marcar = marcar;
+  ['pdfOrcamento', 'pdfRecibo', 'pdfRelatorio'].forEach(function (nome) {
+    var f = window[nome]; if (typeof f !== 'function') return;
+    window[nome] = function () {
+      var x = f.apply(this, arguments);
+      var exemplo = nome === 'pdfOrcamento' && !document.getElementById('selo-exemplo').hidden;
+      marcar(exemplo ? 'exemplo_pdf' : 'pdf');
+      return x;
+    };
+  });
+
   var COLECOES = { 'orc-perfil': 'perfil', 'orc-docs': 'docs', 'orc-precos': 'precos', 'orc-clientes': 'clientes', 'orc-seq': 'seq' };
   var CHAVE_SYNC = 'orc-sync';
   var sb = null, usuario = null, timer = null, rodando = null, pendente = false;
@@ -225,6 +251,12 @@
   ligarTela(); mostrarConta();
   if (!window.supabase || !window.supabase.createClient) { mostrarNuvem('Sem conexão com o servidor de contas agora.'); return; }
   sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' } });
+  // primeira abertura do dia neste aparelho; espera saber se há login para não contar duas vezes
+  setTimeout(function () {
+    var hoje = new Date().toDateString();
+    if (ler('orc-abriu') !== hoje) { guardarTexto('orc-abriu', hoje); marcar('abriu'); }
+    fila.splice(0).forEach(marcar);
+  }, 1500);
   sb.auth.onAuthStateChange(function (ev, sessao) {
     // link de "esqueci a senha": a sessão já foi gravada; a troca acontece na página própria
     if (ev === 'PASSWORD_RECOVERY') { location.replace(PAGINA['nova-senha']); return; }

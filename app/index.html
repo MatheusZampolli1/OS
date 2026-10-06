@@ -133,6 +133,8 @@ footer { color: var(--muted); font-size: .85rem; text-align: center; padding-blo
 .hist-acoes button { padding: 8px 10px; font-size: .88rem; }
 .vazio { color: var(--muted); font-size: .92rem; margin: 0; }
 .bloqueio { border: 2px solid var(--accent); }
+.boas-vindas { border: 2px solid var(--accent); }
+.boas-vindas h2 { margin: 0; }
 #tela-novo.bloqueado > section:not(#bloqueio) { display: none; }
 .bloqueio h2 { margin: 0; }
 .chip.pendente { color: var(--muted); }
@@ -218,6 +220,11 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   <!-- ===================== NOVO ===================== -->
   <div class="tela" id="tela-novo">
     <section id="faixa-plano" class="faixa-plano" hidden><span id="faixa-plano-txt"></span><button id="faixa-plano-btn" type="button">Ver planos</button></section>
+    <section id="boas-vindas" class="bloco boas-vindas" hidden>
+      <h2>Primeira vez aqui?</h2>
+      <p class="dica" style="margin:0">Logo abaixo já tem um orçamento de exemplo montado. Veja o PDF que o seu cliente recebe. Depois é só falar o seu serviço no lugar do exemplo.</p>
+      <div class="linha-botoes"><button id="bv-pdf" class="primario" type="button">Ver o PDF do exemplo</button><button id="bv-fechar" type="button">Fechar</button></div>
+    </section>
     <section id="bloqueio" class="bloco bloqueio" hidden>
       <h2 id="bloqueio-tit">Seu teste grátis acabou</h2>
       <p id="bloqueio-txt" class="dica"></p>
@@ -617,6 +624,8 @@ function lerFala(texto) {
 
   var cliente = '';
   var mCli = texto.match(/(?:para o cliente|pra o cliente|para a cliente|cliente|para dona|pra dona|para seu|pra seu|para o seu|para a dona)\s+(?:é\s+|o\s+|a\s+|dona\s+|seu\s+)?([A-Za-zÀ-ú]+)(\s+[A-ZÀ-Ú][a-zà-ú]+)?/i);
+  // "Orçamento para o Ricardo", "para a Patrícia", "pra Paulo": nome com inicial maiúscula logo no começo
+  if (!mCli) mCli = texto.match(/^\s*(?:[Oo]rçamento\s+)?(?:[Pp]ara|[Pp]ra)\s+(?:o\s+|a\s+)?([A-ZÀ-Ú][a-zà-ú]+)(\s+[A-ZÀ-Ú][a-zà-ú]+)?/);
   if (mCli) {
     var segundo = mCli[2] && /^\s+[A-ZÀ-Ú]/.test(mCli[2]) ? mCli[2] : '';
     cliente = capitalizar(mCli[1]) + (segundo ? ' ' + segundo.trim() : '');
@@ -625,7 +634,13 @@ function lerFala(texto) {
     t = t.replace(alvo.trim(), ' , ');
   }
 
-  var partes = t.split(/[,;.\n]| e depois | depois | mais | também | tambem | outro item | próximo item | proximo item /);
+  // "12,50" é um número só (a vírgula separa itens)
+  t = t.replace(/(\d),(\d{1,2})(?!\d)/g, '$1.$2');
+  // "18 reais e 50 centavos" vira 18.50 reais
+  t = t.replace(/(\d+)\s*(?:reais|real)\s+e\s+(\d{1,2})\s*centavos?/g, function (m, a, b) { return a + '.' + (b.length === 1 ? '0' + b : b) + ' reais'; });
+  // "... a 80 e instalação de chuveiro ...": um "e" logo depois de um valor separa dois itens
+  t = t.replace(/(\d(?:\s*(?:reais|real|conto|contos|pila))?)\s+e\s+(?=[a-zà-ú])(?!meio\b)/g, '$1 , ');
+  var partes = t.split(/[,;:\n]|\.(?!\d)| e depois | depois | mais | também | tambem | outro item | próximo item | proximo item /);
   var itens = [];
   partes.forEach(function (p) {
     p = ' ' + p.trim() + ' ';
@@ -633,6 +648,11 @@ function lerFala(texto) {
 
     var preco = null, unitario = false;
     var mPreco = p.match(/r\$\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:reais|real|conto|contos|pila)\b/);
+    // "2 unidades a 70": preço no fim, sem a palavra reais
+    if (!mPreco) {
+      var mf = p.match(/\b(?:a|por)\s+(\d+(?:\.\d+)?)(?=\s*$|\s+(?:o|a|por|cada)\b)/);
+      if (mf) { mPreco = [mf[1], null, mf[1]]; mPreco.index = mf.index + mf[0].lastIndexOf(mf[1]); }
+    }
     var resto = p;
     if (mPreco) {
       preco = Number(mPreco[1] || mPreco[2]);
@@ -656,7 +676,8 @@ function lerFala(texto) {
         var u = apos.match(UNIDADES[i][0]);
         if (u) {
           qtd = Number(m[1]); un = UNIDADES[i][1]; achou = true;
-          var manter = un === 'pt' ? ' ' + u[0] : '';
+          // "3 pontos de luz" mantém "ponto de luz" na descrição; "tomada 6 pontos" não repete a palavra
+          var manter = un === 'pt' && /^\s*de\b/.test(apos.slice(u[0].length)) ? ' ' + u[0] : '';
           resto = resto.slice(0, m.index) + manter + ' ' + apos.slice(u[0].length);
           break;
         }
@@ -668,7 +689,7 @@ function lerFala(texto) {
       resto = resto.slice(0, primeiro.index) + ' ' + resto.slice(primeiro.index + primeiro[1].length);
     }
 
-    if (preco !== null && qtd !== null && !unitario && p.precoComA && /^(m²|m|h|dia|pt)$/.test(un)) unitario = true;
+    if (preco !== null && qtd !== null && !unitario && p.precoComA && (achou || /^(m²|m|h|dia|pt)$/.test(un))) unitario = true;
 
     var fimFraco = new RegExp(L + '(a|por|de|do|da|no|na|com|e|o|os|as|em|pra|para|valor|preço|preco|fica|vai ficar|sai|total|no total|de serviço|de servico)\\s*$');
     var inicioFraco = new RegExp('^\\s*(de|do|da|e|o|a|um|uma|com|pra|para|tem|vai ter|vou fazer|fazer|faço|faco)' + R);
@@ -938,9 +959,9 @@ function desenharChips() {
   });
 }
 
-function montar() {
+function montar(eraExemplo) {
   var r = lerFala($('fala').value);
-  var cli = atual.cliente;
+  var cli = eraExemplo ? null : atual.cliente; // o cliente do exemplo não passa para o orçamento de verdade
   atual = docVazio(); fotos = []; desenharFotos();
   if (r.cliente) {
     var c = clientes.filter(function (x) { return x.nome.toLowerCase() === r.cliente.toLowerCase(); })[0];
@@ -996,7 +1017,7 @@ function ouvir() {
 }
 function pararVisual() {
   querOuvir = false; $('mic').classList.remove('gravando'); $('mic-txt').textContent = 'Toque e fale';
-  if ($('fala').value.trim()) { $('selo-exemplo').hidden = true; montar(); }
+  if ($('fala').value.trim()) { var ex = !$('selo-exemplo').hidden; $('selo-exemplo').hidden = true; montar(ex); }
 }
 $('mic').addEventListener('click', function () {
   if (!Rec) return;
@@ -1008,7 +1029,7 @@ $('mic').addEventListener('click', function () {
   try { ouvir(); } catch (err) { pararVisual(); avisar('Não deu para ligar o microfone. Tente de novo.'); }
 });
 
-$('montar').addEventListener('click', function () { $('selo-exemplo').hidden = true; montar(); });
+$('montar').addEventListener('click', function () { var ex = !$('selo-exemplo').hidden; $('selo-exemplo').hidden = true; montar(ex); });
 $('add').addEventListener('click', function () { atual.itens.push({ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }); $('selo-exemplo').hidden = true; desenharItens(); });
 ['entrada', 'desc-tipo'].forEach(function (id) { $(id).addEventListener('change', atualizarTotal); });
 ['desc-valor', 'validade', 'prazo', 'garantia', 'obs', 'cliente-tel', 'cliente-end'].forEach(function (id) { $(id).addEventListener('input', atualizarTotal); });
@@ -1221,6 +1242,17 @@ function pdfFotos(doc, lista, titulo) {
     if (col === 1) { y += alt + 6; col = 0; } else col = 1;
   });
 }
+// Rodapé em todas as páginas: cada PDF enviado mostra ao cliente onde fazer o próprio orçamento.
+var LINK_MARCA = 'https://matheuszampolli1.github.io/OS/criar-conta.html?ref=pdf';
+function pdfMarca(doc) {
+  var t = 'Feito com Tá Orçado  ·  faça seu orçamento grátis em matheuszampolli1.github.io/OS';
+  for (var i = 1; i <= doc.getNumberOfPages(); i++) {
+    doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120, 128, 132);
+    var w = doc.getTextWidth(t), x = (W - w) / 2;
+    doc.text(t, x, 291); doc.link(x, 288, w, 4.5, { url: LINK_MARCA });
+  }
+  return doc;
+}
 function pdfOrcamento(d) {
   var doc = pdfNovo();
   var y = pdfCabecalho(doc, 'ORÇAMENTO', d.numero, d.data);
@@ -1240,6 +1272,7 @@ function pdfOrcamento(d) {
   y = pdfPix(doc, codigoPix(sinalDe(d), 'ORC' + d.numero), rot, y + 4);
   pdfAssinaturas(doc, d, y + 2);
   pdfFotos(doc, d === atual ? fotos : [], 'Fotos do local');
+  pdfMarca(doc);
   return { doc: doc, nome: 'orcamento-' + d.numero + '.pdf' };
 }
 function pdfRecibo(d, pag, idx) {
@@ -1255,6 +1288,7 @@ function pdfRecibo(d, pag, idx) {
   y = pdfTexto(doc, [(perfil.cidade ? perfil.cidade + ', ' : '') + hoje + '.'], y + 6, 11, [29, 36, 40]);
   doc.setDrawColor(150, 155, 158); doc.line(M, y + 22, 110, y + 22);
   doc.setFontSize(9); doc.setTextColor(93, 103, 108); doc.text((perfil.nome || 'Prestador') + (perfil.doc ? '  ·  CPF/CNPJ ' + perfil.doc : ''), M, y + 27);
+  pdfMarca(doc);
   return { doc: doc, nome: 'recibo-' + d.numero + '-' + (idx + 1) + '.pdf' };
 }
 function pdfRelatorio(d, lista) {
@@ -1271,6 +1305,7 @@ function pdfRelatorio(d, lista) {
   doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(93, 103, 108);
   doc.text('Serviço recebido (cliente)', M, y + 25); doc.text(perfil.nome || 'Prestador', 115, y + 25);
   pdfFotos(doc, lista, 'Fotos do serviço');
+  pdfMarca(doc);
   return { doc: doc, nome: 'relatorio-' + d.numero + '.pdf' };
 }
 
@@ -1328,6 +1363,7 @@ document.querySelectorAll('.filtros button').forEach(function (b) {
   });
 });
 function desenharOrcs() {
+  if ($('boas-vindas') && docs.length) $('boas-vindas').hidden = true;
   var box = $('hist'); box.textContent = '';
   var agora = new Date(), esperando = 0, receber = 0, recebidoMes = 0, decididos = 0, aprovados = 0;
   docs.forEach(function (d) {
@@ -1535,6 +1571,21 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 atual = docVazio();
 montar();
 tudo();
+// Primeira abertura: mostra o PDF do exemplo antes de pedir qualquer coisa.
+function mostrarBoasVindas() { $('boas-vindas').hidden = !(docs.length === 0 && !ler('orc-bv-fechado')); }
+$('bv-pdf').addEventListener('click', function () {
+  try {
+    if ($('selo-exemplo').hidden) { $('fala').value = $('fala').defaultValue; atual = docVazio(); montar(); $('selo-exemplo').hidden = false; }
+    lerCampos();
+    // cópia com número e data, sem salvar: o exemplo não entra em Orçamentos nem conta no limite
+    var ex = Object.assign({}, atual, { numero: atual.numero || '0001', data: atual.data || new Date().toLocaleDateString('pt-BR') });
+    var x = pdfOrcamento(ex), url = URL.createObjectURL(x.doc.output('blob'));
+    if (!window.open(url, '_blank')) x.doc.save(x.nome);
+    avisar('Esse é o PDF do exemplo. Agora fale o seu serviço no campo 1 e toque em Montar orçamento.');
+  } catch (e) { if (e.message !== 'bloqueado') avisar('Não deu para gerar o PDF. Verifique a internet e tente de novo.'); }
+});
+$('bv-fechar').addEventListener('click', function () { guardar('orc-bv-fechado', '1'); mostrarBoasVindas(); });
+mostrarBoasVindas();
 if (!perfil.nome) $('aviso-perfil').hidden = false;
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>

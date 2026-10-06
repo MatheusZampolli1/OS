@@ -38,6 +38,15 @@
   }
   var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' } });
 
+  // Veio pelo link do rodapé de um PDF: conta a visita (anônima) para medir o alcance do rodapé.
+  if (new URLSearchParams(location.search).get('ref') === 'pdf') {
+    try {
+      var ap = localStorage.getItem('orc-aparelho');
+      if (!ap) { ap = crypto.randomUUID(); localStorage.setItem('orc-aparelho', ap); }
+      sb.from('eventos_app').insert({ aparelho: ap, tipo: 'visita_pdf' }).then(function () {}, function () {});
+    } catch (e) {}
+  }
+
   function mostrarJaDentro(u) {
     var box = el('ja-dentro'); if (!box) return;
     el('ja-email').textContent = u.email || '';

@@ -6,6 +6,7 @@ O app fica em app/ e não é gerado aqui.
 """
 import html
 import os
+import re
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 URL = 'https://matheuszampolli1.github.io/OS/'
@@ -97,7 +98,7 @@ def cabeca(titulo, descricao, base, caminho, extra=''):
 
 
 def topo(base):
-    links = [('Funções', f'{base}#funcoes'), ('Profissões', f'{base}profissoes/'), ('Preços', f'{base}precos.html'),
+    links = [('Funções', f'{base}#funcoes'), ('Profissões', f'{base}profissoes/'), ('Calculadoras', f'{base}calculadoras/'), ('Preços', f'{base}precos.html'),
              ('Blog', f'{base}blog/'), ('Novidades', f'{base}novidades.html')]
     nav = ''.join(f'<a href="{h}">{t}</a>' for t, h in links)
     return f'''<header class="topo"><div class="wrap">
@@ -125,7 +126,7 @@ def rodape(base):
 <footer class="rodape"><div class="wrap">
 <div class="marca-col"><a class="marca" href="{base}"><span class="faixa" aria-hidden="true"></span>{NOME}</a>
 <p class="nota">Orçamento, recibo e cobrança por voz para quem trabalha com obra. Feito no Brasil, para WhatsApp e Pix.</p></div>
-<div><h3>Produto</h3><ul><li><a href="{base}#funcoes">Funções</a></li><li><a href="{base}precos.html">Preços</a></li><li><a href="{base}novidades.html">Novidades</a></li><li><a href="{base}app/">Abrir o app</a></li></ul></div>
+<div><h3>Produto</h3><ul><li><a href="{base}#funcoes">Funções</a></li><li><a href="{base}precos.html">Preços</a></li><li><a href="{base}calculadoras/">Calculadoras grátis</a></li><li><a href="{base}novidades.html">Novidades</a></li><li><a href="{base}app/">Abrir o app</a></li></ul></div>
 <div><h3>Profissões</h3><ul>{profs}</ul></div>
 <div><h3>Ajuda</h3><ul><li><a href="{base}blog/">Blog</a></li>{contato_itens(base)}<li><a href="{base}termos.html">Termos de uso</a></li><li><a href="{base}privacidade.html">Privacidade</a></li></ul></div>
 </div></footer>
@@ -470,7 +471,7 @@ def privacidade(base):
     return f'''<article class="wrap estreito artigo">
 <span class="etiqueta">Documento</span>
 <h1>Política de privacidade</h1>
-<p class="meta">Atualizado em 05/10/2026</p>
+<p class="meta">Atualizado em 06/10/2026</p>
 <p>Esta política explica quais dados o {NOME} trata, para quê e quais são os seus direitos pela Lei Geral de Proteção de Dados (Lei 13.709/2018).</p>
 <h2>Quem é o responsável</h2>
 <p>O controlador dos dados é {RESPONSAVEL}, responsável pelo {NOME}. Pedidos sobre seus dados podem ser feitos pelo <a href="{base}contato.html">contato</a>.</p>
@@ -479,6 +480,7 @@ def privacidade(base):
 <li><b>Conta:</b> e-mail e senha (a senha é guardada de forma cifrada; nós não conseguimos lê-la).</li>
 <li><b>Seu perfil:</b> nome da empresa, telefone, chave Pix, logo e profissão, que você mesmo informa.</li>
 <li><b>Seu trabalho:</b> orçamentos, preços, clientes (nome, telefone, endereço), fotos e assinaturas que você coloca no app.</li>
+<li><b>Uso do app:</b> contagens anônimas de quando o app é aberto e de quando um PDF é gerado, ligadas a um número aleatório do aparelho. Não incluem nada do orçamento (cliente, itens ou valores) e servem só para sabermos se o app está ajudando.</li>
 </ul>
 <h2>Voz</h2>
 <p>O reconhecimento de voz é feito pelo próprio navegador do seu celular. No Google Chrome, o navegador envia o áudio ao serviço de voz do Google para transformar em texto. O {NOME} recebe só o texto, não grava nem guarda o áudio.</p>
@@ -486,6 +488,7 @@ def privacidade(base):
 <ul>
 <li>Fazer o app funcionar: guardar e mostrar seus orçamentos em qualquer aparelho (execução de contrato).</li>
 <li>Responder seus pedidos de suporte.</li>
+<li>Melhorar o app com base nas contagens anônimas de uso (legítimo interesse).</li>
 <li>Avisar sobre mudanças importantes no app ou nos preços.</li>
 </ul>
 <p>Não vendemos seus dados nem os dos seus clientes, e não usamos esses dados para publicidade.</p>
@@ -676,6 +679,30 @@ def pag_nova_senha(base):
 ''' + conta_scripts(base)
 
 
+# ---------------------------------------------------------------- calculadoras
+# As páginas de calculadora são escritas à mão em calculadoras/*.html (corpo, estilo e script próprios).
+# Aqui só trocamos o cabeçalho, o menu e o rodapé pelos do site, para tudo mudar junto.
+def calculadoras():
+    pasta = os.path.join(RAIZ, 'calculadoras')
+    if not os.path.isdir(pasta):
+        return []
+    feitas = []
+    for nome in sorted(os.listdir(pasta)):
+        if not nome.endswith('.html'):
+            continue
+        with open(os.path.join(pasta, nome), encoding='utf-8') as f:
+            s = f.read()
+        cab = s[:s.index('</head>')]
+        titulo = html.unescape(re.search(r'<title>(.*?)</title>', cab, re.S).group(1))
+        descricao = html.unescape(re.search(r'<meta name="description" content="(.*?)">', cab).group(1))
+        estilo = ''.join(x + '\n' for x in re.findall(r'<style>.*?</style>', cab, re.S))
+        corpo_html = s[s.index('<main>\n') + len('<main>\n'):s.index('</main>')]
+        if '</footer>' in s:  # script que vinha depois do rodapé passa para o fim do corpo
+            corpo_html += ''.join(x + '\n' for x in re.findall(r'<script>.*?</script>', s[s.index('</footer>'):], re.S))
+        feitas.append(pagina('calculadoras/' + nome, titulo, descricao, lambda base, c=corpo_html: c, estilo))
+    return feitas
+
+
 # ---------------------------------------------------------------- geração
 def gerar():
     feitas = []
@@ -696,6 +723,8 @@ def gerar():
     feitas.append(pagina('entrar.html', f'Entrar · {NOME}', 'Entre na sua conta do Tá Orçado.', pag_entrar))
     feitas.append(pagina('criar-conta.html', f'Criar conta grátis · {NOME}', 'Crie sua conta grátis no Tá Orçado e guarde seus orçamentos na nuvem.', pag_criar))
     pagina('nova-senha.html', f'Nova senha · {NOME}', 'Troca de senha da conta.', pag_nova_senha, '<meta name="robots" content="noindex">\n')
+
+    feitas += calculadoras()
 
     urls = [URL + c.replace('index.html', '') for c in feitas] + [URL + 'app/']
     with open(os.path.join(RAIZ, 'sitemap.xml'), 'w', encoding='utf-8') as f:

@@ -14,10 +14,11 @@
 .painel-wrap { max-width: 1080px; margin: 0 auto; padding: 28px 16px 64px; display: grid; gap: 28px; }
 .cab-painel { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
 .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 6px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 6px; align-content: start; }
 .kpi b { font: 700 2rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
 .kpi small { color: var(--muted); font-size: .85rem; }
 @media (max-width: 820px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 821px) { #at-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 .duas { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; }
 @media (max-width: 820px) { .duas { grid-template-columns: 1fr; } }
 .caixa-p { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
@@ -83,6 +84,17 @@
       <div class="tabela"><table><thead><tr><th>Quando</th><th>E-mail</th><th>Forma</th><th>Situação</th><th class="num">Valor</th></tr></thead><tbody id="c-ultimas"></tbody></table></div>
       <p id="c-ultimas-vazio" class="miudo">Nenhuma cobrança ainda.</p>
     </section>
+    <section class="caixa-p" id="ativacao">
+      <div class="cab-painel"><h2>Ativação (30 dias)</h2></div>
+      <p id="at-aviso" class="miudo" hidden>Rode o SQL de ativação (supabase-ativacao.sql) para ver estes números.</p>
+      <div class="kpis" id="at-kpis">
+        <div class="kpi"><span class="etiqueta">Abriram o app</span><b id="a-abriu"></b><small>aparelhos diferentes</small></div>
+        <div class="kpi"><span class="etiqueta">Viram o exemplo</span><b id="a-exemplo"></b><small id="a-exemplo-s"></small></div>
+        <div class="kpi"><span class="etiqueta">Geraram o 1º PDF</span><b id="a-pdf"></b><small id="a-pdf-s"></small></div>
+        <div class="kpi"><span class="etiqueta">PDFs gerados</span><b id="a-pdfs"></b><small id="a-pdfs-s"></small></div>
+        <div class="kpi"><span class="etiqueta">Contas ativadas</span><b id="a-contas"></b><small id="a-contas-s"></small></div>
+      </div>
+    </section>
     <section class="duas">
       <div class="caixa-p"><h2>Cadastros por dia (30 dias)</h2><div id="grafico"></div></div>
       <div class="caixa-p"><h2>Cidades</h2><ul id="cidades" class="cidades"></ul><p id="cidades-vazio" class="miudo" hidden>Ninguém preencheu a cidade ainda.</p></div>
@@ -117,14 +129,15 @@
   if (!window.supabase) { $('msg').textContent = 'Não carregou a biblioteca de login. Confira a internet.'; return; }
   var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'orc-admin-auth' } });
   var dados = null, cob = null, ligarArmado = false;
+  var ativ = null;
   var FORMA = { PIX: 'Pix', BOLETO: 'Boleto', CREDIT_CARD: 'Cartão', UNDEFINED: 'a escolher' };
   var SIT = { PENDING: 'Em aberto', OVERDUE: 'Vencida', CONFIRMED: 'Paga', RECEIVED: 'Paga', REFUNDED: 'Estornada', DELETED: 'Cancelada' };
 
   function mostrarLogin(t) { $('login').hidden = false; $('conteudo').hidden = true; $('sair').hidden = true; $('atualizar').hidden = true; $('login-msg').textContent = t || ''; }
   function carregar() {
     $('msg').textContent = 'Carregando…';
-    Promise.all([sb.rpc('painel_admin'), sb.rpc('painel_cobranca')]).then(function (rs) {
-      var r = rs[0]; cob = rs[1].error ? null : rs[1].data;
+    Promise.all([sb.rpc('painel_admin'), sb.rpc('painel_cobranca'), sb.rpc('painel_ativacao')]).then(function (rs) {
+      var r = rs[0]; cob = rs[1].error ? null : rs[1].data; ativ = rs[2].error ? null : rs[2].data;
       if (r.error) {
         $('msg').textContent = /acesso negado/.test(r.error.message) ? 'Esta conta não é de administrador.' : 'Erro: ' + r.error.message;
         $('conteudo').hidden = true; $('sair').hidden = false; return;
@@ -143,7 +156,20 @@
     $('k-taxa').textContent = d.orcamentos ? Math.round(100 * d.aprovados / d.orcamentos) + '%' : '—';
     $('k-taxa-s').textContent = inteiro.format(d.aprovados) + ' aprovados ou com pagamento';
     $('k-orcado').textContent = real.format(Number(d.valor_orcado)); $('k-recebido').textContent = real.format(Number(d.valor_recebido));
-    grafico(d.cadastros_dia); cidades(d.cidades); tabela(); cobranca();
+    grafico(d.cadastros_dia); cidades(d.cidades); tabela(); cobranca(); ativacao();
+  }
+  // Funil: abriu o app → viu o PDF do exemplo → gerou o próprio PDF. Conta anônima por aparelho.
+  function ativacao() {
+    var a = ativ, pct = function (n, de) { return de ? Math.round(100 * n / de) + '%' : '—'; };
+    $('at-aviso').hidden = !!a; $('at-kpis').hidden = !a;
+    if (!a) return;
+    $('a-abriu').textContent = inteiro.format(a.aparelhos);
+    $('a-exemplo').textContent = inteiro.format(a.viram_exemplo); $('a-exemplo-s').textContent = pct(a.viram_exemplo, a.aparelhos) + ' de quem abriu';
+    $('a-pdf').textContent = inteiro.format(a.geraram_pdf);
+    $('a-pdf-s').textContent = pct(a.geraram_pdf, a.aparelhos) + ' de quem abriu' + (a.minutos_ate_pdf != null ? ' · metade em até ' + String(a.minutos_ate_pdf).replace('.', ',') + ' min' : '');
+    $('a-pdfs').textContent = inteiro.format(a.pdfs); $('a-pdfs-s').textContent = inteiro.format(a.visitas_pdf) + ' visitas vindas do rodapé do PDF';
+    $('a-contas').textContent = inteiro.format(a.contas_ativadas) + ' de ' + inteiro.format(a.contas);
+    $('a-contas-s').textContent = 'com 1 orçamento ou mais' + (a.horas_ate_1o_orcamento != null ? ' · metade em até ' + String(a.horas_ate_1o_orcamento).replace('.', ',') + ' h' : '');
   }
   function cobranca() {
     $('cobranca').hidden = !cob;
