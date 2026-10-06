@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
+Disallow: /orcamento/
 Sitemap: https://matheuszampolli1.github.io/OS/sitemap.xml

@@ -481,6 +481,7 @@ def privacidade(base):
 <li><b>Seu perfil:</b> nome da empresa, telefone, chave Pix, logo e profissão, que você mesmo informa.</li>
 <li><b>Seu trabalho:</b> orçamentos, preços, clientes (nome, telefone, endereço), fotos e assinaturas que você coloca no app.</li>
 <li><b>Uso do app:</b> contagens anônimas de quando o app é aberto e de quando um PDF é gerado, ligadas a um número aleatório do aparelho. Não incluem nada do orçamento (cliente, itens ou valores) e servem só para sabermos se o app está ajudando.</li>
+<li><b>Link de aprovação:</b> quando você manda um orçamento com link, guardamos uma cópia do que o seu cliente vê (seus dados de contato, nome do cliente, serviços, valores e condições), quantas vezes o link foi aberto e a resposta dele (aprovou ou pediu alteração, com o nome e o comentário que ele escrever). Quem tem o link consegue ver o orçamento. A cópia é apagada quando você apaga o orçamento ou a conta.</li>
 </ul>
 <h2>Voz</h2>
 <p>O reconhecimento de voz é feito pelo próprio navegador do seu celular. No Google Chrome, o navegador envia o áudio ao serviço de voz do Google para transformar em texto. O {NOME} recebe só o texto, não grava nem guarda o áudio.</p>
@@ -732,7 +733,7 @@ def gerar():
         f.writelines(f'  <url><loc>{u}</loc></url>\n' for u in urls)
         f.write('</urlset>\n')
     with open(os.path.join(RAIZ, 'robots.txt'), 'w', encoding='utf-8') as f:
-        f.write(f'User-agent: *\nAllow: /\nDisallow: /admin/\nSitemap: {URL}sitemap.xml\n')
+        f.write(f'User-agent: *\nAllow: /\nDisallow: /admin/\nDisallow: /orcamento/\nSitemap: {URL}sitemap.xml\n')
     print('\n'.join(feitas))
 
 

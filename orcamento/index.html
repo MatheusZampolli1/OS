@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Orçamento</title>
+<meta name="description" content="Veja o orçamento e aprove pelo celular.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Página que o cliente do profissional abre pelo link do WhatsApp: o orçamento em papel, com dois botões no fim. */
+:root {
+  --bg: #eef0ee; --surface: #ffffff; --ink: #1d2428; --muted: #5d676c; --line: #d3d8d6;
+  --accent: #f2b400; --accent-ink: #1d2428; --go: #1f7a4d; --danger: #b3261e;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15191b; --surface: #1f2528; --ink: #eef1f0; --muted: #a3adb1; --line: #343c40;
+    --accent: #f5c02e; --accent-ink: #15191b; --go: #3fb57a; --danger: #ff8a80; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15191b; --surface: #1f2528; --ink: #eef1f0; --muted: #a3adb1; --line: #343c40;
+  --accent: #f5c02e; --accent-ink: #15191b; --go: #3fb57a; --danger: #ff8a80; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 17px/1.5 var(--font-body);
+  padding: max(16px, env(safe-area-inset-top, 0px)) 16px max(32px, env(safe-area-inset-bottom, 0px)); }
+main { max-width: 640px; margin: 0 auto; display: grid; gap: 16px; }
+.folha { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 16px; display: grid; gap: 16px; }
+.folha::before { content: ""; display: block; height: 6px; margin: -18px -16px 0; border-radius: 14px 14px 0 0;
+  background: repeating-linear-gradient(135deg, var(--accent) 0 7px, var(--ink) 7px 14px); }
+.prof { display: flex; gap: 12px; align-items: center; }
+.prof img { width: 56px; height: 56px; object-fit: contain; border-radius: 8px; background: #fff; flex: none; }
+.prof h1 { font: 700 1.6rem/1.1 var(--font-display); margin: 0; text-wrap: balance; }
+.prof p, .meta p { margin: 0; color: var(--muted); font-size: .92rem; }
+.meta { display: flex; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: 12px; }
+.meta b { color: var(--ink); }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+th { text-align: left; font: 600 .78rem var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 0 0 6px; border-bottom: 1px solid var(--line); }
+td { padding: 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td small { display: block; color: var(--muted); font-family: var(--font-data); font-size: .8rem; }
+th:last-child, td:last-child { text-align: right; padding-left: 12px; white-space: nowrap; }
+.totais { display: grid; gap: 4px; }
+.totais div { display: flex; justify-content: space-between; gap: 12px; }
+.totais .total { font: 700 1.5rem var(--font-display); border-top: 2px solid var(--ink); padding-top: 6px; margin-top: 4px; }
+.cond { display: grid; gap: 6px; font-size: .95rem; }
+.cond p { margin: 0; }
+.cond b { font-weight: 600; }
+.pix { display: grid; gap: 8px; border: 1px dashed var(--line); border-radius: 10px; padding: 12px; }
+.pix code { font: 500 .78rem/1.4 var(--font-data); word-break: break-all; color: var(--muted); }
+button, .botao { font: 600 1.05rem var(--font-body); border-radius: 12px; padding: 14px 16px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); cursor: pointer; text-align: center; text-decoration: none; display: block; width: 100%; }
+button:disabled { opacity: .6; cursor: default; }
+.aprovar { background: var(--go); border-color: var(--go); color: #fff; font-size: 1.15rem; }
+.acoes { display: grid; gap: 10px; }
+label { display: grid; gap: 4px; font-weight: 500; font-size: .95rem; }
+input, textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 12px; width: 100%; }
+.caixa { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
+.caixa h2 { font: 700 1.3rem var(--font-display); margin: 0; }
+.ok { border-color: var(--go); border-width: 2px; }
+.ok h2 { color: var(--go); }
+.msg { margin: 0; font-size: .92rem; color: var(--danger); min-height: 1.2em; }
+.dica { margin: 0; font-size: .9rem; color: var(--muted); }
+.dono { background: var(--accent); color: var(--accent-ink); border-radius: 10px; padding: 10px 12px; font-size: .92rem; margin: 0; }
+footer { text-align: center; font-size: .85rem; color: var(--muted); }
+footer a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <p id="carregando" class="dica">Carregando o orçamento…</p>
+  <div id="erro" class="caixa" hidden><h2>Não achamos este orçamento</h2><p class="dica" id="erro-txt">O link pode estar incompleto ou o orçamento foi apagado. Peça um link novo para quem mandou.</p></div>
+  <p id="dono" class="dono" hidden>Este orçamento é seu. Quando você abre, não conta como “cliente abriu”, e os botões de resposta ficam só para o cliente.</p>
+
+  <article id="folha" class="folha" hidden>
+    <div class="prof"><img id="logo" alt="" hidden><div><h1 id="p-nome"></h1><p id="p-info"></p></div></div>
+    <div class="meta">
+      <p>Orçamento <b class="num" id="o-num"></b> · <span id="o-data"></span></p>
+      <p id="o-cliente"></p>
+      <p id="o-validade"></p>
+    </div>
+    <table><thead><tr><th>Serviço</th><th>Valor</th></tr></thead><tbody id="itens"></tbody></table>
+    <div class="totais">
+      <div id="l-sub"><span>Subtotal</span><span class="num" id="o-sub"></span></div>
+      <div id="l-desc"><span>Desconto</span><span class="num" id="o-desc"></span></div>
+      <div class="total"><span>Total</span><span class="num" id="o-total"></span></div>
+      <div id="l-sinal"><span id="o-sinal-txt"></span><span class="num" id="o-sinal"></span></div>
+    </div>
+    <div class="cond" id="cond"></div>
+    <div class="pix" id="pix" hidden><b>Pix copia e cola<span id="pix-txt"></span></b><code id="pix-cod"></code><button id="pix-copiar" type="button">Copiar código Pix</button></div>
+  </article>
+
+  <section id="responder" class="caixa" hidden>
+    <h2>O que achou?</h2>
+    <label for="nome">Seu nome<input id="nome" autocomplete="name"></label>
+    <div class="acoes">
+      <button id="aprovar" class="aprovar" type="button">Aprovar orçamento</button>
+      <button id="mudar" type="button">Pedir alteração</button>
+    </div>
+    <div id="mudar-box" hidden class="acoes">
+      <label for="obs">O que você quer mudar?<textarea id="obs" rows="3" maxlength="1000" placeholder="Ex.: dá para fazer sem o rodapé? Posso pagar em 2 vezes?"></textarea></label>
+      <button id="mudar-enviar" type="button">Mandar pedido</button>
+    </div>
+    <p id="msg" class="msg" role="status"></p>
+    <p class="dica">Ao aprovar, você concorda com os serviços, valores e condições acima. O profissional é avisado no aplicativo dele.</p>
+  </section>
+
+  <section id="respondido" class="caixa" hidden><h2 id="r-tit"></h2><p class="dica" id="r-txt"></p></section>
+
+  <a id="falar" class="botao" hidden target="_blank" rel="noopener">Falar com o profissional no WhatsApp</a>
+
+  <footer>Orçamento feito com Tá Orçado · <a href="../criar-conta.html?ref=link">faça o seu grátis</a></footer>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script>
+(function () {
+  var SB_URL = 'https://xzumkgmzmjmlxeigicbt.supabase.co';
+  var SB_KEY = 'sb_publishable_5-o29KR-a2F3ZMU7SpWKlw_eTc6X7TM'; // chave pública, feita para ficar no site
+  function $(id) { return document.getElementById(id); }
+  function dinheiro(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+  function qtd(v) { return Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 }); }
+  function quando(iso) { var t = new Date(iso); return t.toLocaleDateString('pt-BR') + ' às ' + t.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
+  function erro(t) { $('carregando').hidden = true; if (t) $('erro-txt').textContent = t; $('erro').hidden = false; }
+
+  var token = (new URLSearchParams(location.search).get('c') || '').toLowerCase();
+  if (!/^[0-9a-f]{32}$/.test(token)) return erro();
+  if (!window.supabase || !window.supabase.createClient) return erro('Não deu para carregar. Confira a internet e abra o link de novo.');
+  var sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: false, detectSessionInUrl: false } });
+  var d = null, dono = false;
+  try { $('nome').value = localStorage.getItem('orc-cliente-nome') || ''; } catch (e) {}
+
+  // Espera a sessão do próprio aparelho: se for o dono abrindo, a abertura não conta.
+  sb.auth.getSession().then(function () { return sb.rpc('ver_orcamento', { p_token: token }); }).then(function (r) {
+    if (r.error) throw r.error;
+    if (!r.data) return erro();
+    d = r.data.dados; dono = !!r.data.dono;
+    desenhar(); mostrarResposta(r.data);
+  }).catch(function () { erro('Não deu para carregar agora. Confira a internet e abra o link de novo.'); });
+
+  function desenhar() {
+    $('carregando').hidden = true; $('folha').hidden = false; $('dono').hidden = !dono;
+    var p = d.prof || {};
+    document.title = 'Orçamento nº ' + d.numero + (p.nome ? ' · ' + p.nome : '');
+    $('p-nome').textContent = p.nome || 'Orçamento';
+    $('p-info').textContent = [p.sobre, p.cidade, p.doc].filter(Boolean).join(' · ');
+    if (p.logo && /^data:image\//.test(p.logo)) { $('logo').src = p.logo; $('logo').hidden = false; }
+    $('o-num').textContent = 'nº ' + d.numero; $('o-data').textContent = d.data || '';
+    $('o-cliente').textContent = d.cliente && d.cliente.nome ? 'Para ' + d.cliente.nome : '';
+    $('o-validade').textContent = d.validade ? 'Válido por ' + d.validade + ' dias' : '';
+    var tb = $('itens');
+    (d.itens || []).forEach(function (i) {
+      var tr = document.createElement('tr'), a = document.createElement('td'), b = document.createElement('td');
+      a.textContent = i.descricao;
+      var sm = document.createElement('small'); sm.textContent = qtd(i.qtd) + ' ' + (i.un || '') + ' × ' + dinheiro(i.valorUnit); a.appendChild(sm);
+      b.className = 'num'; b.textContent = dinheiro(i.qtd * i.valorUnit);
+      tr.appendChild(a); tr.appendChild(b); tb.appendChild(tr);
+    });
+    $('l-sub').hidden = $('l-desc').hidden = !d.desconto;
+    $('o-sub').textContent = dinheiro(d.subtotal); $('o-desc').textContent = '− ' + dinheiro(d.desconto);
+    $('o-total').textContent = dinheiro(d.total);
+    $('l-sinal').hidden = !d.sinal;
+    $('o-sinal-txt').textContent = 'Sinal de ' + d.entrada + '% para começar'; $('o-sinal').textContent = dinheiro(d.sinal);
+    var c = $('cond');
+    [['Prazo', d.prazo], ['Garantia', d.garantia], ['Observações', d.obs]].forEach(function (x) {
+      if (!x[1]) return; var pp = document.createElement('p'), b = document.createElement('b'); b.textContent = x[0] + ': ';
+      pp.appendChild(b); pp.appendChild(document.createTextNode(x[1])); c.appendChild(pp);
+    });
+    c.hidden = !c.children.length;
+    if (d.pix) { $('pix').hidden = false; $('pix-cod').textContent = d.pix; $('pix-txt').textContent = d.sinal ? ' do sinal (' + dinheiro(d.sinal) + ')' : ' (' + dinheiro(d.total) + ')'; }
+    var tel = String(p.tel || '').replace(/\D/g, '');
+    if (tel) { if (tel.length <= 11) tel = '55' + tel; $('falar').href = 'https://wa.me/' + tel + '?text=' + encodeURIComponent('Olá! Vi o orçamento nº ' + d.numero + '.'); $('falar').hidden = false; }
+  }
+  function mostrarResposta(r) {
+    if (r.resposta === 'aprovado') {
+      $('responder').hidden = true; $('respondido').hidden = false; $('respondido').classList.add('ok');
+      $('r-tit').textContent = 'Orçamento aprovado';
+      $('r-txt').textContent = 'Aprovado' + (r.resposta_nome ? ' por ' + r.resposta_nome : '') + ' em ' + quando(r.respondido_em) + '. ' + ((d.prof && d.prof.nome) || 'O profissional') + ' vê a aprovação no aplicativo.';
+      return;
+    }
+    if (r.resposta === 'alteracao') {
+      $('respondido').hidden = false;
+      $('r-tit').textContent = 'Pedido de alteração enviado';
+      $('r-txt').textContent = '“' + r.resposta_obs + '” · ' + quando(r.respondido_em) + '. Quando o orçamento for ajustado, ele aparece aqui mesmo para você aprovar.';
+    }
+    $('responder').hidden = dono || r.resposta === 'alteracao';
+  }
+  function responder(tipo, obs) {
+    var nome = $('nome').value.trim();
+    if (tipo === 'aprovado' && !nome) { $('msg').textContent = 'Escreva seu nome para aprovar.'; $('nome').focus(); return; }
+    try { if (nome) localStorage.setItem('orc-cliente-nome', nome); } catch (e) {}
+    var bs = document.querySelectorAll('#responder button'); bs.forEach(function (b) { b.disabled = true; });
+    $('msg').textContent = 'Mandando…';
+    sb.rpc('responder_orcamento', { p_token: token, p_resposta: tipo, p_nome: nome, p_obs: obs || null }).then(function (r) {
+      if (r.error) throw r.error;
+      $('msg').textContent = '';
+      mostrarResposta({ resposta: tipo, respondido_em: r.data.respondido_em, resposta_nome: nome, resposta_obs: obs });
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }).catch(function (e) {
+      var m = String((e && e.message) || '');
+      $('msg').textContent = /já aprovado/.test(m) ? 'Este orçamento já foi aprovado.' : /Failed to fetch|network/i.test(m) ? 'Sem conexão. Confira a internet e tente de novo.' : 'Não deu para mandar agora. Tente de novo.';
+    }).then(function () { bs.forEach(function (b) { b.disabled = false; }); });
+  }
+  var armado = false;
+  $('aprovar').addEventListener('click', function () {
+    if (!$('nome').value.trim()) { $('msg').textContent = 'Escreva seu nome para aprovar.'; $('nome').focus(); return; }
+    if (!armado) { armado = true; $('aprovar').textContent = 'Toque de novo para confirmar (' + dinheiro(d.total) + ')'; setTimeout(function () { armado = false; $('aprovar').textContent = 'Aprovar orçamento'; }, 6000); return; }
+    responder('aprovado');
+  });
+  $('mudar').addEventListener('click', function () { $('mudar-box').hidden = false; $('obs').focus(); });
+  $('mudar-enviar').addEventListener('click', function () {
+    var obs = $('obs').value.trim(); if (!obs) { $('msg').textContent = 'Escreva o que você quer mudar.'; $('obs').focus(); return; }
+    responder('alteracao', obs);
+  });
+  $('pix-copiar').addEventListener('click', function () {
+    var t = $('pix-cod').textContent;
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { $('pix-copiar').textContent = 'Código copiado'; }, function () {
+      var r = document.createRange(); r.selectNodeContents($('pix-cod')); var s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      $('pix-copiar').textContent = 'Código selecionado: copie pelo menu';
+    });
+  });
+})();
+</script>
+</body>
+</html>

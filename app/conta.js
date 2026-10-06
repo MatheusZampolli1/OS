@@ -141,6 +141,7 @@
     mostrarNuvem('Sincronizando…');
     rodando = receber().then(enviar).then(function () {
       mostrarNuvem('✓ Salvo na nuvem às ' + new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }));
+      return links().catch(function () {});
     }).catch(function (e) {
       mostrarNuvem('Não deu para salvar na nuvem agora (' + traduzir(e) + '). Está salvo no celular; tento de novo depois.');
     }).then(function () {
@@ -193,6 +194,7 @@
     var logado = !!usuario;
     el('conta-fora').hidden = logado; el('conta-dentro').hidden = !logado;
     if (logado) el('conta-quem').textContent = usuario.email || '';
+    var dl = el('dica-link'); if (dl) dl.hidden = logado;
     var d = el('onde-fica'); if (d) d.textContent = logado ? 'Fica salvo no celular e na sua conta.' : 'Fica salvo só neste celular. Crie uma conta para guardar na nuvem.';
   }
   function entrou(u) {
@@ -456,4 +458,68 @@
     var esperar = setInterval(function () { if (usuario && acesso) { clearInterval(esperar); if (acesso.cobranca_ligada || acesso.motivo === 'admin') abrirPlanos(); } }, 300);
     setTimeout(function () { clearInterval(esperar); }, 10000);
   }
+
+  // ---------- aprovação por link (ver supabase/aprovacao.sql) ----------
+  // O token nasce no aparelho, então o link entra na mensagem do WhatsApp na hora, mesmo sem internet;
+  // a cópia do orçamento sobe logo em seguida (ou na próxima sincronização).
+  // Até o banco confirmar que a tabela existe, a mensagem continua com "responda OK".
+  var linksOk = false, CHAVE_PUB = 'orc-links-pub';
+  function novoToken() {
+    var b = new Uint8Array(16); crypto.getRandomValues(b);
+    return Array.prototype.map.call(b, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+  }
+  function urlLink(t) { return new URL('../orcamento/?c=' + t, location.href).href; }
+  function publicar(d) {
+    var foto = fotoParaCliente(d), h = hash(JSON.stringify(foto)), pub = lerObj(CHAVE_PUB);
+    if (pub[d.id] === h) return Promise.resolve();
+    return sb.rpc('publicar_orcamento', { p_token: d.link, p_doc_id: d.id, p_dados: foto }).then(function (r) {
+      if (r.error) throw r.error;
+      var p2 = lerObj(CHAVE_PUB); p2[d.id] = h; guardarTexto(CHAVE_PUB, JSON.stringify(p2));
+      if (r.data && r.data !== d.link) { d.link = r.data; guardarJSON('orc-docs', docs); }
+    });
+  }
+  function lerObj(k) { try { return JSON.parse(ler(k) || '{}') || {}; } catch (e) { return {}; } }
+  window.linkAprovacao = function (d) {
+    if (!usuario || !sb || !linksOk || bloqueado || !d || !d.id) return '';
+    if (!d.link) { d.link = novoToken(); guardarJSON('orc-docs', docs); }
+    publicar(d).catch(function () {});
+    return urlLink(d.link);
+  };
+  function links() {
+    if (!usuario) return Promise.resolve();
+    var pendentes = docs.filter(function (d) { return d.link && d.id; });
+    return pendentes.reduce(function (p, d) { return p.then(function () { return publicar(d).catch(function () {}); }); }, Promise.resolve())
+      .then(function () { return sb.from('links_orcamento').select('doc_id,token,aberturas,aberto_em,ultimo_aberto,resposta,respondido_em,resposta_nome,resposta_obs'); })
+      .then(function (r) {
+        if (r.error) throw r.error;
+        linksOk = true;
+        var mudou = false, novidades = [], recente = Date.now() - 2 * 864e5;
+        r.data.forEach(function (x) {
+          var d = docs.filter(function (k) { return k.id === x.doc_id; })[0]; if (!d) return;
+          var quem = d.cliente.nome ? d.cliente.nome.split(' ')[0] : 'O cliente';
+          var visto = x.aberturas ? { vezes: x.aberturas, primeiro: x.aberto_em, ultimo: x.ultimo_aberto } : null;
+          var resp = x.resposta ? { tipo: x.resposta, em: x.respondido_em, nome: x.resposta_nome || '', obs: x.resposta_obs || '' } : null;
+          var antesV = d.vistoLink || null, antesR = d.respostaLink || null;
+          if (JSON.stringify(visto) !== JSON.stringify(antesV)) {
+            if (visto && (!antesV || visto.vezes > antesV.vezes) && Date.parse(visto.ultimo) > recente && !resp)
+              novidades.push('👀 ' + quem + ' abriu o orçamento nº ' + d.numero + '.');
+            d.vistoLink = visto; mudou = true;
+          }
+          if (JSON.stringify(resp) !== JSON.stringify(antesR)) {
+            if (resp && Date.parse(resp.em) > recente)
+              novidades.unshift(resp.tipo === 'aprovado' ? '✅ ' + quem + ' aprovou o orçamento nº ' + d.numero + ' pelo link!' : '✏️ ' + quem + ' pediu alteração no orçamento nº ' + d.numero + '.');
+            d.respostaLink = resp; mudou = true;
+          }
+          if (resp && resp.tipo === 'aprovado' && situacao(d) === 'enviado') { d.status = 'aprovado'; mudou = true; }
+          if (x.token !== d.link) { d.link = x.token; mudou = true; }
+        });
+        if (mudou) { guardarJSON('orc-docs', docs); desenharOrcs(); }
+        if (novidades.length) mostrarNovidade(novidades[0] + (novidades.length > 1 ? ' (e mais ' + (novidades.length - 1) + ')' : ''));
+      });
+  }
+  // Com o app aberto, olha a cada minuto se algum cliente abriu ou respondeu.
+  setInterval(function () {
+    if (document.visibilityState !== 'visible' || !usuario || !linksOk || rodando) return;
+    if (docs.some(function (d) { return d.link && situacao(d) === 'enviado'; })) links().catch(function () {});
+  }, 60000);
 })();

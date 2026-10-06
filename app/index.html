@@ -137,6 +137,11 @@ footer { color: var(--muted); font-size: .85rem; text-align: center; padding-blo
 .aba-num { position: absolute; top: 4px; right: calc(50% - 22px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: var(--danger); color: #fff; font: 600 .72rem/18px var(--font-body); text-align: center; }
 nav.abas button { position: relative; }
 .hist-item.atrasado { border-color: var(--accent); border-width: 2px; }
+.hist-link { margin: 0; font-size: .88rem; color: var(--muted); }
+.hist-link.novo { color: var(--go); font-weight: 600; }
+#novidade { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 40; max-width: 520px; margin: 0 auto; display: flex; gap: 10px; align-items: center; justify-content: space-between; background: var(--ink); color: var(--bg); border-radius: 12px; padding: 12px 14px; box-shadow: 0 6px 24px rgba(0,0,0,.25); }
+#novidade p { margin: 0; font-size: .95rem; }
+#novidade button { flex: none; background: transparent; color: var(--bg); border: 1px solid var(--bg); padding: 6px 10px; }
 .boas-vindas h2 { margin: 0; }
 #tela-novo.bloqueado > section:not(#bloqueio) { display: none; }
 .bloqueio h2 { margin: 0; }
@@ -329,6 +334,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
           <button id="pdf" class="primario" type="button">Baixar PDF</button>
           <button id="zap" class="zap" type="button">Mandar no WhatsApp</button>
         </div>
+        <p id="dica-link" class="dica" hidden>Com a conta grátis, vai junto um link para o cliente aprovar no celular, e o app avisa quando ele abrir. <a href="../criar-conta.html">Criar conta</a></p>
         <button id="novo" type="button">Começar outro orçamento</button>
         <p id="status" class="status" role="status"></p>
       </div>
@@ -545,6 +551,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   </div>
 </div>
 
+<div id="novidade" role="status" hidden><p id="novidade-txt"></p><button id="novidade-ver" type="button">Ver</button></div>
 <div id="modal-material" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-material">
   <div class="modal-caixa">
     <h2 id="t-material">Lista de material</h2>
@@ -1384,7 +1391,9 @@ function textoOrcamento(d) {
   if (descontoDe(d)) l.push('Desconto: − ' + dinheiro(descontoDe(d)));
   l.push('*Total: ' + dinheiro(totalDe(d)) + '*');
   if (d.entrada > 0 && d.entrada < 100) l.push('Sinal de ' + d.entrada + '% para começar: ' + dinheiro(sinalDe(d)));
-  if (!d.assinatura) l.push('', 'Para aprovar, é só responder *OK* aqui.');
+  var link = !d.assinatura && window.linkAprovacao ? window.linkAprovacao(d) : '';
+  if (link) l.push('', 'Veja o orçamento completo e aprove por aqui:', link);
+  else if (!d.assinatura) l.push('', 'Para aprovar, é só responder *OK* aqui.');
   var cod = codigoPix(sinalDe(d), 'ORC' + d.numero); if (cod) l.push('', 'Pix copia e cola:', cod);
   if (perfil.nome) l.push('', perfil.nome);
   return l.join('\n');
@@ -1455,6 +1464,8 @@ function desenharOrcs() {
     el.querySelector('small').textContent = 'Nº ' + d.numero + ' · ' + d.data + (pagoDe(d) > 0 && s !== 'pago' ? ' · falta ' + dinheiro(restanteDe(d)) : '');
     var cobrar = precisaCobrar(d);
     if (cobrar) { el.classList.add('atrasado'); el.querySelector('small').textContent += ' · sem resposta há ' + diasEsperando(d) + ' dias'; }
+    var lk = textoLink(d);
+    if (lk) { var pl = document.createElement('p'); pl.className = 'hist-link' + (lk.novo ? ' novo' : ''); pl.textContent = lk.t; el.insertBefore(pl, el.querySelector('.hist-acoes')); }
     var ac = el.querySelector('.hist-acoes');
     function botao(t, fn, cls) { var b = document.createElement('button'); b.type = 'button'; b.textContent = t; if (cls) b.className = cls; b.addEventListener('click', fn); ac.appendChild(b); }
     botao('Abrir', function () { abrirDoc(d); });
@@ -1639,6 +1650,38 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 atual = docVazio();
 montar();
 tudo();
+
+// ---------- aprovação por link (ver supabase/aprovacao.sql e conta.js) ----------
+// Cópia só do que o cliente vê na página do link: nada de pagamentos, anotações ou fotos.
+function fotoParaCliente(d) {
+  var prof = { nome: perfil.nome || '', tel: perfil.tel || '', cidade: perfil.cidade || '', doc: perfil.doc || '', sobre: perfil.sobre || '' };
+  if (perfil.logo && perfil.logo.length < 250000) prof.logo = perfil.logo;
+  return { v: 1, numero: d.numero, data: d.data, validade: Number(d.validade) || 0, cliente: { nome: d.cliente.nome || '' },
+    itens: d.itens.map(function (i) { return { descricao: i.descricao || 'Serviço', qtd: Number(i.qtd) || 0, un: i.un || '', valorUnit: Number(i.valorUnit) || 0 }; }),
+    subtotal: subtotalDe(d), desconto: descontoDe(d), total: totalDe(d), entrada: Number(d.entrada) || 0, sinal: d.entrada > 0 && d.entrada < 100 ? sinalDe(d) : 0,
+    prazo: d.prazo || '', garantia: d.garantia || '', obs: d.obs || '', pix: codigoPix(sinalDe(d), 'ORC' + d.numero), prof: prof };
+}
+function quandoTexto(iso) {
+  var t = new Date(iso), hoje = new Date(), ontem = new Date(Date.now() - 864e5);
+  var h = t.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  if (t.toDateString() === hoje.toDateString()) return 'hoje às ' + h;
+  if (t.toDateString() === ontem.toDateString()) return 'ontem às ' + h;
+  return t.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' às ' + h;
+}
+function textoLink(d) {
+  var r = d.respostaLink, v = d.vistoLink;
+  if (r && r.tipo === 'aprovado') return { t: '✅ Aprovado pelo link' + (r.nome ? ' por ' + r.nome : '') + ' ' + quandoTexto(r.em), novo: true };
+  if (r && r.tipo === 'alteracao') return { t: '✏️ Pediu alteração ' + quandoTexto(r.em) + ': “' + r.obs + '”. Ajuste e mande de novo.', novo: true };
+  if (v && v.vezes) return { t: '👀 Cliente abriu o link' + (v.vezes > 1 ? ' ' + v.vezes + ' vezes' : '') + ' · última ' + quandoTexto(v.ultimo), novo: false };
+  if (d.link && situacao(d) === 'enviado') return { t: 'Link de aprovação enviado. O cliente ainda não abriu.', novo: false };
+  return null;
+}
+var novidadeTimer;
+function mostrarNovidade(t) {
+  $('novidade-txt').textContent = t; $('novidade').hidden = false;
+  clearTimeout(novidadeTimer); novidadeTimer = setTimeout(function () { $('novidade').hidden = true; }, 12000);
+}
+$('novidade-ver').addEventListener('click', function () { $('novidade').hidden = true; irPara('orcs'); });
 
 // ---------- lista de material ----------
 // Mesmas contas das calculadoras do site: litros = área × demãos ÷ rendimento; caixas = área × (1 + perda) ÷ m² por caixa.
