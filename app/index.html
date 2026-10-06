@@ -656,6 +656,30 @@ function normalizarNumeros(t) {
   return t;
 }
 
+// Falando sem pausa ("pintura da sala 600 troca do chuveiro 120"), o reconhecedor não põe vírgula.
+// Um número depois do nome de um serviço, seguido de outra palavra que não é unidade nem "cada", fecha o item.
+var ANTES_FRACO = /^(de|do|da|dos|das|com|sem|e|ou|uns|umas|cerca|tipo|até|r\$|mais|menos|nº|n°|número|numero)$/;
+var DEPOIS_CONTINUA = /^(m|m²|m2|ml|cm|mm|metros?|quadrados?|lineares?|pontos?|horas?|h|dias?|di[áa]rias?|sacos?|latas?|gal[õo]es?|litros?|l|kg|quilos?|caixas?|rolos?|unidades?|un|pe[çc]as?|demãos?|dem[ãa]os?|vezes|camadas?|por|x|cada|de|do|da|e|ou|o|a|%|centavos?|mil|reais|real|conto|contos|pila|pilas|pau|paus|lâmpadas?|tomadas?|torneiras?|interruptores?|disjuntores?|janelas?|portas?|vasos?|chuveiros?|ventiladores?|luminárias?|spots?|quartos?|banheiros?|c[ôo]modos?|andares?|paredes?|vãos?|fios?|para|pra|no|na|em|até)$/;
+function separarServicos(t) {
+  var w = t.split(' '), saida = [];
+  for (var i = 0; i < w.length; i++) {
+    saida.push(w[i]);
+    if (!/^\d+(?:\.\d+)?$/.test(w[i])) continue;
+    var ant = w[i - 1] === 'r$' ? w[i - 2] : w[i - 1];
+    if (w[i - 1] === 'r$' && !w[i - 2]) continue;
+    if (!ant || !/^[a-zà-ú]+$/.test(ant) || ANTES_FRACO.test(ant)) continue;
+    var j = i + 1;
+    if (w[j] && new RegExp('^(' + MOEDA + ')$').test(w[j])) saida.push(w[j++]);
+    var resto = w.slice(j).join(' '), mu = resto.match(POR_UNIDADE);
+    if (mu && mu.index === 0) { var n = mu[0].split(' ').length; for (var k = 0; k < n; k++) saida.push(w[j++]); }
+    var prox = w[j];
+    if (!prox || prox === ',' || DEPOIS_CONTINUA.test(prox)) { i = j - 1; continue; }
+    if (/^[a-zà-ú]+$/.test(prox) || /^\d/.test(prox)) saida.push(',');
+    i = j - 1;
+  }
+  return saida.join(' ');
+}
+
 function capitalizar(s) {
   s = s.trim();
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -685,7 +709,8 @@ function lerFala(texto) {
   t = t.replace(/(\d+) e (?:meio|meia)(?![a-zà-ú])/g, '$1.5');
   t = t.replace(/(\d+)\s*(?:reais|real)\s+e\s+(\d{1,2})\s*centavos?/g, function (m, a, b) { return a + '.' + (b.length === 1 ? '0' + b : b) + ' reais'; });
   // "... a 80 e instalação de chuveiro ...": um "e" logo depois de um valor separa dois itens
-  t = t.replace(new RegExp('(\\d(?:\\s*(?:' + MOEDA + '))?)\\s+e\\s+(?=[a-zà-ú])(?!meio\\b)', 'g'), '$1 , ');
+  t = t.replace(new RegExp('(\\d(?:\\s*(?:' + MOEDA + '))?)\\s+e\\s+(?=[a-zà-ú\\d])(?!meio\\b)', 'g'), '$1 , ');
+  t = separarServicos(t);
   var partes = t.split(/[,;:\n]|\.(?!\d)| e depois | depois | mais | também | tambem | outro item | próximo item | proximo item /);
   var itens = [];
   var comodo = null; // medidas faladas ("quarto 3 por 4, pé-direito 2,70") valem para os itens seguintes
