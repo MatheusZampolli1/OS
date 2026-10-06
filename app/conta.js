@@ -157,53 +157,9 @@
     return m && m !== '{}' && m !== '[object Object]' ? m : 'erro inesperado, tente de novo';
   }
   function mostrarNuvem(t) { var n = el('nuvem'); if (n) n.textContent = t; }
-  function msg(t, erro) { var m = el('conta-msg'); m.textContent = t; m.className = erro ? 'aviso' : 'status'; m.hidden = !t; }
-
-  var modo = 'entrar';
-  function abrir(m) {
-    modo = m; msg('');
-    el('t-conta').textContent = m === 'criar' ? 'Criar conta grátis' : m === 'nova-senha' ? 'Escolha uma senha nova' : 'Entrar';
-    el('conta-email-l').hidden = m === 'nova-senha';
-    el('conta-ok').textContent = m === 'criar' ? 'Criar conta' : m === 'nova-senha' ? 'Salvar senha' : 'Entrar';
-    el('conta-senha').autocomplete = m === 'entrar' ? 'current-password' : 'new-password';
-    el('conta-esqueci').hidden = m !== 'entrar';
-    el('conta-troca').hidden = m === 'nova-senha';
-    el('conta-troca').textContent = m === 'criar' ? 'Já tenho conta: entrar' : 'Não tenho conta: criar grátis';
-    el('conta-dica').hidden = m !== 'criar';
-    el('modal-conta').hidden = false;
-    (m === 'nova-senha' ? el('conta-senha') : el('conta-email')).focus();
-  }
-  function fechar() { el('modal-conta').hidden = true; }
-  function urlVolta() { return location.origin + location.pathname; }
-
-  function enviarForm(ev) {
-    ev.preventDefault();
-    if (!sb) { msg('Não deu para falar com o servidor. Confira a internet e recarregue a página.', true); return; }
-    var email = el('conta-email').value.trim(), senha = el('conta-senha').value;
-    if (modo !== 'nova-senha' && !email) { msg('Digite seu e-mail.', true); return; }
-    if (senha.length < 6) { msg('A senha precisa ter pelo menos 6 caracteres.', true); return; }
-    var b = el('conta-ok'); b.disabled = true; msg('Um momento…');
-    var p = modo === 'criar' ? sb.auth.signUp({ email: email, password: senha, options: { emailRedirectTo: urlVolta() } })
-      : modo === 'nova-senha' ? sb.auth.updateUser({ password: senha })
-      : sb.auth.signInWithPassword({ email: email, password: senha });
-    p.then(function (r) {
-      if (r.error) throw r.error;
-      if (modo === 'criar' && !r.data.session) {
-        msg('Pronto! Mandamos um link para ' + email + '. Toque no link do e-mail para ativar a conta e depois entre aqui com seu e-mail e senha.');
-        return;
-      }
-      if (modo === 'nova-senha') { msg('Senha trocada.'); setTimeout(fechar, 900); return; }
-      fechar();
-    }).catch(function (e) { msg(traduzir(e), true); }).then(function () { b.disabled = false; });
-  }
-  function esqueci() {
-    var email = el('conta-email').value.trim();
-    if (!email) { msg('Digite seu e-mail acima e toque de novo em “Esqueci a senha”.', true); return; }
-    sb.auth.resetPasswordForEmail(email, { redirectTo: urlVolta() }).then(function (r) {
-      if (r.error) throw r.error;
-      msg('Se esse e-mail tiver conta, chega um link para trocar a senha.');
-    }).catch(function (e) { msg(traduzir(e), true); });
-  }
+  // Entrar e criar conta ficam em páginas próprias do site; a sessão é a mesma (mesmo domínio).
+  var PAGINA = { criar: '../criar-conta.html', entrar: '../entrar.html', 'nova-senha': '../nova-senha.html' };
+  function abrir(m) { location.href = PAGINA[m] || PAGINA.entrar; }
 
   function mostrarConta() {
     var logado = !!usuario;
@@ -221,12 +177,6 @@
 
   var apagarArmado = false;
   function ligarTela() {
-    el('conta-form').addEventListener('submit', enviarForm);
-    el('conta-fechar').addEventListener('click', fechar);
-    el('conta-esqueci').addEventListener('click', esqueci);
-    el('conta-troca').addEventListener('click', function () { abrir(modo === 'criar' ? 'entrar' : 'criar'); });
-    el('conta-criar').addEventListener('click', function () { abrir('criar'); });
-    el('conta-entrar').addEventListener('click', function () { abrir('entrar'); });
     el('conta-sync').addEventListener('click', function () { sincronizar(); });
     el('conta-sair').addEventListener('click', function () {
       var b = el('conta-sair'); b.disabled = true;
@@ -253,14 +203,15 @@
   }
   function pelaUrl() {
     var h = location.hash.replace('#', '');
-    if (h === 'criar' || h === 'entrar') { abrir(h); history.replaceState(null, '', location.pathname); }
+    if (h === 'criar' || h === 'entrar') { history.replaceState(null, '', location.pathname); location.replace(PAGINA[h]); }
   }
 
   ligarTela(); mostrarConta();
   if (!window.supabase || !window.supabase.createClient) { mostrarNuvem('Sem conexão com o servidor de contas agora.'); return; }
   sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'implicit' } });
   sb.auth.onAuthStateChange(function (ev, sessao) {
-    if (ev === 'PASSWORD_RECOVERY') { setTimeout(function () { abrir('nova-senha'); }, 0); }
+    // link de "esqueci a senha": a sessão já foi gravada; a troca acontece na página própria
+    if (ev === 'PASSWORD_RECOVERY') { location.replace(PAGINA['nova-senha']); return; }
     var u = sessao && sessao.user;
     if (u && (!usuario || usuario.id !== u.id)) setTimeout(function () { entrou(u); }, 0);
     if (!u && usuario) setTimeout(saiu, 0);
@@ -301,6 +252,20 @@
     el('tela-novo').classList.toggle('bloqueado', !!sim); el('bloqueio').hidden = !sim;
     if (sim) { el('bloqueio-tit').textContent = tit; el('bloqueio-txt').textContent = txt; el('bloqueio-btn').textContent = botao; }
   }
+  // Aviso fixo no topo da tela Novo: dias de teste que faltam ou pagamento atrasado.
+  function faixa(a) {
+    var f = el('faixa-plano'), t = '';
+    if (a && a.liberado && a.motivo === 'teste' && a.teste_ate) {
+      var dias = Math.max(0, Math.ceil((new Date(a.teste_ate) - Date.now()) / 864e5));
+      t = dias <= 1 ? 'Seu teste grátis acaba hoje.' : 'Teste grátis: faltam ' + dias + ' dias.';
+      el('faixa-plano-btn').textContent = 'Ver planos';
+    } else if (a && a.liberado && a.motivo === 'tolerancia') {
+      t = 'Pagamento atrasado. Pague para não ser bloqueado.';
+      el('faixa-plano-btn').textContent = 'Pagar';
+    }
+    f.hidden = !t; f.classList.toggle('atrasado', !!a && a.motivo === 'tolerancia');
+    el('faixa-plano-txt').textContent = t;
+  }
   function aplicarAcesso() {
     var ligada = config && config.ligada_em;
     if (!usuario) {
@@ -308,13 +273,15 @@
       var passou = ligada && docs.length >= lim;
       bloquear(passou, 'Crie sua conta para continuar', 'Sem conta dá para fazer ' + lim + ' orçamentos. Com a conta você ganha ' + ((config && config.dias_teste) || 14) + ' dias grátis com tudo liberado e seus dados ficam guardados na nuvem.', 'Criar conta grátis');
       el('bloqueio-btn').onclick = function () { abrir('criar'); };
+      faixa(null);
       return;
     }
-    if (!acesso || !acesso.cobranca_ligada) { bloquear(false); return; }
+    if (!acesso || !acesso.cobranca_ligada) { bloquear(false); faixa(null); return; }
     var vencido = acesso.motivo === 'vencido';
     bloquear(!acesso.liberado, vencido ? 'Sua assinatura venceu' : 'Seu teste grátis acabou',
       'Para voltar a criar e enviar orçamentos, recibos e relatórios, assine a partir de ' + real(acesso.preco_mensal) + ' por mês.', vencido ? 'Pagar agora' : 'Assinar');
-    el('bloqueio-btn').onclick = function () { irPara('perfil'); el('plano-sec').scrollIntoView({ behavior: 'smooth' }); };
+    el('bloqueio-btn').onclick = abrirPlanos;
+    faixa(acesso);
   }
   function desenharPlano(a, faturas) {
     var mostrar = a && (a.cobranca_ligada || a.motivo === 'admin');
@@ -328,13 +295,8 @@
     else if (a.motivo === 'vencido') { s = 'Assinatura vencida'; d = 'Pague a fatura em aberto ou assine de novo para voltar a fazer orçamentos.'; }
     else { s = 'Teste grátis acabou'; d = 'Assine para continuar fazendo orçamentos.'; }
     el('plano-situacao').textContent = s; el('plano-detalhe').textContent = d;
-    el('plano-mensal').textContent = 'Mensal · ' + real(a.preco_mensal);
-    el('plano-trimestral').textContent = 'Trimestral · ' + real(a.preco_trimestral || 79.9);
-    el('plano-anual').textContent = 'Anual · ' + real(a.preco_anual) + ' (2 meses grátis)';
     var renovando = a.motivo === 'pago' && a.status !== 'cancelada';
-    el('plano-botoes').hidden = renovando && a.plano === 'anual';
-    el('plano-mensal').hidden = renovando && a.plano === 'mensal';
-    el('plano-trimestral').hidden = renovando && a.plano === 'trimestral';
+    el('plano-ver').textContent = renovando ? 'Trocar de plano' : a.motivo === 'vencido' || a.motivo === 'tolerancia' ? 'Ver planos e pagar' : 'Ver os planos';
     el('plano-cancelar').hidden = !(a.status === 'ativa' || a.status === 'pendente' || a.status === 'atrasada');
     var box = el('plano-faturas'); box.textContent = '';
     faturas.forEach(function (f) {
@@ -358,16 +320,54 @@
   var planoEscolhido = 'mensal';
   function abrirAssinar(plano) {
     planoEscolhido = plano;
-    var preco = acesso ? (plano === 'anual' ? acesso.preco_anual : plano === 'trimestral' ? (acesso.preco_trimestral || 79.9) : acesso.preco_mensal) : 0;
+    var preco = precoDe(plano);
     el('t-assinar').textContent = 'Assinar plano ' + plano;
     el('assinar-resumo').textContent = real(preco) + (plano === 'anual' ? ' por ano' : plano === 'trimestral' ? ' a cada 3 meses' : ' por mês') + '. Cancele quando quiser; vale até o fim do período pago.';
     if (!el('assinar-nome').value) el('assinar-nome').value = perfil.nome || '';
     if (!el('assinar-doc').value) el('assinar-doc').value = perfil.doc || '';
     el('assinar-msg').hidden = true; el('modal-assinar').hidden = false; el('assinar-nome').focus();
   }
-  el('plano-mensal').addEventListener('click', function () { abrirAssinar('mensal'); });
-  el('plano-trimestral').addEventListener('click', function () { abrirAssinar('trimestral'); });
-  el('plano-anual').addEventListener('click', function () { abrirAssinar('anual'); });
+  // ---------- tela de planos: compara os três e mostra o que muda ----------
+  var PLANOS = [
+    { id: 'mensal', nome: 'Mensal', meses: 1, periodo: 'por mês', cobra: 'Cobrado todo mês' },
+    { id: 'trimestral', nome: 'Trimestral', meses: 3, periodo: 'a cada 3 meses', cobra: 'Cobrado a cada 3 meses' },
+    { id: 'anual', nome: 'Anual', meses: 12, periodo: 'por ano', cobra: 'Cobrado uma vez por ano' },
+  ];
+  function precoDe(id, a) {
+    a = a || acesso || config || {};
+    return Number(id === 'anual' ? a.preco_anual : id === 'trimestral' ? (a.preco_trimestral || 79.9) : a.preco_mensal) || 0;
+  }
+  function abrirPlanos() {
+    if (!usuario) { location.href = '../criar-conta.html?volta=assinar'; return; }
+    var a = acesso || {}, mensal = precoDe('mensal'), box = el('planos-lista');
+    var atual = a.motivo === 'pago' && a.status !== 'cancelada' ? a.plano : null;
+    box.textContent = '';
+    PLANOS.forEach(function (pl) {
+      var v = precoDe(pl.id), porMes = v / pl.meses, economia = mensal * pl.meses - v;
+      var card = document.createElement('div'); card.className = 'plano-card' + (pl.id === 'anual' ? ' dest' : '');
+      card.innerHTML = '<div class="topo-card"><b class="nome"></b><span class="selo-card" hidden></span></div>' +
+        '<p class="preco" style="margin:0"></p><ul></ul><button type="button"></button>';
+      card.querySelector('.nome').textContent = pl.nome;
+      var selo = card.querySelector('.selo-card');
+      if (pl.id === atual) { selo.hidden = false; selo.className = 'selo-card atual'; selo.textContent = 'Seu plano'; }
+      else if (pl.id === 'anual') { selo.hidden = false; selo.textContent = 'Mais economia'; }
+      card.querySelector('.preco').innerHTML = '<span></span> <small></small>';
+      card.querySelector('.preco span').textContent = real(v); card.querySelector('.preco small').textContent = pl.periodo;
+      var itens = [pl.cobra];
+      if (pl.meses > 1) itens.push('Sai ' + real(porMes) + ' por mês');
+      itens.push(economia > 0.005 ? 'Economia de ' + real(economia) + ' (' + Math.round(economia / (mensal * pl.meses) * 100) + '%) em relação ao mensal' : 'Sem compromisso de ficar');
+      if (pl.id === 'anual') itens.push('Preço travado por 12 meses');
+      itens.forEach(function (t) { var li = document.createElement('li'); li.textContent = t; card.querySelector('ul').appendChild(li); });
+      var b = card.querySelector('button');
+      if (pl.id === atual) { b.textContent = 'Plano atual'; b.disabled = true; }
+      else { b.textContent = 'Escolher ' + pl.nome.toLowerCase(); b.className = pl.id === 'anual' ? 'primario' : ''; b.addEventListener('click', function () { el('modal-planos').hidden = true; abrirAssinar(pl.id); }); }
+      box.appendChild(card);
+    });
+    el('modal-planos').hidden = false;
+  }
+  el('plano-ver').addEventListener('click', abrirPlanos);
+  el('faixa-plano-btn').addEventListener('click', abrirPlanos);
+  el('planos-fechar').addEventListener('click', function () { el('modal-planos').hidden = true; });
   el('assinar-fechar').addEventListener('click', function () { el('modal-assinar').hidden = true; });
   el('assinar-form').addEventListener('submit', function (ev) {
     ev.preventDefault();
@@ -402,5 +402,10 @@
   var guardarAnterior = window.guardarJSON;
   window.guardarJSON = function (k, v) { guardarAnterior(k, v); if (k === 'orc-docs' && !usuario) aplicarAcesso(); };
   lerAcesso();
-  if (location.hash === '#assinar') { history.replaceState(null, '', location.pathname); setTimeout(function () { irPara('perfil'); }, 0); }
+  if (location.hash === '#assinar') {
+    history.replaceState(null, '', location.pathname);
+    setTimeout(function () { irPara('perfil'); }, 0);
+    var esperar = setInterval(function () { if (usuario && acesso) { clearInterval(esperar); if (acesso.cobranca_ligada || acesso.motivo === 'admin') abrirPlanos(); } }, 300);
+    setTimeout(function () { clearInterval(esperar); }, 10000);
+  }
 })();

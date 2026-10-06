@@ -1,6 +1,6 @@
 // Guarda o app e as bibliotecas para abrir sem internet na obra.
 // Pedidos ao servidor de contas (supabase.co) nunca passam pelo cache: são dados pessoais.
-var CACHE = 'orcamento-falado-v8';
+var CACHE = 'orcamento-falado-v9';
 var ARQUIVOS = [
   './',
   './index.html',

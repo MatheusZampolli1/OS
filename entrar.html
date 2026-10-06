@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Novidades · Orçamento Falado</title>
-<meta name="description" content="Tudo o que mudou no app, versão por versão.">
-<link rel="canonical" href="https://matheuszampolli1.github.io/OS/novidades.html">
-<meta property="og:title" content="Novidades · Orçamento Falado">
-<meta property="og:description" content="Tudo o que mudou no app, versão por versão.">
+<title>Entrar · Orçamento Falado</title>
+<meta name="description" content="Entre na sua conta do Orçamento Falado.">
+<link rel="canonical" href="https://matheuszampolli1.github.io/OS/entrar.html">
+<meta property="og:title" content="Entrar · Orçamento Falado">
+<meta property="og:description" content="Entre na sua conta do Orçamento Falado.">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pt_BR">
 <meta name="theme-color" content="#1d2428">
@@ -24,15 +24,30 @@
 <details class="menu-mob"><summary>Menu</summary><nav aria-label="Principal"><a href="#funcoes">Funções</a><a href="profissoes/">Profissões</a><a href="precos.html">Preços</a><a href="blog/">Blog</a><a href="novidades.html">Novidades</a><a href="entrar.html">Entrar</a><a href="criar-conta.html"><b>Criar conta grátis</b></a></nav></details>
 </div></header>
 <main>
-<section class="secao"><div class="wrap estreito">
-<div class="cab"><span class="etiqueta">Novidades</span><h1>O que mudou no app</h1><p class="sub">Cada melhoria, na ordem em que entrou.</p></div>
-<div class="versao"><span class="tag breve">Em breve</span><h2>Em construção</h2><ul><li>Conta com login: seus orçamentos, clientes e preços guardados na nuvem e em qualquer aparelho</li><li>Assinatura do orçamento à distância, por link</li><li>Aviso quando o cliente abrir o orçamento</li><li>Mais de uma pessoa usando a mesma empresa</li></ul></div><div class="versao"><h2>Versão 3 · 05/10/2026</h2><ul><li>Abas: Novo, Orçamentos, Preços, Clientes e Perfil</li><li>Tabela de preços que aprende sozinha e lista pronta por profissão</li><li>Assinatura do cliente na tela, com nome, data e hora no PDF</li><li>Desconto em R$ ou %, sinal, parcelas e recibo de cada pagamento</li><li>Lembrete de resposta, lembrete de cobrança com Pix do saldo e pedido de avaliação no Google pelo WhatsApp</li><li>Relatório de serviço com fotos, painel do mês, planilha para o contador e cópia de segurança</li><li>Funciona sem internet depois da primeira visita</li></ul></div><div class="versao"><h2>Versão 2 · 05/10/2026</h2><ul><li>Logo e até 5 fotos no PDF</li><li>Sinal de 30%, 50% ou 100% via Pix, garantia e campo de aceite</li><li>Recibo em PDF e lista de orçamentos com situação</li></ul></div><div class="versao"><h2>Versão 1 · 05/10/2026</h2><ul><li>Orçamento por voz em português, PDF e envio pelo WhatsApp</li><li>Pix copia e cola no padrão do Banco Central</li><li>Correção: palavras repetidas no microfone do Chrome para Android</li></ul></div>
+<section class="conta-pag"><div class="wrap">
+<div class="cab"><h1>Entrar</h1><p class="sub">Use o e-mail e a senha da sua conta.</p></div>
+<div id="ja-dentro" class="form-conta" hidden><p style="margin:0">Você já está conectado como <b id="ja-email"></b>.</p>
+<a class="botao primario" href="app/">Abrir o app</a>
+<p class="miudo" style="margin:0">Para trocar de conta, abra o app e toque em Perfil → Sair.</p></div>
+<form id="form-entrar" class="form-conta" novalidate>
+<label for="email">E-mail<input id="email" type="email" autocomplete="email" inputmode="email" required></label>
+<label for="senha">Senha<input id="senha" type="password" autocomplete="current-password" minlength="6" required></label>
+<label class="ver-senha"><input id="ver" type="checkbox"> Mostrar senha</label>
+<button class="botao primario" type="submit">Entrar</button>
+<p id="msg" class="msg-conta" role="status" hidden></p>
+<button id="esqueci" class="link" type="button">Esqueci a senha</button>
+</form>
+<form id="form-esqueci" class="form-conta" novalidate hidden>
+<p style="margin:0">Digite o e-mail da conta. Mandamos um link para você escolher uma senha nova.</p>
+<label for="email2">E-mail<input id="email2" type="email" autocomplete="email" inputmode="email" required></label>
+<button class="botao primario" type="submit">Mandar o link</button>
+<p id="msg2" class="msg-conta" role="status" hidden></p>
+<button id="voltar-entrar" class="link" type="button">Voltar para entrar</button>
+</form>
+<p class="troca-conta">Ainda não tem conta? <a href="criar-conta.html"><b>Criar conta grátis</b></a></p>
 </div></section>
-<section class="secao chamada"><div class="wrap">
-<h2>Seu próximo orçamento pode sair em um minuto.</h2>
-<p class="sub">Crie a conta, fale o primeiro serviço e mande o PDF para você mesmo no WhatsApp para ver como fica.</p>
-<div class="botoes"><a class="botao primario" href="criar-conta.html">Criar conta grátis</a><a class="botao" href="app/">Testar sem conta</a></div>
-</div></section>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script src="assets/conta-site.js"></script>
 </main>
 <footer class="rodape"><div class="wrap">
 <div class="marca-col"><a class="marca" href=""><span class="faixa" aria-hidden="true"></span>Orçamento Falado</a>

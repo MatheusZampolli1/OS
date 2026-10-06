@@ -136,6 +136,20 @@ footer { color: var(--muted); font-size: .85rem; text-align: center; padding-blo
 #tela-novo.bloqueado > section:not(#bloqueio) { display: none; }
 .bloqueio h2 { margin: 0; }
 .chip.pendente { color: var(--muted); }
+.faixa-plano { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; border: 1px solid var(--accent); background: var(--surface); border-radius: 10px; padding: 10px 12px; font-size: .95rem; }
+.faixa-plano.atrasado { border-color: var(--danger); }
+.faixa-plano button { padding: 8px 12px; font-size: .9rem; }
+.planos-lista { display: grid; gap: 10px; }
+.plano-card { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 6px; background: var(--bg); position: relative; }
+.plano-card.dest { border: 2px solid var(--accent); }
+.plano-card .topo-card { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.plano-card .preco { font: 700 1.6rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
+.plano-card .preco small { font: 500 .9rem var(--font-body); color: var(--muted); }
+.plano-card ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: .92rem; }
+.plano-card .selo-card { font: 600 .74rem/1 var(--font-body); text-transform: uppercase; letter-spacing: .06em; background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 5px 8px; }
+.plano-card .selo-card.atual { background: var(--go); color: #fff; }
+.incluso summary { cursor: pointer; font-weight: 600; }
+.incluso ul { margin: 8px 0 0; padding-left: 18px; font-size: .94rem; }
 .formas { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
 .formas legend { margin-bottom: 6px; }
 .forma { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-weight: 400; cursor: pointer; }
@@ -203,6 +217,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
   <!-- ===================== NOVO ===================== -->
   <div class="tela" id="tela-novo">
+    <section id="faixa-plano" class="faixa-plano" hidden><span id="faixa-plano-txt"></span><button id="faixa-plano-btn" type="button">Ver planos</button></section>
     <section id="bloqueio" class="bloco bloqueio" hidden>
       <h2 id="bloqueio-tit">Seu teste grátis acabou</h2>
       <p id="bloqueio-txt" class="dica"></p>
@@ -375,7 +390,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
       <div class="bloco">
         <div id="conta-fora">
           <p class="dica" style="margin-bottom:10px">Crie uma conta grátis para guardar seus orçamentos na nuvem e abrir em outro celular. O que já está aqui sobe junto.</p>
-          <div class="linha-botoes"><button id="conta-criar" class="primario" type="button">Criar conta grátis</button><button id="conta-entrar" type="button">Entrar</button></div>
+          <div class="linha-botoes"><a id="conta-criar" class="botao primario" href="../criar-conta.html">Criar conta grátis</a><a id="conta-entrar" class="botao" href="../entrar.html">Entrar</a></div>
         </div>
         <div id="conta-dentro" hidden style="display:grid;gap:10px">
           <p style="margin:0">Conectado como <b id="conta-quem"></b></p>
@@ -391,9 +406,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
         <p id="plano-situacao" style="margin:0;font-weight:600"></p>
         <p id="plano-detalhe" class="dica"></p>
         <div id="plano-botoes" class="linha-botoes">
-          <button id="plano-mensal" class="primario" type="button"></button>
-          <button id="plano-trimestral" type="button"></button>
-          <button id="plano-anual" type="button"></button>
+          <button id="plano-ver" class="primario" type="button">Ver os planos</button>
         </div>
         <div id="plano-faturas" class="hist"></div>
         <button id="plano-cancelar" class="remover" type="button" style="justify-self:start;padding-inline:0" hidden>Cancelar a renovação</button>
@@ -458,6 +471,26 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   <button type="button" data-aba="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Perfil</button>
 </nav>
 
+<div id="modal-planos" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-planos">
+  <div class="modal-caixa">
+    <h2 id="t-planos">Escolha seu plano</h2>
+    <p class="dica" style="margin:0">Todos os planos têm o app inteiro, sem limite. O que muda é de quanto em quanto tempo você paga e quanto economiza.</p>
+    <div id="planos-lista" class="planos-lista"></div>
+    <details class="incluso"><summary>O que vem em todos os planos</summary>
+      <ul>
+        <li>Orçamento por voz e por digitação, sem limite</li>
+        <li>PDF com seu logo, fotos, Pix e assinatura do cliente</li>
+        <li>Recibo, sinal, parcelas e relatório de serviço</li>
+        <li>Lembretes de resposta e de cobrança no WhatsApp</li>
+        <li>Clientes, tabela de preços e planilha para o contador</li>
+        <li>Dados na nuvem, em quantos celulares você quiser</li>
+        <li>Suporte pelo WhatsApp</li>
+      </ul>
+    </details>
+    <p class="dica" style="margin:0">Cancele quando quiser: vale até o fim do período pago. Se desistir em até 7 dias do primeiro pagamento, devolvemos o valor.</p>
+    <button id="planos-fechar" type="button">Fechar</button>
+  </div>
+</div>
 <div id="modal-assinar" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-assinar">
   <form id="assinar-form" class="modal-caixa" novalidate>
     <h2 id="t-assinar">Assinar</h2>
@@ -473,21 +506,6 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
     <button id="assinar-ok" class="primario" type="submit">Ir para o pagamento</button>
     <p id="assinar-msg" class="status" role="status" hidden></p>
     <button id="assinar-fechar" type="button">Fechar</button>
-  </form>
-</div>
-<div id="modal-conta" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-conta">
-  <form id="conta-form" class="modal-caixa" novalidate>
-    <h2 id="t-conta">Entrar</h2>
-    <label id="conta-email-l" for="conta-email">E-mail<input id="conta-email" type="email" autocomplete="email" inputmode="email"></label>
-    <label for="conta-senha">Senha<input id="conta-senha" type="password" autocomplete="current-password" minlength="6"></label>
-    <p id="conta-dica" class="dica" hidden>Pelo menos 6 caracteres. Ao criar a conta você aceita os <a href="../termos.html" target="_blank" rel="noopener">termos de uso</a> e a <a href="../privacidade.html" target="_blank" rel="noopener">política de privacidade</a>.</p>
-    <button id="conta-ok" class="primario" type="submit">Entrar</button>
-    <p id="conta-msg" class="status" role="status" hidden></p>
-    <div class="linha-botoes">
-      <button id="conta-esqueci" type="button">Esqueci a senha</button>
-      <button id="conta-troca" type="button">Não tenho conta: criar grátis</button>
-    </div>
-    <button id="conta-fechar" type="button">Fechar</button>
   </form>
 </div>
 <div id="modal-assina" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-assina">
