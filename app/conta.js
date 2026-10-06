@@ -6,6 +6,8 @@
 (function () {
   var SB_URL = 'https://xzumkgmzmjmlxeigicbt.supabase.co';
   var SB_KEY = 'sb_publishable_5-o29KR-a2F3ZMU7SpWKlw_eTc6X7TM'; // chave pública, feita para ficar no site
+  // Endereço de cada função no Supabase (o painel pode dar um nome de endereço diferente do nome da função).
+  var FUNCOES = { assinar: 'bright-responder', cancelar: 'clever-function' };
 
   var COLECOES = { 'orc-perfil': 'perfil', 'orc-docs': 'docs', 'orc-precos': 'precos', 'orc-clientes': 'clientes', 'orc-seq': 'seq' };
   var CHAVE_SYNC = 'orc-sync';
@@ -337,7 +339,7 @@
   function chamarFuncao(nome, corpo) {
     return sb.auth.getSession().then(function (r) {
       var t = r.data.session && r.data.session.access_token;
-      return fetch(SB_URL + '/functions/v1/' + nome, { method: 'POST', headers: { 'content-type': 'application/json', apikey: SB_KEY, authorization: 'Bearer ' + t }, body: JSON.stringify(corpo || {}) });
+      return fetch(SB_URL + '/functions/v1/' + (FUNCOES[nome] || nome), { method: 'POST', headers: { 'content-type': 'application/json', apikey: SB_KEY, authorization: 'Bearer ' + t }, body: JSON.stringify(corpo || {}) });
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.erro || (r.status === 404 ? 'A função “' + nome + '” não foi encontrada no servidor. Confira se ela foi publicada com esse nome exato.' : 'Erro ' + r.status)); return j; }); });
   }
   var planoEscolhido = 'mensal';

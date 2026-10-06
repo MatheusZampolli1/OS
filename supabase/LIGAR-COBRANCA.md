@@ -20,7 +20,7 @@ As chaves ficam só no Supabase e no Asaas. Não mande nenhuma delas no chat.
 
 ## C. Aviso de pagamento (Asaas)
 7. No sandbox, abra **Integrações → Webhooks → Adicionar**:
-   - URL: `https://xzumkgmzmjmlxeigicbt.supabase.co/functions/v1/asaas-webhook`
+   - URL: `https://xzumkgmzmjmlxeigicbt.supabase.co/functions/v1/assas-webhook` (o endereço que o Supabase deu à função)
    - Token de autenticação: o mesmo `ASAAS_WEBHOOK_TOKEN` do passo 4
    - Versão da API: v3. Tipo de envio: sequencial. Ativo: sim.
    - Eventos de cobrança: criada, atualizada, confirmada, recebida, vencida, removida, estornada, chargeback recebido e recebimento em dinheiro desfeito.
