@@ -154,6 +154,8 @@
     if (/Password should be|at least/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
     if (/invalid.*email|Unable to validate email/i.test(m)) return 'Confira o e-mail digitado.';
     if (/Failed to fetch|NetworkError|network/i.test(m)) return 'sem conexão com o servidor';
+    if (/row-level security|violates row/i.test(m)) return 'seu plano não está ativo; o que mudar agora fica só no celular até você assinar';
+    if (/assinatura ativa/i.test(m)) return 'cancele a renovação do plano antes de apagar a conta';
     return m && m !== '{}' && m !== '[object Object]' ? m : 'erro inesperado, tente de novo';
   }
   function mostrarNuvem(t) { var n = el('nuvem'); if (n) n.textContent = t; }
@@ -175,22 +177,36 @@
   }
   function saiu() { usuario = null; mostrarConta(); if (!/apagad/.test(el('nuvem').textContent)) mostrarNuvem('Você saiu da conta.'); }
 
-  var apagarArmado = false;
+  var apagarArmado = false, sairArmado = false;
+  function sairAgora(b) {
+    b.disabled = true;
+    return sb.auth.signOut({ scope: 'local' }).then(function () { limparLocal(); })
+      .catch(function (e) { mostrarNuvem('Não deu para sair: ' + traduzir(e)); })
+      .then(function () { b.disabled = false; b.textContent = 'Sair'; });
+  }
   function ligarTela() {
     el('conta-sync').addEventListener('click', function () { sincronizar(); });
     el('conta-sair').addEventListener('click', function () {
       var b = el('conta-sair'); b.disabled = true;
+      if (sairArmado) { sairArmado = false; return sairAgora(b); } // segundo toque: sai mesmo sem subir tudo
       sincronizar().then(function () {
         var tudoEnviado = /✓/.test(el('nuvem').textContent);
-        if (!tudoEnviado) { b.disabled = false; mostrarNuvem('Ainda tem coisa que não subiu para a nuvem. Conecte à internet antes de sair, senão ela se perde.'); return; }
-        return sb.auth.signOut().then(function () { limparLocal(); b.disabled = false; });
+        if (!tudoEnviado) {
+          b.disabled = false; sairArmado = true; b.textContent = 'Sair mesmo assim';
+          mostrarNuvem('Ainda tem coisa que não subiu para a nuvem e vai se perder se você sair agora. Conecte à internet e tente de novo, ou toque em “Sair mesmo assim”.');
+          setTimeout(function () { sairArmado = false; b.textContent = 'Sair'; }, 8000);
+          return;
+        }
+        return sairAgora(b);
       });
     });
     el('conta-apagar').addEventListener('click', function () {
       var b = el('conta-apagar');
       if (!apagarArmado) { apagarArmado = true; b.textContent = 'Toque de novo para apagar a conta e todos os dados'; setTimeout(function () { apagarArmado = false; b.textContent = 'Apagar minha conta'; }, 6000); return; }
       b.disabled = true;
-      sb.rpc('apagar_conta').then(function (r) {
+      // assinatura em andamento: cancela a renovação primeiro, para o cartão não continuar sendo cobrado
+      var temPlano = acesso && ['pendente', 'ativa', 'atrasada'].indexOf(acesso.status) >= 0;
+      (temPlano ? chamarFuncao('cancelar') : Promise.resolve()).then(function () { return sb.rpc('apagar_conta'); }).then(function (r) {
         if (r.error) throw r.error;
         return sb.auth.signOut({ scope: 'local' });
       }).then(function () { limparLocal(); mostrarNuvem('Conta e dados apagados.'); })

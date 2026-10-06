@@ -152,7 +152,7 @@ language plpgsql security definer set search_path = '' as $$
 declare
   ev text := p ->> 'event';
   pg jsonb := p -> 'payment';
-  uid uuid; c public.cobranca_config; cob public.cobrancas; meses int; base timestamptz; res text;
+  uid uuid; c public.cobranca_config; ass public.assinaturas; atual boolean; cob public.cobrancas; meses int; base timestamptz; res text;
 begin
   if p ->> 'id' is null or ev is null then return 'ignorado: sem id'; end if;
   insert into public.asaas_eventos (id, evento) values (p ->> 'id', ev) on conflict do nothing;
@@ -172,7 +172,11 @@ begin
   end if;
 
   select * into c from public.cobranca_config where id = 1;
-  meses := case when (pg ->> 'value')::numeric >= c.preco_anual * 0.8 then 12
+  select * into ass from public.assinaturas where user_id = uid;
+  -- assinatura atual: o plano dela diz quantos meses vale; senão, deduz pelo valor
+  atual := ass.asaas_subscription is not null and ass.asaas_subscription = pg ->> 'subscription';
+  meses := case when atual and ass.plano = 'anual' then 12 when atual and ass.plano = 'trimestral' then 3 when atual then 1
+                when (pg ->> 'value')::numeric >= c.preco_anual * 0.8 then 12
                 when (pg ->> 'value')::numeric >= c.preco_trimestral * 0.8 then 3 else 1 end;
 
   insert into public.cobrancas (id, user_id, subscription, valor, vencimento, status, forma, pago_em, link, meses, atualizado)
@@ -189,7 +193,10 @@ begin
       into base from public.assinaturas a where a.user_id = uid;
     base := coalesce(base, greatest(now(), coalesce((public.acesso_de(uid) ->> 'teste_ate')::timestamptz, now())));
     insert into public.assinaturas (user_id, status, pago_ate) values (uid, 'ativa', base + make_interval(months => cob.meses))
-    on conflict (user_id) do update set status = 'ativa', pago_ate = base + make_interval(months => cob.meses), atualizado = now();
+    on conflict (user_id) do update set
+      -- quem cancelou continua cancelado: o pagamento só estende o acesso, a renovação não volta
+      status = case when public.assinaturas.status = 'cancelada' then 'cancelada' else 'ativa' end,
+      pago_ate = base + make_interval(months => cob.meses), atualizado = now();
     update public.cobrancas set creditado = true where id = cob.id;
     res := 'creditado ' || cob.meses || ' mes(es)';
   elsif ev in ('PAYMENT_REFUNDED', 'PAYMENT_CHARGEBACK_REQUESTED', 'PAYMENT_RECEIVED_IN_CASH_UNDONE') and cob.creditado then
@@ -197,7 +204,9 @@ begin
     update public.cobrancas set creditado = false where id = cob.id;
     res := 'estornado';
   elsif ev = 'PAYMENT_OVERDUE' then
-    update public.assinaturas set status = 'atrasada', atualizado = now() where user_id = uid and status in ('ativa', 'pendente');
+    -- só a fatura da assinatura atual conta; uma fatura velha de um plano trocado não atrasa ninguém
+    update public.assinaturas set status = 'atrasada', atualizado = now()
+     where user_id = uid and status in ('ativa', 'pendente') and (pg ->> 'subscription' is null or asaas_subscription = pg ->> 'subscription');
     res := 'atrasada';
   else
     res := 'registrado';
@@ -263,3 +272,18 @@ begin
 end $$;
 revoke execute on function public.painel_cobranca() from public, anon;
 grant execute on function public.painel_cobranca() to authenticated;
+
+-- Apagar a conta com assinatura ativa deixaria o cartão sendo cobrado sem dono no app.
+-- O app cancela a assinatura antes (função cancelar) e só então apaga.
+create or replace function public.apagar_conta() returns void
+language plpgsql security definer set search_path = '' as $$
+begin
+  if auth.uid() is null then raise exception 'sem login'; end if;
+  if exists (select 1 from public.assinaturas where user_id = auth.uid() and asaas_subscription is not null
+             and status in ('pendente', 'ativa', 'atrasada')) then
+    raise exception 'assinatura ativa: cancele a renovacao antes de apagar a conta';
+  end if;
+  delete from auth.users where id = auth.uid();
+end $$;
+revoke execute on function public.apagar_conta() from public, anon;
+grant execute on function public.apagar_conta() to authenticated;
