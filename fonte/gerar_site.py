@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gera as páginas estáticas do site do Orçamento Falado.
+"""Gera as páginas estáticas do site do Tá Orçado.
 
 Rode na raiz do repositório:  python3 fonte/gerar_site.py
 O app fica em app/ e não é gerado aqui.
@@ -9,7 +9,7 @@ import os
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 URL = 'https://matheuszampolli1.github.io/OS/'
-NOME = 'Orçamento Falado'
+NOME = 'Tá Orçado'
 
 # Canal de atendimento. Vazio esconde o item no site.
 WHATSAPP = '5511989167926'  # só dígitos, com DDI
@@ -526,7 +526,7 @@ POSTS = [
 <p>Quanto tempo de garantia você dá sobre o serviço. Isso pesa na decisão do cliente quando ele está comparando três orçamentos.</p>
 <h2>7. O aceite</h2>
 <p>Um campo para o cliente assinar, com data. Pode ser no papel ou com o dedo na tela do celular. Ele transforma uma conversa em um combinado.</p>
-<div class="caixa"><b>No app</b><p>Todos esses campos já vêm no PDF do Orçamento Falado: seus dados, itens com unidade, prazo, validade, sinal com Pix, garantia e assinatura na tela.</p></div>
+<div class="caixa"><b>No app</b><p>Todos esses campos já vêm no PDF do Tá Orçado: seus dados, itens com unidade, prazo, validade, sinal com Pix, garantia e assinatura na tela.</p></div>
 ''',
     },
     {
@@ -686,15 +686,15 @@ def gerar():
     for k, p in PROFISSOES.items():
         feitas.append(pagina(f'profissoes/{k}.html', f'{p["titulo"]} · {NOME}', p['chamada'], profissao(k)))
     feitas.append(pagina('novidades.html', f'Novidades · {NOME}', 'Tudo o que mudou no app, versão por versão.', novidades))
-    feitas.append(pagina('contato.html', f'Contato · {NOME}', 'Fale com o suporte do Orçamento Falado.', contato))
-    feitas.append(pagina('termos.html', f'Termos de uso · {NOME}', 'Termos de uso do Orçamento Falado.', termos))
-    feitas.append(pagina('privacidade.html', f'Privacidade · {NOME}', 'Política de privacidade do Orçamento Falado (LGPD).', privacidade))
+    feitas.append(pagina('contato.html', f'Contato · {NOME}', 'Fale com o suporte do Tá Orçado.', contato))
+    feitas.append(pagina('termos.html', f'Termos de uso · {NOME}', 'Termos de uso do Tá Orçado.', termos))
+    feitas.append(pagina('privacidade.html', f'Privacidade · {NOME}', 'Política de privacidade do Tá Orçado (LGPD).', privacidade))
     feitas.append(pagina('blog/index.html', f'Blog · {NOME}', 'Dicas de orçamento, cobrança e organização para quem trabalha com obra.', blog_indice))
     for p in POSTS:
         feitas.append(pagina(f'blog/{p["slug"]}.html', f'{p["titulo"]} · {NOME}', p['resumo'], post(p)))
 
-    feitas.append(pagina('entrar.html', f'Entrar · {NOME}', 'Entre na sua conta do Orçamento Falado.', pag_entrar))
-    feitas.append(pagina('criar-conta.html', f'Criar conta grátis · {NOME}', 'Crie sua conta grátis no Orçamento Falado e guarde seus orçamentos na nuvem.', pag_criar))
+    feitas.append(pagina('entrar.html', f'Entrar · {NOME}', 'Entre na sua conta do Tá Orçado.', pag_entrar))
+    feitas.append(pagina('criar-conta.html', f'Criar conta grátis · {NOME}', 'Crie sua conta grátis no Tá Orçado e guarde seus orçamentos na nuvem.', pag_criar))
     pagina('nova-senha.html', f'Nova senha · {NOME}', 'Troca de senha da conta.', pag_nova_senha, '<meta name="robots" content="noindex">\n')
 
     urls = [URL + c.replace('index.html', '') for c in feitas] + [URL + 'app/']

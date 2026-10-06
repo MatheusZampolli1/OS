@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Orçamento Falado</title>
+<title>Tá Orçado</title>
 <meta name="description" content="Fale o serviço e receba o orçamento pronto em PDF para mandar no WhatsApp, com Pix copia e cola.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -211,7 +211,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 <div class="wrap">
   <header>
     <div class="marca"><span class="faixa" aria-hidden="true"></span><span class="etiqueta">Para pedreiro, pintor, eletricista</span></div>
-    <h1>Orçamento Falado</h1>
+    <h1>Tá Orçado</h1>
     <p class="sub" id="sub-novo">Fale o serviço do jeito que você explica pro cliente. O orçamento sai em PDF, com fotos e Pix, e o cliente pode assinar na hora.</p>
   </header>
 
@@ -455,7 +455,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
       <div class="bloco">
         <p class="dica">Dúvida, problema ou quer ajuda para montar sua tabela de preços? Chame no WhatsApp. A ajuda para configurar é grátis.</p>
         <div class="linha-botoes">
-          <a class="botao primario" href="https://wa.me/5511989167926?text=Oi!%20Preciso%20de%20ajuda%20com%20o%20Or%C3%A7amento%20Falado." target="_blank" rel="noopener">Falar no WhatsApp</a>
+          <a class="botao primario" href="https://wa.me/5511989167926?text=Oi!%20Preciso%20de%20ajuda%20com%20o%20T%C3%A1%20Or%C3%A7ado." target="_blank" rel="noopener">Falar no WhatsApp</a>
           <a class="botao" href="../precos.html" target="_blank" rel="noopener">Planos e dúvidas</a>
         </div>
       </div>
@@ -1481,7 +1481,7 @@ function baixarArquivo(nome, conteudo, tipo) {
   setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1000);
 }
 $('backup-baixar').addEventListener('click', function () {
-  baixarArquivo('orcamento-falado-copia-' + new Date().toISOString().slice(0, 10) + '.json',
+  baixarArquivo('ta-orcado-copia-' + new Date().toISOString().slice(0, 10) + '.json',
     JSON.stringify({ versao: 3, perfil: perfil, docs: docs, precos: precos, clientes: clientes, seq: ler('orc-seq') }), 'application/json');
   avisar('Cópia baixada. Guarde no Google Drive ou mande para você no WhatsApp.');
 });
@@ -1497,7 +1497,7 @@ $('backup-in').addEventListener('change', function (e) {
       if (c.seq) guardar('orc-seq', c.seq);
       Object.keys(CAMPOS).forEach(function (id) { $(id).value = perfil[CAMPOS[id]] || ''; });
       mostrarLogo(); tudo(); avisar('Cópia restaurada: ' + docs.length + ' orçamentos.');
-    } catch (err) { avisar('Esse arquivo não é uma cópia do Orçamento Falado.'); }
+    } catch (err) { avisar('Esse arquivo não é uma cópia do Tá Orçado.'); }
   };
   r.readAsText(f); e.target.value = '';
 });
@@ -1512,7 +1512,7 @@ $('csv').addEventListener('click', function () {
 });
 
 // ---------- abas ----------
-var TITULOS = { novo: 'Orçamento Falado', orcs: 'Orçamentos', precos: 'Tabela de preços', clientes: 'Clientes', perfil: 'Perfil' };
+var TITULOS = { novo: 'Tá Orçado', orcs: 'Orçamentos', precos: 'Tabela de preços', clientes: 'Clientes', perfil: 'Perfil' };
 function irPara(aba) {
   ['novo', 'orcs', 'precos', 'clientes', 'perfil'].forEach(function (a) { $('tela-' + a).hidden = a !== aba; });
   document.querySelectorAll('.abas button').forEach(function (b) { if (b.dataset.aba === aba) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
