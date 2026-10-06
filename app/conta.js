@@ -338,7 +338,7 @@
     return sb.auth.getSession().then(function (r) {
       var t = r.data.session && r.data.session.access_token;
       return fetch(SB_URL + '/functions/v1/' + nome, { method: 'POST', headers: { 'content-type': 'application/json', apikey: SB_KEY, authorization: 'Bearer ' + t }, body: JSON.stringify(corpo || {}) });
-    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.erro || 'Erro ' + r.status); return j; }); });
+    }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.erro || (r.status === 404 ? 'A função “' + nome + '” não foi encontrada no servidor. Confira se ela foi publicada com esse nome exato.' : 'Erro ' + r.status)); return j; }); });
   }
   var planoEscolhido = 'mensal';
   function abrirAssinar(plano) {
