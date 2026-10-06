@@ -21,6 +21,8 @@ PRECO_TRI = 'R$ 79,90'
 PRECO_TRI_MES = 'R$ 26,63'
 PRECO_ANO = 'R$ 299'
 PRECO_ANO_MES = 'R$ 24,92'
+ECON_TRI = 'R$ 9,80 a cada 3 meses (11%)'
+ECON_ANO = 'R$ 59,80 por ano (17%)'
 
 PROFISSOES = {
     'pedreiro': {
@@ -70,7 +72,7 @@ UNIDADES = {'m²': 'metro quadrado', 'm': 'metro linear', 'pt': 'ponto', 'un': '
 e = html.escape
 
 
-def cabeca(titulo, descricao, base, caminho):
+def cabeca(titulo, descricao, base, caminho, extra=''):
     return f'''<!doctype html>
 <html lang="pt-BR">
 <head>
@@ -89,7 +91,7 @@ def cabeca(titulo, descricao, base, caminho):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
 <link rel="stylesheet" href="{base}assets/site.css">
-</head>
+{extra}</head>
 <body>
 '''
 
@@ -100,8 +102,8 @@ def topo(base):
     nav = ''.join(f'<a href="{h}">{t}</a>' for t, h in links)
     return f'''<header class="topo"><div class="wrap">
 <a class="marca" href="{base}"><span class="faixa" aria-hidden="true"></span>{NOME}</a>
-<nav class="menu" aria-label="Principal">{nav}<a href="{base}app/#entrar">Entrar</a><a class="botao primario peq" href="{base}app/#criar">Criar conta grátis</a></nav>
-<details class="menu-mob"><summary>Menu</summary><nav aria-label="Principal">{nav}<a href="{base}app/#entrar">Entrar</a><a href="{base}app/#criar"><b>Criar conta grátis</b></a></nav></details>
+<nav class="menu" aria-label="Principal">{nav}<a href="{base}entrar.html">Entrar</a><a class="botao primario peq" href="{base}criar-conta.html">Criar conta grátis</a></nav>
+<details class="menu-mob"><summary>Menu</summary><nav aria-label="Principal">{nav}<a href="{base}entrar.html">Entrar</a><a href="{base}criar-conta.html"><b>Criar conta grátis</b></a></nav></details>
 </div></header>
 <main>
 '''
@@ -136,14 +138,14 @@ def chamada_final(base):
     return f'''<section class="secao chamada"><div class="wrap">
 <h2>Seu próximo orçamento pode sair em um minuto.</h2>
 <p class="sub">Crie a conta, fale o primeiro serviço e mande o PDF para você mesmo no WhatsApp para ver como fica.</p>
-<div class="botoes"><a class="botao primario" href="{base}app/#criar">Criar conta grátis</a><a class="botao" href="{base}app/">Testar sem conta</a></div>
+<div class="botoes"><a class="botao primario" href="{base}criar-conta.html">Criar conta grátis</a><a class="botao" href="{base}app/">Testar sem conta</a></div>
 </div></section>
 '''
 
 
-def pagina(caminho, titulo, descricao, corpo):
+def pagina(caminho, titulo, descricao, corpo, extra=''):
     base = '../' * caminho.count('/')
-    conteudo = cabeca(titulo, descricao, base, caminho.replace('index.html', '')) + topo(base) + corpo(base) + rodape(base)
+    conteudo = cabeca(titulo, descricao, base, caminho.replace('index.html', ''), extra) + topo(base) + corpo(base) + rodape(base)
     destino = os.path.join(RAIZ, caminho)
     os.makedirs(os.path.dirname(destino), exist_ok=True)
     with open(destino, 'w', encoding='utf-8') as f:
@@ -184,7 +186,7 @@ def inicio(base):
 <span class="selo"><i aria-hidden="true"></i>Grátis durante o lançamento</span>
 <h1>Fale o serviço.<br>O orçamento sai pronto.</h1>
 <p class="sub">Para pedreiro, pintor, eletricista, encanador e gesseiro. Você fala no celular, o app monta o orçamento em PDF com Pix e você manda no WhatsApp do cliente, ainda na obra.</p>
-<div class="botoes"><a class="botao primario" href="{base}app/#criar">Criar conta grátis</a><a class="botao" href="#como">Ver como funciona</a></div>
+<div class="botoes"><a class="botao primario" href="{base}criar-conta.html">Criar conta grátis</a><a class="botao" href="#como">Ver como funciona</a></div>
 <p class="miudo">Sem cartão. Sem instalar nada. Funciona no navegador do celular.</p>
 </div>
 <div class="celular" role="img" aria-label="Exemplo de tela do app: a fala vira um orçamento em PDF">
@@ -271,23 +273,22 @@ def precos(base):
 <p class="miudo">Sai {PRECO_ANO_MES} por mês.</p>
 <ul><li>14 dias grátis, sem cartão</li><li>Todas as funções</li><li>Preço travado por 12 meses</li></ul></div>
 </div>
-<div class="botoes" style="margin-top:24px"><a class="botao primario" href="{base}app/#criar">Criar conta grátis</a></div>
-</div></section>
-<section class="secao"><div class="wrap">
-<div class="cab"><h2>O que muda de um plano para o outro</h2><p class="sub">As funções são as mesmas. Muda o preço, de quanto em quanto tempo você paga e por quanto tempo o preço fica garantido.</p></div>
-<div class="tabela comparar"><table>
-<tr><th></th><th>Mensal</th><th>Trimestral</th><th>Anual</th></tr>
-<tr><td>Você paga</td><td>{PRECO_MES} por mês</td><td>{PRECO_TRI} a cada 3&nbsp;meses</td><td>{PRECO_ANO} por ano</td></tr>
-<tr><td>Sai por mês</td><td>{PRECO_MES}</td><td>{PRECO_TRI_MES}</td><td>{PRECO_ANO_MES}</td></tr>
-<tr><td>Economia em 1 ano</td><td>—</td><td>R$ 39,20</td><td>R$ 59,80 (2 meses)</td></tr>
-<tr><td>Preço garantido por</td><td>1 mês</td><td>3 meses</td><td>12 meses</td></tr>
-<tr><td>Funções</td><td>Todas</td><td>Todas</td><td>Todas</td></tr>
-<tr><td>Cancelar</td><td colspan="3">Quando quiser, pelo app. Vale até o fim do período pago.</td></tr>
-<tr><td>Arrependimento</td><td colspan="3">Até 7 dias depois do primeiro pagamento, devolvemos tudo.</td></tr>
-</table></div>
-<p class="miudo" style="margin-top:12px">Já tem conta? No app, abra Perfil, Seu plano, e toque em “Ver e comparar planos” para escolher ou trocar. Se trocar, o plano novo começa quando o atual acabar.</p>
+<div class="botoes" style="margin-top:24px"><a class="botao primario" href="{base}criar-conta.html">Criar conta grátis</a></div>
 </div></section>
 <section class="secao alt"><div class="wrap">
+<div class="cab"><h2>O que muda de um plano para o outro</h2><p class="sub">As funções são as mesmas nos três. Muda o período, o preço e a economia.</p></div>
+<div class="tabela comparar"><table>
+<tr><th></th><th>Mensal</th><th>Trimestral</th><th>Anual</th></tr>
+<tr><td>Quanto paga</td><td class="num">{PRECO_MES}</td><td class="num">{PRECO_TRI}</td><td class="num">{PRECO_ANO}</td></tr>
+<tr><td>De quanto em quanto tempo</td><td>Todo mês</td><td>A cada 3 meses</td><td>Uma vez por ano</td></tr>
+<tr><td>Sai por mês</td><td class="num">{PRECO_MES}</td><td class="num">{PRECO_TRI_MES}</td><td class="num">{PRECO_ANO_MES}</td></tr>
+<tr><td>Economia em relação ao mensal</td><td>—</td><td class="num">{ECON_TRI}</td><td class="num">{ECON_ANO}</td></tr>
+<tr><td>Preço travado</td><td>1 mês</td><td>3 meses</td><td>12 meses</td></tr>
+<tr><td>Todas as funções</td><td>Sim</td><td>Sim</td><td>Sim</td></tr>
+<tr><td>Cancelar quando quiser</td><td>Sim</td><td>Sim</td><td>Sim</td></tr>
+</table></div>
+</div></section>
+<section class="secao"><div class="wrap">
 <div class="cab"><h2>O que está incluído</h2></div>
 <div class="tabela"><table>
 <tr><th>Função</th><th>Incluído</th></tr>
@@ -328,7 +329,7 @@ def profissao(chave):
 <span class="etiqueta">Para {p["nome"].lower()}</span>
 <h1>{e(p["titulo"])}</h1>
 <p class="sub">{e(p["chamada"])}</p>
-<div class="botoes"><a class="botao primario" href="{base}app/#criar">Criar conta grátis</a><a class="botao" href="{base}app/">Testar agora</a></div>
+<div class="botoes"><a class="botao primario" href="{base}criar-conta.html">Criar conta grátis</a><a class="botao" href="{base}app/">Testar agora</a></div>
 </div>
 <div class="celular" role="img" aria-label="Exemplo de fala de um {p["nome"].lower()}"><div class="tela">
 <span class="rotulo">Exemplo · você fala</span>
@@ -594,6 +595,87 @@ def post(p):
     return corpo
 
 
+# ---------------------------------------------------------------- conta
+# Páginas próprias de login. Usam a mesma sessão do app (supabase-js guarda no localStorage
+# deste domínio), então quem entra aqui já abre o app conectado.
+SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js'
+
+
+def conta_scripts(base):
+    return f'<script src="{SUPABASE_JS}"></script>\n<script src="{base}assets/conta-site.js"></script>\n'
+
+
+def ja_dentro(base, acao):
+    return f'''<div id="ja-dentro" class="form-conta" hidden><p style="margin:0">Você já está conectado como <b id="ja-email"></b>.</p>
+<a class="botao primario" href="{base}app/">Abrir o app</a>
+<p class="miudo" style="margin:0">Para {acao}, abra o app e toque em Perfil → Sair.</p></div>
+'''
+
+
+def pag_entrar(base):
+    return f'''<section class="conta-pag"><div class="wrap">
+<div class="cab"><h1>Entrar</h1><p class="sub">Use o e-mail e a senha da sua conta.</p></div>
+{ja_dentro(base, 'trocar de conta')}<form id="form-entrar" class="form-conta" novalidate>
+<label for="email">E-mail<input id="email" type="email" autocomplete="email" inputmode="email" required></label>
+<label for="senha">Senha<input id="senha" type="password" autocomplete="current-password" minlength="6" required></label>
+<label class="ver-senha"><input id="ver" type="checkbox"> Mostrar senha</label>
+<button class="botao primario" type="submit">Entrar</button>
+<p id="msg" class="msg-conta" role="status" hidden></p>
+<button id="esqueci" class="link" type="button">Esqueci a senha</button>
+</form>
+<form id="form-esqueci" class="form-conta" novalidate hidden>
+<p style="margin:0">Digite o e-mail da conta. Mandamos um link para você escolher uma senha nova.</p>
+<label for="email2">E-mail<input id="email2" type="email" autocomplete="email" inputmode="email" required></label>
+<button class="botao primario" type="submit">Mandar o link</button>
+<p id="msg2" class="msg-conta" role="status" hidden></p>
+<button id="voltar-entrar" class="link" type="button">Voltar para entrar</button>
+</form>
+<p class="troca-conta">Ainda não tem conta? <a href="{base}criar-conta.html"><b>Criar conta grátis</b></a></p>
+</div></section>
+''' + conta_scripts(base)
+
+
+def pag_criar(base):
+    return f'''<section class="conta-pag"><div class="wrap">
+<div class="cab"><h1>Criar conta grátis</h1><p class="sub">Seus orçamentos ficam guardados na nuvem e aparecem em qualquer celular em que você entrar.</p></div>
+{ja_dentro(base, 'criar outra conta')}<form id="form-criar" class="form-conta" novalidate>
+<label for="email">E-mail<input id="email" type="email" autocomplete="email" inputmode="email" required></label>
+<label for="senha">Senha<input id="senha" type="password" autocomplete="new-password" minlength="6" required></label>
+<label class="ver-senha"><input id="ver" type="checkbox"> Mostrar senha</label>
+<p class="miudo" style="margin:0">Pelo menos 6 caracteres.</p>
+<label class="ver-senha"><input id="aceito" type="checkbox" required> <span>Li e aceito os <a href="{base}termos.html" target="_blank" rel="noopener">termos de uso</a> e a <a href="{base}privacidade.html" target="_blank" rel="noopener">política de privacidade</a>.</span></label>
+<button class="botao primario" type="submit">Criar conta</button>
+<p id="msg" class="msg-conta" role="status" hidden></p>
+</form>
+<div id="confira" class="form-conta" hidden>
+<h2 style="font-size:1.6rem">Confira seu e-mail</h2>
+<p style="margin:0">Mandamos um link para <b id="confira-email"></b>. Toque nele para ativar a conta: o app abre já conectado.</p>
+<p class="miudo" style="margin:0">Não chegou? Olhe a caixa de spam e a de promoções.</p>
+<button id="reenviar" class="botao" type="button">Mandar o link de novo</button>
+<p id="msg3" class="msg-conta" role="status" hidden></p>
+</div>
+<p class="troca-conta">Já tem conta? <a href="{base}entrar.html"><b>Entrar</b></a></p>
+</div></section>
+''' + conta_scripts(base)
+
+
+def pag_nova_senha(base):
+    return f'''<section class="conta-pag"><div class="wrap">
+<div class="cab"><h1>Escolha uma senha nova</h1></div>
+<p id="carregando" class="msg-conta">Conferindo o link…</p>
+<div id="expirou" class="form-conta" hidden><p style="margin:0">Esse link expirou ou já foi usado. Peça outro na tela de entrar, em “Esqueci a senha”.</p>
+<a class="botao primario" href="{base}entrar.html#esqueci">Pedir outro link</a></div>
+<form id="form-nova" class="form-conta" novalidate hidden>
+<p style="margin:0">Conta: <b id="ja-email"></b></p>
+<label for="senha">Senha nova<input id="senha" type="password" autocomplete="new-password" minlength="6" required></label>
+<label class="ver-senha"><input id="ver" type="checkbox"> Mostrar senha</label>
+<button class="botao primario" type="submit">Salvar a senha</button>
+<p id="msg" class="msg-conta" role="status" hidden></p>
+</form>
+</div></section>
+''' + conta_scripts(base)
+
+
 # ---------------------------------------------------------------- geração
 def gerar():
     feitas = []
@@ -610,6 +692,10 @@ def gerar():
     feitas.append(pagina('blog/index.html', f'Blog · {NOME}', 'Dicas de orçamento, cobrança e organização para quem trabalha com obra.', blog_indice))
     for p in POSTS:
         feitas.append(pagina(f'blog/{p["slug"]}.html', f'{p["titulo"]} · {NOME}', p['resumo'], post(p)))
+
+    feitas.append(pagina('entrar.html', f'Entrar · {NOME}', 'Entre na sua conta do Orçamento Falado.', pag_entrar))
+    feitas.append(pagina('criar-conta.html', f'Criar conta grátis · {NOME}', 'Crie sua conta grátis no Orçamento Falado e guarde seus orçamentos na nuvem.', pag_criar))
+    pagina('nova-senha.html', f'Nova senha · {NOME}', 'Troca de senha da conta.', pag_nova_senha, '<meta name="robots" content="noindex">\n')
 
     urls = [URL + c.replace('index.html', '') for c in feitas] + [URL + 'app/']
     with open(os.path.join(RAIZ, 'sitemap.xml'), 'w', encoding='utf-8') as f:
