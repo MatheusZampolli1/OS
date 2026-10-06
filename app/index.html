@@ -307,6 +307,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
           <div id="fotos" class="fotos"></div>
           <label class="botao arquivo" for="foto-in">+ Tirar ou escolher foto<input id="foto-in" type="file" accept="image/*" multiple></label>
         </div>
+        <button id="material-btn" type="button">🧱 Lista de material para comprar</button>
       </div>
     </section>
 
@@ -544,6 +545,23 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   </div>
 </div>
 
+<div id="modal-material" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-material">
+  <div class="modal-caixa">
+    <h2 id="t-material">Lista de material</h2>
+    <p class="dica" style="margin:0">Calculada a partir dos itens em m². Os números da lata e da caixa ficam guardados para a próxima vez.</p>
+    <div class="grade2">
+      <label for="mat-rend">Rendimento da tinta <small class="dica">m² por litro, por demão (está na lata)</small><input id="mat-rend" type="number" inputmode="decimal" step="0.1" placeholder="veja na lata"></label>
+      <label for="mat-caixa">Piso: m² por caixa <small class="dica">está na caixa</small><input id="mat-caixa" type="number" inputmode="decimal" step="0.01" placeholder="veja na caixa"></label>
+      <label for="mat-perda">Perda do piso (%)<input id="mat-perda" type="number" inputmode="decimal" step="1" value="10"></label>
+      <label for="mat-dep">WhatsApp do depósito <small class="dica">opcional</small><input id="mat-dep" inputmode="tel" placeholder="(11) 90000-0000"></label>
+    </div>
+    <div id="mat-lista" class="hist"></div>
+    <label for="mat-outros">Outros materiais (um por linha)<textarea id="mat-outros" rows="3" placeholder="Ex.: 2 sacos de argamassa AC-II&#10;1 rolo de lã 23 cm"></textarea></label>
+    <div class="linha-botoes"><button id="mat-zap" class="zap" type="button">Mandar para o depósito</button><button id="mat-copiar" type="button">Copiar lista</button></div>
+    <p id="mat-msg" class="status" role="status"></p>
+    <button id="mat-fechar" type="button">Fechar</button>
+  </div>
+</div>
 <div id="modal-pag" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-pag">
   <div class="modal-caixa">
     <h2 id="t-pag">Registrar pagamento</h2>
@@ -1621,6 +1639,72 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 atual = docVazio();
 montar();
 tudo();
+
+// ---------- lista de material ----------
+// Mesmas contas das calculadoras do site: litros = área × demãos ÷ rendimento; caixas = área × (1 + perda) ÷ m² por caixa.
+var TINTA = /pint|tinta|selador|textura/, PISO = /piso|porcelanato|cer[âa]mica|laminado|vin[íi]lico|revestimento|azulejo/;
+function numBR(n, casas) { return Number(n).toLocaleString('pt-BR', { maximumFractionDigits: casas === undefined ? 2 : casas }); }
+function latas(litros) {
+  var l18 = Math.floor(litros / 18), resto = litros - l18 * 18, g = Math.ceil(resto / 3.6 - 1e-9);
+  if (g >= 5) { l18++; g = 0; }
+  var p = []; if (l18) p.push(l18 + (l18 > 1 ? ' latas' : ' lata') + ' de 18 L'); if (g) p.push(g + (g > 1 ? ' galões' : ' galão') + ' de 3,6 L');
+  return p.join(' + ');
+}
+function calcularMaterial() {
+  var rend = Number($('mat-rend').value) || 0, cx = Number($('mat-caixa').value) || 0, perda = Number($('mat-perda').value);
+  if (!(perda >= 0)) perda = 10;
+  var linhas = [], avisos = [];
+  (atual.itens || []).forEach(function (it) {
+    var d = (it.descricao || '').toLowerCase(), area = Number(it.qtd) || 0;
+    if (it.un !== 'm²' || !area) return;
+    var nome = (it.descricao || '').replace(/\s*\(.*\)\s*$/, '');
+    if (TINTA.test(d) && !/contrapiso/.test(d)) {
+      var md = d.match(/(\d+)\s*dem[ãa]os?/), dem = md ? Number(md[1]) : 2;
+      if (!rend) { avisos.push('Coloque o rendimento da lata para calcular a tinta de “' + nome + '”.'); return; }
+      var lt = area * dem / rend;
+      linhas.push({ txt: 'Tinta para ' + nome.toLowerCase() + ': ' + numBR(lt, 1) + ' L (' + latas(lt) + ')', conta: numBR(area) + ' m² × ' + dem + (dem > 1 ? ' demãos' : ' demão') + (md ? '' : ' (padrão)') + ' ÷ ' + numBR(rend) + ' m²/L' });
+    } else if (PISO.test(d) && !/contrapiso|rodap/.test(d)) {
+      if (!cx) { avisos.push('Coloque os m² por caixa para calcular “' + nome + '”.'); return; }
+      var comprar = area * (1 + perda / 100), n = Math.ceil(comprar / cx - 1e-9);
+      linhas.push({ txt: nome + ': ' + n + (n > 1 ? ' caixas' : ' caixa') + ' (' + numBR(n * cx) + ' m²)', conta: numBR(area) + ' m² + ' + numBR(perda, 0) + '% de perda = ' + numBR(comprar) + ' m² ÷ ' + numBR(cx) + ' m² por caixa' });
+    }
+  });
+  var box = $('mat-lista'); box.textContent = '';
+  linhas.forEach(function (l) {
+    var el = document.createElement('div'); el.className = 'hist-item';
+    var b = document.createElement('b'); b.textContent = l.txt; var sm = document.createElement('small'); sm.className = 'dica'; sm.textContent = l.conta;
+    el.appendChild(b); el.appendChild(sm); box.appendChild(el);
+  });
+  avisos.forEach(function (a) { var p = document.createElement('p'); p.className = 'aviso'; p.style.margin = '0'; p.textContent = a; box.appendChild(p); });
+  if (!linhas.length && !avisos.length) { var v = document.createElement('p'); v.className = 'vazio'; v.textContent = 'Nenhum item de pintura ou de piso em m² neste orçamento. Escreva os materiais em “Outros materiais”.'; box.appendChild(v); }
+  return linhas;
+}
+function textoMaterial() {
+  var linhas = calcularMaterial().map(function (l) { return '• ' + l.txt; });
+  $('mat-outros').value.split('\n').forEach(function (x) { if (x.trim()) linhas.push('• ' + x.trim()); });
+  if (!linhas.length) return '';
+  return ['Olá! Pode me passar o preço e se tem a pronta entrega destes materiais?', ''].concat(linhas).concat(perfil.nome ? ['', perfil.nome] : []).join('\n');
+}
+function guardarMaterial() {
+  perfil.rendTinta = $('mat-rend').value; perfil.m2Caixa = $('mat-caixa').value; perfil.perdaPiso = $('mat-perda').value; perfil.deposito = $('mat-dep').value;
+  guardarJSON('orc-perfil', perfil);
+}
+$('material-btn').addEventListener('click', function () {
+  lerCampos();
+  $('mat-rend').value = perfil.rendTinta || ''; $('mat-caixa').value = perfil.m2Caixa || ''; $('mat-perda').value = perfil.perdaPiso || '10'; $('mat-dep').value = perfil.deposito || '';
+  $('mat-msg').textContent = ''; calcularMaterial(); $('modal-material').hidden = false;
+});
+['mat-rend', 'mat-caixa', 'mat-perda'].forEach(function (id) { $(id).addEventListener('input', calcularMaterial); });
+['mat-rend', 'mat-caixa', 'mat-perda', 'mat-dep'].forEach(function (id) { $(id).addEventListener('change', guardarMaterial); });
+$('mat-zap').addEventListener('click', function () {
+  var t = textoMaterial(); if (!t) { $('mat-msg').textContent = 'A lista está vazia.'; return; }
+  guardarMaterial(); abrirWhats($('mat-dep').value, t);
+});
+$('mat-copiar').addEventListener('click', function () {
+  var t = textoMaterial(); if (!t) { $('mat-msg').textContent = 'A lista está vazia.'; return; }
+  (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function () { $('mat-msg').textContent = 'Lista copiada.'; }, function () { $('mat-msg').textContent = 'Não deu para copiar. Use “Mandar para o depósito”.'; });
+});
+$('mat-fechar').addEventListener('click', function () { $('modal-material').hidden = true; });
 // Primeira abertura: mostra o PDF do exemplo antes de pedir qualquer coisa.
 function mostrarBoasVindas() { $('boas-vindas').hidden = !(docs.length === 0 && !ler('orc-bv-fechado')); }
 $('bv-pdf').addEventListener('click', function () {
