@@ -271,6 +271,16 @@
   // O banco decide quem tem acesso (meu_acesso); a tela só mostra e bloqueia a aba Novo.
   // Sem a cobrança ligada pelo dono, ninguém é bloqueado e a seção do plano fica escondida.
   var acesso = null, config = null;
+  var bloqueado = false;
+  // Sem acesso não sai nenhum documento (orçamento, recibo ou relatório). Ver e exportar os dados continua liberado.
+  var pdfNovoOriginal = window.pdfNovo;
+  window.pdfNovo = function () {
+    if (bloqueado) {
+      setTimeout(function () { irPara('novo'); window.scrollTo(0, 0); }, 0);
+      throw new Error('bloqueado');
+    }
+    return pdfNovoOriginal.apply(this, arguments);
+  };
   var real = function (v) { return Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); };
   var dataBR = function (s) { return s ? new Date(s).toLocaleDateString('pt-BR') : ''; };
   var STATUS = { PENDING: 'Em aberto', OVERDUE: 'Vencida', CONFIRMED: 'Paga', RECEIVED: 'Paga', RECEIVED_IN_CASH: 'Paga', REFUNDED: 'Estornada', DELETED: 'Cancelada' };
@@ -287,6 +297,7 @@
       }).catch(function () { aplicarAcesso(); });
   }
   function bloquear(sim, tit, txt, botao) {
+    bloqueado = !!sim;
     el('tela-novo').classList.toggle('bloqueado', !!sim); el('bloqueio').hidden = !sim;
     if (sim) { el('bloqueio-tit').textContent = tit; el('bloqueio-txt').textContent = txt; el('bloqueio-btn').textContent = botao; }
   }
@@ -302,7 +313,7 @@
     if (!acesso || !acesso.cobranca_ligada) { bloquear(false); return; }
     var vencido = acesso.motivo === 'vencido';
     bloquear(!acesso.liberado, vencido ? 'Sua assinatura venceu' : 'Seu teste grátis acabou',
-      'Para continuar fazendo orçamentos, assine por ' + real(acesso.preco_mensal) + ' por mês ou ' + real(acesso.preco_anual) + ' por ano.', vencido ? 'Pagar agora' : 'Assinar');
+      'Para voltar a criar e enviar orçamentos, recibos e relatórios, assine a partir de ' + real(acesso.preco_mensal) + ' por mês.', vencido ? 'Pagar agora' : 'Assinar');
     el('bloqueio-btn').onclick = function () { irPara('perfil'); el('plano-sec').scrollIntoView({ behavior: 'smooth' }); };
   }
   function desenharPlano(a, faturas) {
@@ -318,10 +329,12 @@
     else { s = 'Teste grátis acabou'; d = 'Assine para continuar fazendo orçamentos.'; }
     el('plano-situacao').textContent = s; el('plano-detalhe').textContent = d;
     el('plano-mensal').textContent = 'Mensal · ' + real(a.preco_mensal);
+    el('plano-trimestral').textContent = 'Trimestral · ' + real(a.preco_trimestral || 79.9);
     el('plano-anual').textContent = 'Anual · ' + real(a.preco_anual) + ' (2 meses grátis)';
     var renovando = a.motivo === 'pago' && a.status !== 'cancelada';
     el('plano-botoes').hidden = renovando && a.plano === 'anual';
     el('plano-mensal').hidden = renovando && a.plano === 'mensal';
+    el('plano-trimestral').hidden = renovando && a.plano === 'trimestral';
     el('plano-cancelar').hidden = !(a.status === 'ativa' || a.status === 'pendente' || a.status === 'atrasada');
     var box = el('plano-faturas'); box.textContent = '';
     faturas.forEach(function (f) {
@@ -345,21 +358,23 @@
   var planoEscolhido = 'mensal';
   function abrirAssinar(plano) {
     planoEscolhido = plano;
-    var preco = acesso ? (plano === 'anual' ? acesso.preco_anual : acesso.preco_mensal) : 0;
+    var preco = acesso ? (plano === 'anual' ? acesso.preco_anual : plano === 'trimestral' ? (acesso.preco_trimestral || 79.9) : acesso.preco_mensal) : 0;
     el('t-assinar').textContent = 'Assinar plano ' + plano;
-    el('assinar-resumo').textContent = real(preco) + (plano === 'anual' ? ' por ano' : ' por mês') + '. Cancele quando quiser.';
+    el('assinar-resumo').textContent = real(preco) + (plano === 'anual' ? ' por ano' : plano === 'trimestral' ? ' a cada 3 meses' : ' por mês') + '. Cancele quando quiser; vale até o fim do período pago.';
     if (!el('assinar-nome').value) el('assinar-nome').value = perfil.nome || '';
     if (!el('assinar-doc').value) el('assinar-doc').value = perfil.doc || '';
     el('assinar-msg').hidden = true; el('modal-assinar').hidden = false; el('assinar-nome').focus();
   }
   el('plano-mensal').addEventListener('click', function () { abrirAssinar('mensal'); });
+  el('plano-trimestral').addEventListener('click', function () { abrirAssinar('trimestral'); });
   el('plano-anual').addEventListener('click', function () { abrirAssinar('anual'); });
   el('assinar-fechar').addEventListener('click', function () { el('modal-assinar').hidden = true; });
   el('assinar-form').addEventListener('submit', function (ev) {
     ev.preventDefault();
     var m = el('assinar-msg'), b = el('assinar-ok');
     m.hidden = false; m.className = 'status'; m.textContent = 'Criando sua cobrança…'; b.disabled = true;
-    chamarFuncao('assinar', { plano: planoEscolhido, nome: el('assinar-nome').value, cpfCnpj: el('assinar-doc').value }).then(function (j) {
+    var forma = (document.querySelector('input[name=forma]:checked') || {}).value || 'cartao';
+    chamarFuncao('assinar', { plano: planoEscolhido, forma: forma, nome: el('assinar-nome').value, cpfCnpj: el('assinar-doc').value }).then(function (j) {
       if (j.jaAssinante) { m.textContent = 'Você já está com esse plano ativo.'; return; }
       if (!j.link) { m.textContent = 'Assinatura criada. A fatura aparece em “Seu plano” em instantes.'; lerAcesso(); return; }
       m.innerHTML = 'Pronto! <a href="" target="_blank" rel="noopener">Abrir o pagamento</a>. Depois de pagar, volte aqui: libera sozinho.';

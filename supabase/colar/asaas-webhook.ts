@@ -84,7 +84,9 @@ function clientes(amb, f) {
   return { rpc, linha, usuario, asaas };
 }
 
-// POST { plano: 'mensal'|'anual', nome, cpfCnpj } -> { link } da fatura (Pix, boleto ou cartão)
+// POST { plano: 'mensal'|'trimestral'|'anual', forma: 'cartao'|'fatura', nome, cpfCnpj } -> { link } da fatura.
+// cartao: o cliente põe o cartão na página do Asaas e as próximas cobranças saem sozinhas.
+// fatura: a cada período chega uma fatura para pagar com Pix, boleto ou cartão.
 function criarAssinar(amb, f = fetch) {
   const c = clientes(amb, f);
   return async (req) => {
@@ -94,23 +96,25 @@ function criarAssinar(amb, f = fetch) {
       const u = await c.usuario(req);
       if (!u) return resposta(req, 401, { erro: 'Entre na sua conta para assinar.' });
       const b = await req.json().catch(() => ({}));
-      const plano = b.plano === 'anual' ? 'anual' : b.plano === 'mensal' ? 'mensal' : null;
-      if (!plano) return resposta(req, 400, { erro: 'Escolha o plano mensal ou anual.' });
+      const plano = ['mensal', 'trimestral', 'anual'].includes(b.plano) ? b.plano : null;
+      if (!plano) return resposta(req, 400, { erro: 'Escolha o plano mensal, trimestral ou anual.' });
+      const tipo = b.forma === 'cartao' ? 'CREDIT_CARD' : 'UNDEFINED';
       const nome = String(b.nome || '').trim();
       const doc = String(b.cpfCnpj || '').replace(/\D/g, '');
       if (nome.length < 3) return resposta(req, 400, { erro: 'Digite seu nome completo ou o nome da empresa.' });
       if (!cpfCnpjValido(doc)) return resposta(req, 400, { erro: 'CPF ou CNPJ inválido. Confira os números.' });
 
       const conf = await c.linha('cobranca_config', 'id=eq.1');
-      const valor = Number(plano === 'anual' ? conf.preco_anual : conf.preco_mensal);
+      const valor = Number(plano === 'anual' ? conf.preco_anual : plano === 'trimestral' ? conf.preco_trimestral : conf.preco_mensal);
       const atual = await c.linha('assinaturas', 'user_id=eq.' + u.id);
 
       // Mesmo plano já em andamento: devolve a fatura em aberto em vez de criar outra.
       if (atual && atual.asaas_subscription && atual.plano === plano && atual.status !== 'cancelada') {
         const pg = await c.asaas('GET', '/subscriptions/' + atual.asaas_subscription + '/payments');
-        const aberta = (pg.data || []).find((p) => ['PENDING', 'OVERDUE'].includes(p.status));
+        const aberta = (pg.data || []).find((p) => ['PENDING', 'OVERDUE'].includes(p.status) && p.billingType === tipo);
         if (aberta) return resposta(req, 200, { link: aberta.invoiceUrl, reaproveitada: true });
-        if (atual.pago_ate && new Date(atual.pago_ate) > new Date()) return resposta(req, 200, { jaAssinante: true });
+        const temAberta = (pg.data || []).some((p) => ['PENDING', 'OVERDUE'].includes(p.status));
+        if (!temAberta && atual.pago_ate && new Date(atual.pago_ate) > new Date()) return resposta(req, 200, { jaAssinante: true });
       }
 
       let cliente = atual && atual.asaas_customer;
@@ -128,8 +132,8 @@ function criarAssinar(amb, f = fetch) {
       const pagoAte = atual && atual.pago_ate ? hojeBrasil(new Date(atual.pago_ate)) : null;
       const venc = pagoAte && pagoAte > hoje ? pagoAte : hoje;
       const sub = await c.asaas('POST', '/subscriptions', {
-        customer: cliente, billingType: 'UNDEFINED', value: valor, nextDueDate: venc,
-        cycle: plano === 'anual' ? 'YEARLY' : 'MONTHLY',
+        customer: cliente, billingType: tipo, value: valor, nextDueDate: venc,
+        cycle: plano === 'anual' ? 'YEARLY' : plano === 'trimestral' ? 'QUARTERLY' : 'MONTHLY',
         description: 'Orçamento Falado - plano ' + plano, externalReference: u.id,
       });
       const ativa = atual && atual.pago_ate && new Date(atual.pago_ate) > new Date();

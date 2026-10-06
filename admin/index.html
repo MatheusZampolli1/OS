@@ -156,7 +156,7 @@
     $('cob-aviso').textContent = ligada
       ? 'Quem não paga depois do teste fica sem poder criar orçamentos novos (continua vendo e exportando os dados).'
       : 'Desligada: todo mundo usa grátis. Ao ligar, cada conta ganha ' + cob.config.dias_teste + ' dias de teste a partir de agora e depois precisa assinar.';
-    $('c-ativas').textContent = inteiro.format(cob.ativas); $('c-ativas-s').textContent = cob.mensais + ' mensais · ' + cob.anuais + ' anuais';
+    $('c-ativas').textContent = inteiro.format(cob.ativas); $('c-ativas-s').textContent = cob.mensais + ' mensais · ' + (cob.trimestrais || 0) + ' trimestrais · ' + cob.anuais + ' anuais';
     $('c-teste').textContent = inteiro.format(cob.em_teste);
     $('c-atraso').textContent = inteiro.format(cob.atrasadas); $('c-atraso-s').textContent = cob.canceladas + ' cancelaram a renovação';
     $('c-receb').textContent = real.format(Number(cob.recebido_30d)); $('c-receb-s').textContent = 'nos últimos 30 dias · ' + real.format(Number(cob.recebido_total)) + ' no total (antes das taxas do Asaas)';

@@ -13,6 +13,7 @@ create table if not exists public.cobranca_config (
   limite_sem_conta int not null default 3      -- orçamentos permitidos sem conta, com a cobrança ligada
 );
 insert into public.cobranca_config (id) values (1) on conflict do nothing;
+alter table public.cobranca_config add column if not exists preco_trimestral numeric(10,2) not null default 79.90;
 alter table public.cobranca_config enable row level security;
 drop policy if exists "todos leem" on public.cobranca_config;
 create policy "todos leem" on public.cobranca_config for select to anon, authenticated using (true);
@@ -22,13 +23,15 @@ grant select on public.cobranca_config to anon, authenticated;
 -- ---------- assinatura de cada usuário ----------
 create table if not exists public.assinaturas (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  plano text check (plano in ('mensal', 'anual')),
+  plano text,
   status text not null default 'sem' check (status in ('sem', 'pendente', 'ativa', 'atrasada', 'cancelada')),
   pago_ate timestamptz,
   asaas_customer text,
   asaas_subscription text,
   atualizado timestamptz not null default now()
 );
+alter table public.assinaturas drop constraint if exists assinaturas_plano_check;
+alter table public.assinaturas add constraint assinaturas_plano_check check (plano in ('mensal', 'trimestral', 'anual'));
 create index if not exists assinaturas_sub on public.assinaturas (asaas_subscription);
 create index if not exists assinaturas_cus on public.assinaturas (asaas_customer);
 alter table public.assinaturas enable row level security;
@@ -82,11 +85,11 @@ begin
   select created_at into criado from auth.users where id = p_user;
   if exists (select 1 from public.admins where user_id = p_user) then
     return jsonb_build_object('cobranca_ligada', c.ligada_em is not null, 'liberado', true, 'motivo', 'admin',
-      'preco_mensal', c.preco_mensal, 'preco_anual', c.preco_anual);
+      'preco_mensal', c.preco_mensal, 'preco_trimestral', c.preco_trimestral, 'preco_anual', c.preco_anual);
   end if;
   if c.ligada_em is null then
     return jsonb_build_object('cobranca_ligada', false, 'liberado', true, 'motivo', 'gratis',
-      'preco_mensal', c.preco_mensal, 'preco_anual', c.preco_anual);
+      'preco_mensal', c.preco_mensal, 'preco_trimestral', c.preco_trimestral, 'preco_anual', c.preco_anual);
   end if;
   teste_ate := greatest(coalesce(criado, now()), c.ligada_em) + make_interval(days => c.dias_teste);
   if a.pago_ate is not null and now() < a.pago_ate + make_interval(days => c.dias_tolerancia) then
@@ -101,7 +104,7 @@ begin
     'teste_ate', teste_ate, 'pago_ate', a.pago_ate,
     'status', coalesce(a.status, 'sem'), 'plano', a.plano,
     'dias_tolerancia', c.dias_tolerancia,
-    'preco_mensal', c.preco_mensal, 'preco_anual', c.preco_anual);
+    'preco_mensal', c.preco_mensal, 'preco_trimestral', c.preco_trimestral, 'preco_anual', c.preco_anual);
 end $$;
 revoke execute on function public.acesso_de(uuid) from public, anon, authenticated;
 
@@ -169,7 +172,8 @@ begin
   end if;
 
   select * into c from public.cobranca_config where id = 1;
-  meses := case when (pg ->> 'value')::numeric >= c.preco_anual * 0.8 then 12 else 1 end;
+  meses := case when (pg ->> 'value')::numeric >= c.preco_anual * 0.8 then 12
+                when (pg ->> 'value')::numeric >= c.preco_trimestral * 0.8 then 3 else 1 end;
 
   insert into public.cobrancas (id, user_id, subscription, valor, vencimento, status, forma, pago_em, link, meses, atualizado)
   values (pg ->> 'id', uid, pg ->> 'subscription', (pg ->> 'value')::numeric, (pg ->> 'dueDate')::date, coalesce(pg ->> 'status', ''),
@@ -242,7 +246,8 @@ begin
     'em_teste', (select count(*) from auth.users u where c.ligada_em is not null
                    and greatest(u.created_at, c.ligada_em) + make_interval(days => c.dias_teste) > now()
                    and not exists (select 1 from public.assinaturas a where a.user_id = u.id and a.pago_ate > now())),
-    'mrr', (select coalesce(sum(case when plano = 'anual' then c.preco_anual / 12 else c.preco_mensal end), 0)
+    'trimestrais', (select count(*) from public.assinaturas where pago_ate > now() and plano = 'trimestral'),
+    'mrr', (select coalesce(sum(case when plano = 'anual' then c.preco_anual / 12 when plano = 'trimestral' then c.preco_trimestral / 3 else c.preco_mensal end), 0)
               from public.assinaturas where pago_ate > now() and status <> 'cancelada'),
     'recebido_total', (select coalesce(sum(valor), 0) from public.cobrancas where creditado),
     'recebido_30d', (select coalesce(sum(valor), 0) from public.cobrancas where creditado and coalesce(pago_em, atualizado::date) > current_date - 30),

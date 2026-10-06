@@ -17,6 +17,8 @@ EMAIL = ''
 RESPONSAVEL = 'Matheus Zampolli'
 
 PRECO_MES = 'R$ 29,90'
+PRECO_TRI = 'R$ 79,90'
+PRECO_TRI_MES = 'R$ 26,63'
 PRECO_ANO = 'R$ 299'
 PRECO_ANO_MES = 'R$ 24,92'
 
@@ -257,10 +259,13 @@ def inicio(base):
 # ---------------------------------------------------------------- preços
 def precos(base):
     return f'''<section class="secao"><div class="wrap">
-<div class="cab"><span class="etiqueta">Preços</span><h1>Um plano, tudo incluído.</h1><p class="sub">Sem limite de orçamentos, sem cobrança por cliente e sem taxa sobre o seu Pix.</p></div>
+<div class="cab"><span class="etiqueta">Preços</span><h1>Um plano, tudo incluído.</h1><p class="sub">Sem limite de orçamentos, sem cobrança por cliente e sem taxa sobre o seu Pix. Mesmo app em todos os planos; muda só o período.</p></div>
 <p class="faixa-aviso">Lançamento: enquanto estamos em teste, o app é grátis para todo mundo. Ninguém será cobrado sem aviso antes.</p>
 <div class="planos" style="margin-top:20px">
 <div class="plano"><span class="etiqueta">Mensal</span><p class="valor">{PRECO_MES}<small> /mês</small></p>
+<ul><li>14 dias grátis, sem cartão</li><li>Cancele quando quiser</li><li>Todas as funções</li></ul></div>
+<div class="plano"><span class="etiqueta">Trimestral</span><p class="valor">{PRECO_TRI}<small> /3 meses</small></p>
+<p class="miudo">Sai {PRECO_TRI_MES} por mês.</p>
 <ul><li>14 dias grátis, sem cartão</li><li>Cancele quando quiser</li><li>Todas as funções</li></ul></div>
 <div class="plano dest"><span class="etiqueta">Anual · 2 meses de presente</span><p class="valor">{PRECO_ANO}<small> /ano</small></p>
 <p class="miudo">Sai {PRECO_ANO_MES} por mês.</p>
@@ -288,7 +293,10 @@ def precos(base):
     ('Preciso pôr cartão para testar?', 'Não. O teste de 14 dias não pede cartão. No fim, você escolhe se quer continuar.'),
     ('Vocês cobram taxa sobre o que eu recebo?', 'Não. O Pix vai da conta do cliente direto para a sua. Não ficamos com nenhuma parte.'),
     ('E se eu cancelar?', 'Você continua podendo exportar todos os seus dados: cópia de segurança completa e planilha.'),
-    ('Como vou pagar?', 'Por Pix, boleto ou cartão, quando a cobrança começar. Durante o lançamento, não há cobrança.'),
+    ('Como vou pagar?', 'No cartão de crédito, que renova sozinho a cada período, ou por Pix e boleto, com uma fatura no seu e-mail a cada período. Durante o lançamento, não há cobrança.'),
+    ('E quando acabam os 14 dias?', 'Você escolhe um plano e paga. Se não assinar, o app para de criar e enviar orçamentos, recibos e relatórios. Seus dados continuam guardados e você pode ver e exportar tudo quando quiser.'),
+    ('E se um pagamento atrasar?', 'O app continua funcionando por 3 dias. Depois disso, a criação de documentos fica pausada até o pagamento cair, e volta sozinha assim que ele é confirmado.'),
+    ('Posso desistir e pedir o dinheiro de volta?', 'Sim. Em até 7 dias depois do primeiro pagamento, devolvemos o valor inteiro (direito de arrependimento do Código de Defesa do Consumidor). Depois disso, o cancelamento vale no fim do período já pago.'),
 ])}
 </div></section>
 ''' + chamada_final(base)
@@ -421,7 +429,15 @@ def termos(base):
 <h2>3. Conta</h2>
 <p>Você é responsável por manter sua senha em segredo. Se perceber uso indevido, fale com a gente pelo <a href="{base}contato.html">contato</a>.</p>
 <h2>4. Preço e cancelamento</h2>
-<p>Durante o lançamento, o app é gratuito. Quando a cobrança começar, os preços estarão na página <a href="{base}precos.html">Preços</a>, com aviso prévio a quem já usa, 14 dias de teste grátis e cancelamento a qualquer momento, sem multa.</p>
+<p>Durante o lançamento, o app é gratuito. Quando a cobrança começar, os preços estarão na página <a href="{base}precos.html">Preços</a>, com aviso prévio a quem já usa.</p>
+<ul>
+<li><b>Teste:</b> 14 dias grátis com todas as funções, sem cartão, uma vez por pessoa. O teste começa quando a conta é criada (ou quando a cobrança começar, para quem já usava).</li>
+<li><b>Planos:</b> mensal, trimestral ou anual, renovados automaticamente ao fim de cada período até você cancelar. No cartão, a renovação é cobrada sozinha; no Pix ou boleto, enviamos uma fatura por e-mail.</li>
+<li><b>Fim do teste ou atraso:</b> sem plano pago, o app deixa de criar e enviar orçamentos, recibos e relatórios. Em caso de atraso, isso só acontece 3 dias depois do vencimento. Seus dados continuam disponíveis para ver e exportar.</li>
+<li><b>Cancelamento:</b> a qualquer momento, pelo próprio app, sem multa. Vale no fim do período já pago, sem devolução proporcional.</li>
+<li><b>Arrependimento:</b> em até 7 dias do primeiro pagamento, você pode desistir e receber o valor inteiro de volta (art. 49 do Código de Defesa do Consumidor). Peça pelo <a href="{base}contato.html">contato</a>.</li>
+<li><b>Pagamentos:</b> processados pelo Asaas. Não guardamos dados de cartão.</li>
+</ul>
 <h2>5. Disponibilidade</h2>
 <p>Trabalhamos para o app ficar sempre no ar, mas ele pode ter interrupções. Recomendamos guardar uma cópia de segurança dos seus dados de vez em quando, pela aba Perfil.</p>
 <h2>6. Seus dados</h2>

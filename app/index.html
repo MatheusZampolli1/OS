@@ -136,6 +136,12 @@ footer { color: var(--muted); font-size: .85rem; text-align: center; padding-blo
 #tela-novo.bloqueado > section:not(#bloqueio) { display: none; }
 .bloqueio h2 { margin: 0; }
 .chip.pendente { color: var(--muted); }
+.formas { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.formas legend { margin-bottom: 6px; }
+.forma { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-weight: 400; cursor: pointer; }
+.forma input { width: auto; margin-top: 4px; }
+.forma small { color: var(--muted); }
+.forma:has(input:checked) { border-color: var(--ink); background: var(--bg); }
 
 /* ----- v3: abas de app, chips, assinatura ----- */
 body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
@@ -386,6 +392,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
         <p id="plano-detalhe" class="dica"></p>
         <div id="plano-botoes" class="linha-botoes">
           <button id="plano-mensal" class="primario" type="button"></button>
+          <button id="plano-trimestral" type="button"></button>
           <button id="plano-anual" type="button"></button>
         </div>
         <div id="plano-faturas" class="hist"></div>
@@ -457,7 +464,12 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
     <p id="assinar-resumo" class="dica"></p>
     <label for="assinar-nome">Nome completo ou da empresa<input id="assinar-nome" autocomplete="name"></label>
     <label for="assinar-doc">CPF ou CNPJ<input id="assinar-doc" inputmode="numeric" autocomplete="off"></label>
-    <p class="dica">Usados só para emitir a cobrança. Na próxima tela você paga com Pix, boleto ou cartão.</p>
+    <fieldset class="formas">
+      <legend class="etiqueta">Como você quer pagar</legend>
+      <label class="forma"><input type="radio" name="forma" value="cartao" checked><span><b>Cartão de crédito</b><br><small>Renova sozinho a cada período. Nada para lembrar.</small></span></label>
+      <label class="forma"><input type="radio" name="forma" value="fatura"><span><b>Pix ou boleto</b><br><small>A cada período chega uma fatura no seu e-mail para pagar.</small></span></label>
+    </fieldset>
+    <p class="dica">Nome e CPF/CNPJ servem só para emitir a cobrança. Se desistir em até 7 dias do primeiro pagamento, devolvemos o valor.</p>
     <button id="assinar-ok" class="primario" type="submit">Ir para o pagamento</button>
     <p id="assinar-msg" class="status" role="status" hidden></p>
     <button id="assinar-fechar" type="button">Fechar</button>
