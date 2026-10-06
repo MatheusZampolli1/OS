@@ -134,6 +134,9 @@ footer { color: var(--muted); font-size: .85rem; text-align: center; padding-blo
 .vazio { color: var(--muted); font-size: .92rem; margin: 0; }
 .bloqueio { border: 2px solid var(--accent); }
 .boas-vindas { border: 2px solid var(--accent); }
+.aba-num { position: absolute; top: 4px; right: calc(50% - 22px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px; background: var(--danger); color: #fff; font: 600 .72rem/18px var(--font-body); text-align: center; }
+nav.abas button { position: relative; }
+.hist-item.atrasado { border-color: var(--accent); border-width: 2px; }
 .boas-vindas h2 { margin: 0; }
 #tela-novo.bloqueado > section:not(#bloqueio) { display: none; }
 .bloqueio h2 { margin: 0; }
@@ -239,7 +242,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
         <label for="fala">O que você falou (dá para corrigir)
           <textarea id="fala">Orçamento para o cliente João Silva, reboco de parede 30 metros quadrados a 25 reais o metro, pintura com duas demãos 60 metros a 18 reais, troca de 4 tomadas a 30 reais cada, mão de obra de instalação do chuveiro 150 reais</textarea>
         </label>
-        <p class="dica">Se você não falar o preço, usamos o valor da sua tabela de preços.</p>
+        <p class="dica">Se você não falar o preço, usamos o valor da sua tabela de preços. Pode falar as medidas do cômodo, como “quarto 3 por 4, pé-direito 2,70, pintura a 18”, que o app calcula os metros quadrados.</p>
         <button id="montar" class="primario" type="button">Montar orçamento</button>
       </div>
     </section>
@@ -351,6 +354,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
         <button type="button" data-f="pago" aria-pressed="false">Pagos</button>
         <button type="button" data-f="recusado" aria-pressed="false">Recusados</button>
       </div>
+      <div id="hist-alerta" class="faixa-plano" hidden><span id="hist-alerta-txt"></span><button id="hist-alerta-btn" type="button">Ver quem cobrar</button></div>
       <div id="hist" class="hist"></div>
       <p id="hist-vazio" class="vazio">Os orçamentos que você mandar aparecem aqui, com quem ainda não respondeu e quem falta pagar.</p>
     </section>
@@ -482,7 +486,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 
 <nav class="abas" aria-label="Seções">
   <button type="button" data-aba="novo" aria-current="page"><svg viewBox="0 0 24 24"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Novo</button>
-  <button type="button" data-aba="orcs"><svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></svg>Orçamentos</button>
+  <button type="button" data-aba="orcs"><svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v4h4M10 12h6M10 16h6"/></svg>Orçamentos<span id="aba-cobrar" class="aba-num" hidden></span></button>
   <button type="button" data-aba="precos"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4z"/><path d="M4 10h16M10 10v9"/></svg>Preços</button>
   <button type="button" data-aba="clientes"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>Clientes</button>
   <button type="button" data-aba="perfil"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Perfil</button>
@@ -642,9 +646,22 @@ function lerFala(texto) {
   t = t.replace(/(\d(?:\s*(?:reais|real|conto|contos|pila))?)\s+e\s+(?=[a-zà-ú])(?!meio\b)/g, '$1 , ');
   var partes = t.split(/[,;:\n]|\.(?!\d)| e depois | depois | mais | também | tambem | outro item | próximo item | proximo item /);
   var itens = [];
+  var comodo = null; // medidas faladas ("quarto 3 por 4, pé-direito 2,70") valem para os itens seguintes
   partes.forEach(function (p) {
     p = ' ' + p.trim() + ' ';
     if (!p.trim()) return;
+    var md = p.match(/(\d+(?:\.\d+)?)\s*(?:m|metros?)?\s*(?:por|x)\s*(\d+(?:\.\d+)?)\s*(?:m\b|metros?\b)?/);
+    var mh = p.match(/(?:p[ée][\s-]*direito|altura)\s*(?:de\s*)?(\d+(?:\.\d+)?)\s*(?:m\b|metros?\b)?/);
+    if (md || mh) {
+      if (md) {
+        var nomeC = p.slice(0, md.index).match(/(quarto|sala|cozinha|banheiro|lavanderia|varanda|corredor|escrit[óo]rio|garagem|[áa]rea|su[íi]te|closet|c[ôo]modo|loja|parede)\s*(?:de\s*)?$/);
+        comodo = { c: Number(md[1]), l: Number(md[2]), h: mh ? Number(mh[1]) : (comodo ? comodo.h : null), nome: nomeC ? nomeC[1] : '' };
+        p = p.replace(md[0], ' '); if (nomeC) p = p.replace(new RegExp(L + nomeC[1] + R), ' ');
+      } else if (comodo) comodo.h = Number(mh[1]);
+      else comodo = { c: 0, l: 0, h: Number(mh[1]), nome: '' };
+      if (mh) p = p.replace(mh[0], ' ');
+      if (!/\d/.test(p)) return; // a parte só tinha as medidas
+    }
 
     var preco = null, unitario = false;
     var mPreco = p.match(/r\$\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:reais|real|conto|contos|pila)\b/);
@@ -699,7 +716,24 @@ function lerFala(texto) {
     if (!desc && preco === null) return;
     if (preco === null && SO_CONVERSA.test(desc)) return;
     if (!desc) desc = 'Serviço';
+    var qtdFalada = qtd;
     if (qtd === null || qtd === 0) qtd = 1;
+    // Sem quantidade, mas com cômodo medido: o app faz a conta da área (mesma conta da calculadora de tinta)
+    if (comodo && comodo.c && qtdFalada === null && preco !== null) {
+      var dl = desc.toLowerCase(), c = comodo.c, l = comodo.l, h = comodo.h, area = null, unA = 'm²', conta = '';
+      var br = function (n) { return String(Math.round(n * 100) / 100).replace('.', ','); };
+      var medida = (comodo.nome ? comodo.nome + ' ' : '') + br(c) + ' × ' + br(l) + ' m';
+      if (comodo.nome === 'parede') { area = c * l; conta = medida; }
+      else if (/rodap[ée]/.test(dl)) { area = 2 * (c + l); unA = 'm'; conta = medida; }
+      else if (/piso|contrapiso|porcelanato|cer[âa]mica|laminado|vin[íi]lico|assentamento/.test(dl)) { area = c * l; conta = medida; }
+      else if (/^(?:pintura de |pintar o )?teto|forro|laje|sanca/.test(dl) && !/parede/.test(dl)) { area = c * l; conta = medida; }
+      else if (h && /pint|massa|textura|reboco|emboço|emboco|chapisco|grafiato|parede|revestimento|azulejo|selador|lixa/.test(dl)) {
+        area = 2 * (c + l) * h; conta = medida + ', pé-direito ' + br(h) + ' m';
+        if (/teto/.test(dl)) { area += c * l; conta += ', com teto'; }
+      }
+      else if (!h && /pint|massa|textura|reboco|emboço|emboco|chapisco|grafiato|parede|revestimento|azulejo|selador/.test(dl)) desc += ' (fale o pé-direito para o app calcular as paredes)';
+      if (area) { qtd = Math.round(area * 100) / 100; un = unA; unitario = true; desc = desc + ' (' + conta + ')'; }
+    }
     var valorUnit = preco === null ? 0 : (unitario ? preco : preco / qtd);
     itens.push({ descricao: capitalizar(desc), qtd: qtd, un: un, valorUnit: Math.round(valorUnit * 100) / 100 });
   });
@@ -1362,8 +1396,16 @@ document.querySelectorAll('.filtros button').forEach(function (b) {
     desenharOrcs();
   });
 });
+// Orçamento esperando resposta há 2 dias ou mais (contando da última cobrança) pede uma cobrança educada.
+var DIAS_COBRAR = 2;
+function diasEsperando(d) { return Math.floor((Date.now() - (d.cobradoEm || d.criadoEm || Date.now())) / 864e5); }
+function precisaCobrar(d) { return situacao(d) === 'enviado' && diasEsperando(d) >= DIAS_COBRAR; }
 function desenharOrcs() {
   if ($('boas-vindas') && docs.length) $('boas-vindas').hidden = true;
+  var nCobrar = docs.filter(precisaCobrar).length;
+  $('aba-cobrar').hidden = !nCobrar; $('aba-cobrar').textContent = nCobrar;
+  $('hist-alerta').hidden = !nCobrar || filtro === 'enviado';
+  $('hist-alerta-txt').textContent = nCobrar === 1 ? '1 orçamento sem resposta há ' + DIAS_COBRAR + ' dias ou mais.' : nCobrar + ' orçamentos sem resposta há ' + DIAS_COBRAR + ' dias ou mais.';
   var box = $('hist'); box.textContent = '';
   var agora = new Date(), esperando = 0, receber = 0, recebidoMes = 0, decididos = 0, aprovados = 0;
   docs.forEach(function (d) {
@@ -1393,14 +1435,21 @@ function desenharOrcs() {
     el.querySelector('b').textContent = d.cliente.nome || 'Sem nome';
     el.querySelector('.v').textContent = dinheiro(totalDe(d));
     el.querySelector('small').textContent = 'Nº ' + d.numero + ' · ' + d.data + (pagoDe(d) > 0 && s !== 'pago' ? ' · falta ' + dinheiro(restanteDe(d)) : '');
+    var cobrar = precisaCobrar(d);
+    if (cobrar) { el.classList.add('atrasado'); el.querySelector('small').textContent += ' · sem resposta há ' + diasEsperando(d) + ' dias'; }
     var ac = el.querySelector('.hist-acoes');
     function botao(t, fn, cls) { var b = document.createElement('button'); b.type = 'button'; b.textContent = t; if (cls) b.className = cls; b.addEventListener('click', fn); ac.appendChild(b); }
     botao('Abrir', function () { abrirDoc(d); });
     if (s === 'enviado') {
       botao('Cliente aprovou', function () { d.status = 'aprovado'; guardarJSON('orc-docs', docs); desenharOrcs(); });
       botao('Cobrar resposta', function () {
-        abrirWhats(d.cliente.tel, 'Olá' + (d.cliente.nome ? ', ' + d.cliente.nome.split(' ')[0] : '') + '! Passando para saber se deu para ver o orçamento nº ' + d.numero + ' de ' + dinheiro(totalDe(d)) + '. Posso reservar a data para você?' + (perfil.nome ? '\n\n' + perfil.nome : ''));
-      });
+        var nome = d.cliente.nome ? ', ' + d.cliente.nome.split(' ')[0] : '';
+        var texto = d.cobradoEm
+          ? 'Olá' + nome + ', tudo bem? Só confirmando se ainda tem interesse no serviço do orçamento nº ' + d.numero + ' (' + dinheiro(totalDe(d)) + '). Se quiser ajustar alguma coisa no valor ou no prazo, me fala que eu vejo para você.'
+          : 'Olá' + nome + '! Passando para saber se deu para ver o orçamento nº ' + d.numero + ' de ' + dinheiro(totalDe(d)) + '. Ficou alguma dúvida? Se estiver tudo certo, já posso reservar a data para você.';
+        abrirWhats(d.cliente.tel, texto + (perfil.nome ? '\n\n' + perfil.nome : ''));
+        d.cobradoEm = Date.now(); guardarJSON('orc-docs', docs); desenharOrcs();
+      }, cobrar ? 'primario' : '');
       botao('Recusado', function () { d.status = 'recusado'; guardarJSON('orc-docs', docs); desenharOrcs(); });
     }
     if (s === 'aprovado' || s === 'parcial') {
@@ -1437,6 +1486,7 @@ function abrirPagamento(d) {
   $('pag-resumo').textContent = (d.cliente.nome || 'Cliente') + ' · orçamento nº ' + d.numero + ' · falta ' + dinheiro(restanteDe(d));
   $('modal-pag').hidden = false;
 }
+$('hist-alerta-btn').addEventListener('click', function () { var b = document.querySelector('.filtros button[data-f="enviado"]'); if (b) b.click(); });
 $('pag-fechar').addEventListener('click', function () { $('modal-pag').hidden = true; });
 $('pag-ok').addEventListener('click', function () {
   var v = Number($('pag-valor').value) || 0; if (v <= 0) { $('pag-resumo').textContent = 'Digite o valor recebido.'; return; }
