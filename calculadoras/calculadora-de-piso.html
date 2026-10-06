@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Calculadora de piso, rodapé e caixas · Tá Orçado</title>
+<meta name="description" content="Calcule os m² de piso com a perda, quantas caixas comprar, os metros de rodapé e o valor da mão de obra.">
+<link rel="canonical" href="https://matheuszampolli1.github.io/OS/calculadoras/calculadora-de-piso.html">
+<meta property="og:title" content="Calculadora de piso, rodapé e caixas · Tá Orçado">
+<meta property="og:description" content="Calcule os m² de piso com a perda, quantas caixas comprar, os metros de rodapé e o valor da mão de obra.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta name="theme-color" content="#1d2428">
+<link rel="icon" href="../assets/icone.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+.calc input[type=number] { font: inherit; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); width: 100%; }
+.calc input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.calc .par { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+.calc small { font-weight: 400; color: var(--muted); }
+.resultado { display: grid; gap: 6px; }
+.resultado b { font-weight: 700; }
+</style>
+</head>
+<body>
+<header class="topo"><div class="wrap">
+<a class="marca" href="../"><span class="faixa" aria-hidden="true"></span>Tá Orçado</a>
+<nav class="menu" aria-label="Principal"><a href="../#funcoes">Funções</a><a href="../profissoes/">Profissões</a><a href="../precos.html">Preços</a><a href="../blog/">Blog</a><a href="../novidades.html">Novidades</a><a href="../entrar.html">Entrar</a><a class="botao primario peq" href="../criar-conta.html">Criar conta grátis</a></nav>
+<details class="menu-mob"><summary>Menu</summary><nav aria-label="Principal"><a href="../#funcoes">Funções</a><a href="../profissoes/">Profissões</a><a href="../precos.html">Preços</a><a href="../blog/">Blog</a><a href="../novidades.html">Novidades</a><a href="../entrar.html">Entrar</a><a href="../criar-conta.html"><b>Criar conta grátis</b></a></nav></details>
+</div></header>
+<main>
+<article class="wrap estreito artigo">
+<a class="etiqueta" href="./">← Calculadoras</a>
+<h1>Calculadora de piso, rodapé e caixas</h1>
+<p>Coloque as medidas do cômodo e o que está escrito na caixa do piso. Sai quanto comprar e quanto cobrar.</p>
+<form class="form-conta calc" onsubmit="return false">
+<div class="par"><label>Largura (m)<input id="larg" type="number" inputmode="decimal" step="0.01" value="3"></label>
+<label>Comprimento (m)<input id="comp" type="number" inputmode="decimal" step="0.01" value="4"></label></div>
+<div class="par"><label>Perda (%) <small>recortes e quebras; ajuste ao seu caso</small><input id="perda" type="number" inputmode="decimal" step="1" value="10"></label>
+<label>m² por caixa <small>está na caixa</small><input id="caixa" type="number" inputmode="decimal" step="0.01" placeholder="veja na caixa"></label></div>
+<label>Largura das portas no cômodo (m) <small>sai do rodapé</small><input id="portas" type="number" inputmode="decimal" step="0.01" value="0.8"></label>
+<div class="par"><label>Mão de obra do piso (R$ por m²)<input id="ppiso" type="number" inputmode="decimal" step="0.01" placeholder="ex.: 40"></label>
+<label>Mão de obra do rodapé (R$ por m)<input id="prod" type="number" inputmode="decimal" step="0.01" placeholder="ex.: 15"></label></div>
+<div class="caixa resultado" aria-live="polite" id="res"></div>
+</form>
+<h2>Como a conta é feita</h2>
+<p>Área = largura × comprimento. Para comprar, soma-se a perda: área × (1 + perda ÷ 100), arredondando as caixas para cima. A mão de obra é cobrada sobre a área real, sem a perda. Rodapé = (largura + comprimento) × 2, menos a largura das portas.</p>
+<p>Peça ao cliente para guardar uma caixa a mais do mesmo lote. Se uma peça quebrar no futuro, a cor bate.</p>
+</article>
+<section class="secao chamada"><div class="wrap">
+<h2>Transforme essa conta em orçamento.</h2>
+<p class="sub">No Tá Orçado você fala o serviço com a metragem e o preço, e o PDF sai com o total, o Pix e a assinatura do cliente.</p>
+<div class="botoes"><a class="botao primario" href="../criar-conta.html">Criar conta grátis</a><a class="botao" href="../app/">Testar sem conta</a></div>
+</div></section>
+</main>
+<footer class="rodape"><div class="wrap">
+<div class="marca-col"><a class="marca" href="../"><span class="faixa" aria-hidden="true"></span>Tá Orçado</a>
+<p class="nota">Orçamento, recibo e cobrança por voz para quem trabalha com obra. Feito no Brasil, para WhatsApp e Pix.</p></div>
+<div><h3>Produto</h3><ul><li><a href="../#funcoes">Funções</a></li><li><a href="../precos.html">Preços</a></li><li><a href="../novidades.html">Novidades</a></li><li><a href="../app/">Abrir o app</a></li></ul></div>
+<div><h3>Profissões</h3><ul><li><a href="../profissoes/pedreiro.html">Pedreiro</a></li><li><a href="../profissoes/pintor.html">Pintor</a></li><li><a href="../profissoes/eletricista.html">Eletricista</a></li><li><a href="../profissoes/encanador.html">Encanador</a></li><li><a href="../profissoes/gesseiro.html">Gesseiro</a></li></ul></div>
+<div><h3>Ajuda</h3><ul><li><a href="../blog/">Blog</a></li><li><a href="https://wa.me/5511989167926" rel="noopener">WhatsApp</a></li><li><a href="../contato.html">Contato</a></li><li><a href="../termos.html">Termos de uso</a></li><li><a href="../privacidade.html">Privacidade</a></li></ul></div>
+</div></footer>
+<script>
+
+function n(id) { var v = String(document.getElementById(id).value).replace(',', '.'); var x = parseFloat(v); return isFinite(x) && x > 0 ? x : 0; }
+function br(x, c) { return x.toLocaleString('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c }); }
+function rs(x) { return x.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+document.querySelectorAll('.calc input').forEach(function (i) { i.addEventListener('input', calcular); });
+
+function calcular() {
+  var l = n('larg'), c = n('comp'), pe = n('perda'), cx = n('caixa'), po = n('portas'), pp = n('ppiso'), pr = n('prod');
+  var area = l * c, compra = area * (1 + pe / 100), rod = Math.max(0, (l + c) * 2 - po);
+  var h = '<p>Área do piso: <b>' + br(area, 2) + ' m²</b></p><p>Comprar com ' + br(pe, 0) + '% de perda: <b>' + br(compra, 2) + ' m²</b></p>';
+  if (cx) { var q = Math.ceil(compra / cx - 1e-9); h += '<p>Caixas: <b>' + q + '</b> (' + br(q * cx, 2) + ' m²)</p>'; }
+  else h += '<p>Preencha os m² por caixa para ver quantas caixas comprar.</p>';
+  h += '<p>Rodapé: <b>' + br(rod, 2) + ' m</b></p>';
+  var tot = area * pp + rod * pr;
+  if (pp || pr) h += '<p>Mão de obra: <b>' + rs(tot) + '</b>' + (pp ? ' (piso ' + rs(area * pp) + ')' : '') + (pr ? ' (rodapé ' + rs(rod * pr) + ')' : '') + '</p>';
+  document.getElementById('res').innerHTML = h;
+}
+calcular();
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Calculadora de tinta e de pintura por m² · Tá Orçado</title>
+<meta name="description" content="Calcule a área de parede, os litros de tinta e o valor da mão de obra de pintura. Grátis, no celular.">
+<link rel="canonical" href="https://matheuszampolli1.github.io/OS/calculadoras/calculadora-de-tinta.html">
+<meta property="og:title" content="Calculadora de tinta e de pintura por m² · Tá Orçado">
+<meta property="og:description" content="Calcule a área de parede, os litros de tinta e o valor da mão de obra de pintura. Grátis, no celular.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="pt_BR">
+<meta name="theme-color" content="#1d2428">
+<link rel="icon" href="../assets/icone.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="../assets/site.css">
+<style>
+.calc input[type=number] { font: inherit; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); width: 100%; }
+.calc input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.calc .par { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+.calc small { font-weight: 400; color: var(--muted); }
+.resultado { display: grid; gap: 6px; }
+.resultado b { font-weight: 700; }
+</style>
+</head>
+<body>
+<header class="topo"><div class="wrap">
+<a class="marca" href="../"><span class="faixa" aria-hidden="true"></span>Tá Orçado</a>
+<nav class="menu" aria-label="Principal"><a href="../#funcoes">Funções</a><a href="../profissoes/">Profissões</a><a href="../precos.html">Preços</a><a href="../blog/">Blog</a><a href="../novidades.html">Novidades</a><a href="../entrar.html">Entrar</a><a class="botao primario peq" href="../criar-conta.html">Criar conta grátis</a></nav>
+<details class="menu-mob"><summary>Menu</summary><nav aria-label="Principal"><a href="../#funcoes">Funções</a><a href="../profissoes/">Profissões</a><a href="../precos.html">Preços</a><a href="../blog/">Blog</a><a href="../novidades.html">Novidades</a><a href="../entrar.html">Entrar</a><a href="../criar-conta.html"><b>Criar conta grátis</b></a></nav></details>
+</div></header>
+<main>
+<article class="wrap estreito artigo">
+<a class="etiqueta" href="./">← Calculadoras</a>
+<h1>Calculadora de tinta e de pintura por m²</h1>
+<p>Coloque as medidas do cômodo. A conta sai na hora: metros quadrados, litros de tinta e quanto fica a mão de obra.</p>
+<form class="form-conta calc" onsubmit="return false">
+<div class="par"><label>Largura do cômodo (m)<input id="larg" type="number" inputmode="decimal" step="0.01" value="3"></label>
+<label>Comprimento (m)<input id="comp" type="number" inputmode="decimal" step="0.01" value="4"></label></div>
+<div class="par"><label>Altura da parede (m)<input id="alt" type="number" inputmode="decimal" step="0.01" value="2.7"></label>
+<label>Vãos a descontar (m²) <small>portas e janelas grandes</small><input id="vaos" type="number" inputmode="decimal" step="0.01" value="0"></label></div>
+<label class="ver-senha"><input id="teto" type="checkbox"> Incluir o teto</label>
+<div class="par"><label>Demãos<input id="demaos" type="number" inputmode="numeric" step="1" value="2"></label>
+<label>Rendimento (m² por litro, por demão) <small>está na lata</small><input id="rend" type="number" inputmode="decimal" step="0.1" placeholder="veja na lata"></label></div>
+<label>Seu preço de mão de obra (R$ por m²)<input id="preco" type="number" inputmode="decimal" step="0.01" placeholder="ex.: 18"></label>
+<div class="caixa resultado" aria-live="polite" id="res"></div>
+</form>
+<h2>Como a conta é feita</h2>
+<p>Paredes = (largura + comprimento) × 2 × altura, menos os vãos. O teto, se marcado, é largura × comprimento. Litros = área × demãos ÷ rendimento. O rendimento muda de uma tinta para outra, por isso a calculadora usa o número da lata que você vai usar.</p>
+<p>Para entender os detalhes (descontar ou não portas e janelas, teto como item separado), leia <a href="../blog/como-calcular-metro-quadrado-de-parede.html">como calcular o metro quadrado de parede</a>.</p>
+</article>
+<section class="secao chamada"><div class="wrap">
+<h2>Transforme essa conta em orçamento.</h2>
+<p class="sub">No Tá Orçado você fala o serviço com a metragem e o preço, e o PDF sai com o total, o Pix e a assinatura do cliente.</p>
+<div class="botoes"><a class="botao primario" href="../criar-conta.html">Criar conta grátis</a><a class="botao" href="../app/">Testar sem conta</a></div>
+</div></section>
+</main>
+<footer class="rodape"><div class="wrap">
+<div class="marca-col"><a class="marca" href="../"><span class="faixa" aria-hidden="true"></span>Tá Orçado</a>
+<p class="nota">Orçamento, recibo e cobrança por voz para quem trabalha com obra. Feito no Brasil, para WhatsApp e Pix.</p></div>
+<div><h3>Produto</h3><ul><li><a href="../#funcoes">Funções</a></li><li><a href="../precos.html">Preços</a></li><li><a href="../novidades.html">Novidades</a></li><li><a href="../app/">Abrir o app</a></li></ul></div>
+<div><h3>Profissões</h3><ul><li><a href="../profissoes/pedreiro.html">Pedreiro</a></li><li><a href="../profissoes/pintor.html">Pintor</a></li><li><a href="../profissoes/eletricista.html">Eletricista</a></li><li><a href="../profissoes/encanador.html">Encanador</a></li><li><a href="../profissoes/gesseiro.html">Gesseiro</a></li></ul></div>
+<div><h3>Ajuda</h3><ul><li><a href="../blog/">Blog</a></li><li><a href="https://wa.me/5511989167926" rel="noopener">WhatsApp</a></li><li><a href="../contato.html">Contato</a></li><li><a href="../termos.html">Termos de uso</a></li><li><a href="../privacidade.html">Privacidade</a></li></ul></div>
+</div></footer>
+<script>
+
+function n(id) { var v = String(document.getElementById(id).value).replace(',', '.'); var x = parseFloat(v); return isFinite(x) && x > 0 ? x : 0; }
+function br(x, c) { return x.toLocaleString('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c }); }
+function rs(x) { return x.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+document.querySelectorAll('.calc input').forEach(function (i) { i.addEventListener('input', calcular); });
+
+function calcular() {
+  var l = n('larg'), c = n('comp'), a = n('alt'), v = n('vaos'), d = Math.round(n('demaos')), r = n('rend'), p = n('preco');
+  var paredes = Math.max(0, (l + c) * 2 * a - v), teto = document.getElementById('teto').checked ? l * c : 0, area = paredes + teto;
+  var h = '<p>Paredes: <b>' + br(paredes, 2) + ' m²</b>' + (teto ? ' · Teto: <b>' + br(teto, 2) + ' m²</b>' : '') + '</p><p>Área total: <b>' + br(area, 2) + ' m²</b></p>';
+  if (r && d) { var lt = area * d / r; h += '<p>Tinta: <b>' + br(lt, 1) + ' litros</b> para ' + d + (d > 1 ? ' demãos' : ' demão') + '. Arredonde para cima ao comprar.</p>'; }
+  else h += '<p>Preencha o rendimento da lata para ver os litros.</p>';
+  if (p) h += '<p>Mão de obra: <b>' + rs(area * p) + '</b> (' + br(area, 2) + ' m² × ' + rs(p) + ')</p>';
+  document.getElementById('res').innerHTML = h;
+}
+document.getElementById('teto').addEventListener('change', calcular);
+calcular();
+</script>
+</body>
+</html>
