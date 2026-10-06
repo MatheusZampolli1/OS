@@ -165,3 +165,8 @@ p { margin: 0; }
 .rodape .marca-col { display: grid; gap: 10px; align-content: start; }
 .rodape .nota { color: var(--muted); font-size: .88rem; }
 @media (max-width: 760px) { .rodape .wrap { grid-template-columns: 1fr 1fr; } .rodape .marca-col { grid-column: 1 / -1; } }
+.tabela.comparar table { table-layout: fixed; }
+.tabela.comparar th, .tabela.comparar td { padding: 10px 6px; text-align: center; vertical-align: top; }
+.tabela.comparar th:first-child, .tabela.comparar td:first-child { text-align: left; color: var(--muted); width: 30%; }
+.tabela.comparar td[colspan] { text-align: left; }
+@media (max-width: 520px) { .tabela.comparar table { font-size: .82rem; } }

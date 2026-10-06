@@ -273,6 +273,20 @@ def precos(base):
 </div>
 <div class="botoes" style="margin-top:24px"><a class="botao primario" href="{base}app/#criar">Criar conta grátis</a></div>
 </div></section>
+<section class="secao"><div class="wrap">
+<div class="cab"><h2>O que muda de um plano para o outro</h2><p class="sub">As funções são as mesmas. Muda o preço, de quanto em quanto tempo você paga e por quanto tempo o preço fica garantido.</p></div>
+<div class="tabela comparar"><table>
+<tr><th></th><th>Mensal</th><th>Trimestral</th><th>Anual</th></tr>
+<tr><td>Você paga</td><td>{PRECO_MES} por mês</td><td>{PRECO_TRI} a cada 3&nbsp;meses</td><td>{PRECO_ANO} por ano</td></tr>
+<tr><td>Sai por mês</td><td>{PRECO_MES}</td><td>{PRECO_TRI_MES}</td><td>{PRECO_ANO_MES}</td></tr>
+<tr><td>Economia em 1 ano</td><td>—</td><td>R$ 39,20</td><td>R$ 59,80 (2 meses)</td></tr>
+<tr><td>Preço garantido por</td><td>1 mês</td><td>3 meses</td><td>12 meses</td></tr>
+<tr><td>Funções</td><td>Todas</td><td>Todas</td><td>Todas</td></tr>
+<tr><td>Cancelar</td><td colspan="3">Quando quiser, pelo app. Vale até o fim do período pago.</td></tr>
+<tr><td>Arrependimento</td><td colspan="3">Até 7 dias depois do primeiro pagamento, devolvemos tudo.</td></tr>
+</table></div>
+<p class="miudo" style="margin-top:12px">Já tem conta? No app, abra Perfil, Seu plano, e toque em “Ver e comparar planos” para escolher ou trocar. Se trocar, o plano novo começa quando o atual acabar.</p>
+</div></section>
 <section class="secao alt"><div class="wrap">
 <div class="cab"><h2>O que está incluído</h2></div>
 <div class="tabela"><table>
@@ -436,6 +450,7 @@ def termos(base):
 <li><b>Fim do teste ou atraso:</b> sem plano pago, o app deixa de criar e enviar orçamentos, recibos e relatórios. Em caso de atraso, isso só acontece 3 dias depois do vencimento. Seus dados continuam disponíveis para ver e exportar.</li>
 <li><b>Cancelamento:</b> a qualquer momento, pelo próprio app, sem multa. Vale no fim do período já pago, sem devolução proporcional.</li>
 <li><b>Arrependimento:</b> em até 7 dias do primeiro pagamento, você pode desistir e receber o valor inteiro de volta (art. 49 do Código de Defesa do Consumidor). Peça pelo <a href="{base}contato.html">contato</a>.</li>
+<li><b>Mudança de preço:</b> avisamos por e-mail antes. O preço novo só vale a partir da próxima renovação; o período já pago não muda.</li>
 <li><b>Pagamentos:</b> processados pelo Asaas. Não guardamos dados de cartão.</li>
 </ul>
 <h2>5. Disponibilidade</h2>

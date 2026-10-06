@@ -310,12 +310,22 @@
       el('bloqueio-btn').onclick = function () { abrir('criar'); };
       return;
     }
-    if (!acesso || !acesso.cobranca_ligada) { bloquear(false); return; }
+    if (!acesso || !acesso.cobranca_ligada) { bloquear(false); el('aviso-teste').hidden = true; return; }
     var vencido = acesso.motivo === 'vencido';
     bloquear(!acesso.liberado, vencido ? 'Sua assinatura venceu' : 'Seu teste grátis acabou',
       'Para voltar a criar e enviar orçamentos, recibos e relatórios, assine a partir de ' + real(acesso.preco_mensal) + ' por mês.', vencido ? 'Pagar agora' : 'Assinar');
-    el('bloqueio-btn').onclick = function () { irPara('perfil'); el('plano-sec').scrollIntoView({ behavior: 'smooth' }); };
+    el('bloqueio-btn').onclick = abrirPlanos;
+    avisoTeste();
   }
+  // Faltando 3 dias ou menos para o teste acabar, avisa na tela de novo orçamento.
+  function avisoTeste() {
+    var box = el('aviso-teste');
+    var dias = acesso && acesso.motivo === 'teste' && acesso.teste_ate ? Math.ceil((new Date(acesso.teste_ate) - new Date()) / 864e5) : null;
+    box.hidden = !(dias !== null && dias <= 3 && dias >= 0);
+    if (box.hidden) return;
+    el('aviso-teste-txt').textContent = dias <= 0 ? 'Seu teste grátis acaba hoje.' : 'Faltam ' + dias + (dias === 1 ? ' dia' : ' dias') + ' para o seu teste grátis acabar.';
+  }
+  el('aviso-teste-btn').addEventListener('click', function () { abrirPlanos(); });
   function desenharPlano(a, faturas) {
     var mostrar = a && (a.cobranca_ligada || a.motivo === 'admin');
     el('plano-sec').hidden = !mostrar;
@@ -328,13 +338,8 @@
     else if (a.motivo === 'vencido') { s = 'Assinatura vencida'; d = 'Pague a fatura em aberto ou assine de novo para voltar a fazer orçamentos.'; }
     else { s = 'Teste grátis acabou'; d = 'Assine para continuar fazendo orçamentos.'; }
     el('plano-situacao').textContent = s; el('plano-detalhe').textContent = d;
-    el('plano-mensal').textContent = 'Mensal · ' + real(a.preco_mensal);
-    el('plano-trimestral').textContent = 'Trimestral · ' + real(a.preco_trimestral || 79.9);
-    el('plano-anual').textContent = 'Anual · ' + real(a.preco_anual) + ' (2 meses grátis)';
     var renovando = a.motivo === 'pago' && a.status !== 'cancelada';
-    el('plano-botoes').hidden = renovando && a.plano === 'anual';
-    el('plano-mensal').hidden = renovando && a.plano === 'mensal';
-    el('plano-trimestral').hidden = renovando && a.plano === 'trimestral';
+    el('plano-ver').textContent = renovando ? 'Trocar de plano' : a.motivo === 'teste' ? 'Ver e comparar planos' : 'Escolher um plano';
     el('plano-cancelar').hidden = !(a.status === 'ativa' || a.status === 'pendente' || a.status === 'atrasada');
     var box = el('plano-faturas'); box.textContent = '';
     faturas.forEach(function (f) {
@@ -355,19 +360,76 @@
       return fetch(SB_URL + '/functions/v1/' + (FUNCOES[nome] || nome), { method: 'POST', headers: { 'content-type': 'application/json', apikey: SB_KEY, authorization: 'Bearer ' + t }, body: JSON.stringify(corpo || {}) });
     }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.erro || (r.status === 404 ? 'A função “' + nome + '” não foi encontrada no servidor. Confira se ela foi publicada com esse nome exato.' : 'Erro ' + r.status)); return j; }); });
   }
+  // ---------- tela de planos: abre e compara o que muda de um para o outro ----------
+  var PLANOS = [
+    { id: 'mensal', meses: 1, paga: 'por mês', garantido: '1 mês' },
+    { id: 'trimestral', meses: 3, paga: 'a cada 3 meses', garantido: '3 meses' },
+    { id: 'anual', meses: 12, paga: 'por ano', garantido: '12 meses' }
+  ];
+  function precoDe(id) {
+    var a = acesso || {};
+    var v = id === 'anual' ? a.preco_anual : id === 'trimestral' ? a.preco_trimestral : a.preco_mensal;
+    return Number(v || (id === 'anual' ? 299 : id === 'trimestral' ? 79.9 : 29.9));
+  }
+  function abrirPlanos() {
+    var a = acesso || {};
+    var renovando = a.motivo === 'pago' && a.status !== 'cancelada';
+    var atual = renovando ? a.plano : null;
+    var mesBase = precoDe('mensal');
+    var linhas = [
+      ['Você paga', function (p) { return '<b>' + real(precoDe(p.id)) + '</b><br>' + p.paga; }],
+      ['Sai por mês', function (p) { return real(Math.round(precoDe(p.id) / p.meses * 100) / 100); }],
+      ['Economia em 1 ano', function (p) {
+        var eco = Math.round((mesBase * 12 - precoDe(p.id) * 12 / p.meses) * 100) / 100;
+        return eco > 0 ? real(eco) : '—';
+      }],
+      ['Preço garantido por', function (p) { return p.garantido; }],
+      ['', function (p) {
+        return p.id === atual ? '<button type="button" disabled>Seu plano</button>'
+          : '<button type="button" class="' + (p.id === 'anual' ? 'primario' : '') + '" data-escolher="' + p.id + '">Escolher</button>';
+      }]
+    ];
+    var corpo = el('planos-linhas'); corpo.innerHTML = '';
+    linhas.forEach(function (l) {
+      var tr = document.createElement('tr');
+      var th = document.createElement('td'); th.textContent = l[0]; tr.appendChild(th);
+      PLANOS.forEach(function (p) {
+        var td = document.createElement('td'); td.innerHTML = l[1](p);
+        if (p.id === 'anual') td.className = 'col-dest';
+        tr.appendChild(td);
+      });
+      corpo.appendChild(tr);
+    });
+    document.querySelectorAll('#modal-planos thead th').forEach(function (th) {
+      var id = th.getAttribute('data-plano');
+      th.className = id === 'anual' ? 'col-dest' : '';
+      th.querySelector('.selo').textContent = id === atual ? 'Seu plano' : id === 'anual' ? 'Mais econômico' : '';
+    });
+    el('planos-nota').textContent = a.motivo === 'teste' && a.teste_ate ? 'Seu teste grátis vai até ' + dataBR(a.teste_ate) + '.'
+      : renovando ? 'Se trocar, o plano novo começa quando o atual acabar (' + dataBR(a.pago_ate) + '). Você não perde dias já pagos.' : '';
+    el('modal-planos').hidden = false;
+  }
+  window.abrirPlanos = abrirPlanos;
+  el('planos-linhas').addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-escolher]'); if (!b) return;
+    el('modal-planos').hidden = true;
+    if (!usuario) { abrir('criar'); return; }
+    abrirAssinar(b.getAttribute('data-escolher'));
+  });
+  el('planos-fechar').addEventListener('click', function () { el('modal-planos').hidden = true; });
+  el('modal-planos').addEventListener('click', function (ev) { if (ev.target === el('modal-planos')) el('modal-planos').hidden = true; });
+  el('plano-ver').addEventListener('click', abrirPlanos);
   var planoEscolhido = 'mensal';
   function abrirAssinar(plano) {
     planoEscolhido = plano;
     var preco = acesso ? (plano === 'anual' ? acesso.preco_anual : plano === 'trimestral' ? (acesso.preco_trimestral || 79.9) : acesso.preco_mensal) : 0;
     el('t-assinar').textContent = 'Assinar plano ' + plano;
+    el('assinar-trocar').onclick = function () { el('modal-assinar').hidden = true; abrirPlanos(); };
     el('assinar-resumo').textContent = real(preco) + (plano === 'anual' ? ' por ano' : plano === 'trimestral' ? ' a cada 3 meses' : ' por mês') + '. Cancele quando quiser; vale até o fim do período pago.';
     if (!el('assinar-nome').value) el('assinar-nome').value = perfil.nome || '';
     if (!el('assinar-doc').value) el('assinar-doc').value = perfil.doc || '';
     el('assinar-msg').hidden = true; el('modal-assinar').hidden = false; el('assinar-nome').focus();
   }
-  el('plano-mensal').addEventListener('click', function () { abrirAssinar('mensal'); });
-  el('plano-trimestral').addEventListener('click', function () { abrirAssinar('trimestral'); });
-  el('plano-anual').addEventListener('click', function () { abrirAssinar('anual'); });
   el('assinar-fechar').addEventListener('click', function () { el('modal-assinar').hidden = true; });
   el('assinar-form').addEventListener('submit', function (ev) {
     ev.preventDefault();
@@ -402,5 +464,6 @@
   var guardarAnterior = window.guardarJSON;
   window.guardarJSON = function (k, v) { guardarAnterior(k, v); if (k === 'orc-docs' && !usuario) aplicarAcesso(); };
   lerAcesso();
+  if (location.hash === '#planos') { history.replaceState(null, '', location.pathname); setTimeout(function () { irPara('perfil'); abrirPlanos(); }, 0); }
   if (location.hash === '#assinar') { history.replaceState(null, '', location.pathname); setTimeout(function () { irPara('perfil'); }, 0); }
 })();
