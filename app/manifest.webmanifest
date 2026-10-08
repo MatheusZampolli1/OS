@@ -1,4 +1,5 @@
 {
+  "id": "./",
   "name": "Tá Orçado",
   "short_name": "Tá Orçado",
   "description": "Fale o serviço e receba o orçamento pronto em PDF para mandar no WhatsApp.",
@@ -9,9 +10,18 @@
   "orientation": "portrait",
   "background_color": "#eef0ee",
   "theme_color": "#1d2428",
+  "categories": ["business", "productivity"],
   "icons": [
     { "src": "icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "icone-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Novo orçamento por voz", "short_name": "Novo orçamento", "url": "./?falar=1", "icons": [{ "src": "icone-192.png", "sizes": "192x192" }] },
+    { "name": "Meus orçamentos", "short_name": "Orçamentos", "url": "./?aba=orcs", "icons": [{ "src": "icone-192.png", "sizes": "192x192" }] }
+  ],
+  "screenshots": [
+    { "src": "tela-1.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Fale o serviço e o app monta o orçamento" },
+    { "src": "tela-2.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Confira os itens e mande no WhatsApp" }
   ]
 }

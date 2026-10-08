@@ -93,6 +93,11 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 details > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; }
 details > summary::after { content: "editar"; font-weight: 500; color: var(--muted); font-size: .9rem; }
 details[open] > summary::after { content: "fechar"; }
+.como-falar { display: grid; gap: 6px; }
+.como-falar > summary { min-height: 44px; color: var(--ink); }
+.como-falar > summary::after { content: "ver"; }
+.como-falar[open] > summary::after { content: "fechar"; }
+.como-falar p { margin: 4px 0 0; }
 .itens { display: grid; gap: 10px; }
 .item { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 8px; background: var(--bg); }
 .item .desc { font-weight: 600; }
@@ -228,6 +233,13 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus
 }
 :root[data-theme="dark"] .zap, :root[data-theme="dark"] .mic.gravando, :root[data-theme="dark"] .chip.pago, :root[data-theme="dark"] .aba-num { color: #15191b; }
 :root[data-theme="dark"] input, :root[data-theme="dark"] textarea, :root[data-theme="dark"] select { border-color: #6f7a7f; }
+.toast {
+  position: fixed; left: 12px; right: 12px; bottom: calc(132px + env(safe-area-inset-bottom, 0px)); z-index: 30; max-width: 560px; margin: 0 auto;
+  background: var(--ink); color: var(--bg); border-radius: 12px; padding: 12px 14px; display: flex; gap: 12px; align-items: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .25); font-size: .95rem;
+}
+.toast span { flex: 1; }
+.toast button { background: transparent; color: var(--accent); border-color: var(--accent); padding: 8px 12px; min-height: 44px; }
 .barra-envio {
   position: fixed; left: 0; right: 0; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); z-index: 19;
   background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 12px rgba(0, 0, 0, .08);
@@ -263,12 +275,11 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus
 
   <!-- ===================== NOVO ===================== -->
   <div class="tela" id="tela-novo">
-    <section id="faixa-plano" class="faixa-plano" hidden><span id="faixa-plano-txt"></span><button id="faixa-plano-btn" type="button">Ver planos</button></section>
-    <section id="boas-vindas" class="bloco boas-vindas" hidden>
-      <h2>Primeira vez aqui?</h2>
-      <p class="dica" style="margin:0">Logo abaixo já tem um orçamento de exemplo montado. Veja o PDF que o seu cliente recebe. Depois é só falar o seu serviço no lugar do exemplo.</p>
-      <div class="linha-botoes"><button id="bv-pdf" class="primario" type="button">Ver o PDF do exemplo</button><button id="bv-fechar" type="button">Fechar</button></div>
+    <section id="falha-salvar" class="bloco bloqueio" hidden>
+      <p class="aviso" style="margin:0"><b>Este celular não está deixando o app salvar.</b> O que você fizer agora pode se perder. Libere espaço no celular ou baixe uma cópia.</p>
+      <button type="button" class="primario" onclick="document.getElementById('backup-baixar').click()">Baixar cópia agora</button>
     </section>
+    <section id="faixa-plano" class="faixa-plano" hidden><span id="faixa-plano-txt"></span><button id="faixa-plano-btn" type="button">Ver planos</button></section>
     <section id="bloqueio" class="bloco bloqueio" hidden>
       <h2 id="bloqueio-tit">Seu teste grátis acabou</h2>
       <p id="bloqueio-txt" class="dica"></p>
@@ -284,9 +295,20 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus
         <label for="fala">O que você falou (dá para corrigir)
           <textarea id="fala">Orçamento para o cliente João Silva, reboco de parede 30 metros quadrados a 25 reais o metro, pintura com duas demãos 60 metros a 18 reais, troca de 4 tomadas a 30 reais cada, mão de obra de instalação do chuveiro 150 reais</textarea>
         </label>
-        <p class="dica">Se você não falar o preço, usamos o valor da sua tabela de preços. Pode falar as medidas do cômodo, como “quarto 3 por 4, pé-direito 2,70, pintura a 18”, que o app calcula os metros quadrados. Prazo, garantia, entrada e desconto também: “prazo de 5 dias, garantia de 90 dias, metade na entrada”. Errou? Fale “não, 700” ou “apaga o último”. Falar de novo acrescenta ao que já está montado.</p>
-        <button id="montar" class="primario" type="button">Montar orçamento</button>
+        <details class="como-falar"><summary>Como falar (exemplos)</summary>
+          <p class="dica">Fale como você explica pro cliente: “pintura da sala 600, troca do chuveiro 120, 4 tomadas a 30 cada”. Sem o preço, o app usa a sua tabela de preços.</p>
+          <p class="dica">Medidas: “quarto 3 por 4, pé-direito 2,70, pintura a 18”, e o app calcula os metros quadrados.</p>
+          <p class="dica">Condições: “prazo de 5 dias, garantia de 90 dias, metade na entrada, 10% de desconto”.</p>
+          <p class="dica">Errou? Fale “não, 700” ou “apaga o último”. Falar de novo acrescenta ao que já está montado.</p>
+          <p class="dica">Obra sem sinal? Com internet, toque abaixo uma vez para o celular guardar a voz em português (só no Chrome novo).</p>
+          <button id="voz-baixar" type="button" hidden>⬇ Baixar a voz para funcionar sem internet</button>
+        </details>        <button id="montar" class="primario" type="button">Montar orçamento</button>
       </div>
+    </section>
+    <section id="boas-vindas" class="bloco boas-vindas" hidden>
+      <h2>Primeira vez aqui?</h2>
+      <p class="dica" style="margin:0">Logo abaixo já tem um orçamento de exemplo montado (o “João Silva”). Veja o PDF que o seu cliente recebe. Depois é só falar o seu serviço no lugar do exemplo.</p>
+      <div class="linha-botoes"><button id="bv-pdf" class="primario" type="button">Ver o PDF do exemplo</button><button id="bv-fechar" type="button">Fechar</button></div>
     </section>
 
     <section aria-labelledby="t-itens">
@@ -372,6 +394,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus
           <button id="pdf" class="primario" type="button">Baixar PDF</button>
           <button id="zap" class="zap" type="button">Mandar no WhatsApp</button>
         </div>
+        <button id="zap-msg" class="zap" type="button" hidden>Mandar também a mensagem para aprovar (direto no número do cliente)</button>
         <p id="dica-link" class="dica" hidden>Com a conta grátis, vai junto um link para o cliente aprovar no celular, e o app avisa quando ele abrir. <a href="../criar-conta.html">Criar conta</a></p>
         <button id="instalar" type="button" hidden>📲 Pôr o app na tela do celular (menos de 1 MB)</button>
         <p id="instalar-ios" class="dica" hidden>Para pôr o app na tela do iPhone: toque em Compartilhar e depois em “Adicionar à Tela de Início”.</p>
@@ -614,6 +637,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus
     <button id="mat-fechar" type="button">Fechar</button>
   </div>
 </div>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden><span id="toast-txt"></span><button id="toast-btn" type="button" hidden></button></div>
 <div id="barra-envio" class="barra-envio" hidden>
   <span>Total <strong id="barra-total">R$ 0,00</strong></span>
   <button id="barra-pdf" type="button">PDF</button>
@@ -908,19 +932,23 @@ function lerFala(texto) {
     var valorUnit = preco === null ? 0 : (unitario ? preco : preco / qtd);
     itens.push({ descricao: capitalizar(desc), qtd: qtd, un: un, valorUnit: Math.round(valorUnit * 100) / 100 });
   });
-  return { cliente: cliente, itens: itens, apagarAntes: apagarAntes, endereco: cond.endereco, prazo: cond.prazo, garantia: cond.garantia,
+  return { cliente: cliente, itens: itens, apagarAntes: apagarAntes, endereco: cond.endereco, tel: cond.tel, prazo: cond.prazo, garantia: cond.garantia,
     validade: cond.validade, entrada: cond.entrada, desconto: cond.desconto, obs: cond.obs };
 }
 
 // "prazo de 5 dias", "garantia de 90 dias", "metade na entrada", "10% de desconto", "material por conta do cliente",
 // "rua das Flores 123", "600, não, 700", "aí", "né", "tipo"... Recebe o texto já em minúsculas e com números.
 function lerCondicoes(t) {
-  var c = { prazo: '', garantia: '', validade: null, entrada: null, desconto: null, obs: [], endereco: '' };
+  var c = { prazo: '', garantia: '', validade: null, entrada: null, desconto: null, obs: [], endereco: '', tel: '' };
   function tira(re, fn) { t = t.replace(re, function () { fn.apply(null, arguments); return ' , '; }); }
   var N = '(\\d+(?:\\.\\d+)?)', TEMPO = '(dias? úteis|dias? uteis|dias?|semanas?|m[êe]s|meses|anos?)';
   function tempo(n, u) { n = Number(n); u = u.replace('uteis', 'úteis'); if (n === 1) u = u.replace(/^dias/, 'dia').replace(/^semanas/, 'semana').replace(/^meses/, 'mês').replace(/^anos/, 'ano'); else u = u.replace(/^dia(?!s)/, 'dias').replace(/^semana(?!s)/, 'semanas').replace(/^m[êe]s$/, 'meses').replace(/^ano(?!s)/, 'anos'); return String(n).replace('.', ',') + ' ' + u; }
   // "600, não, 700" / "600 aliás 700": fica o último valor
   t = t.replace(new RegExp(N + '(\\s*(?:' + MOEDA + '))?\\s*,?\\s*(?:não|nao|aliás|alias|quer dizer|na verdade|corrigindo|digo|ou melhor|melhor dizendo|errei)(?:\\s*,?\\s*(?:pera|peraí|perai|espera|é|errei|o certo é|são|sao))*\\s*,?\\s*(?:r\\$\\s*)?' + N, 'g'), function (m, a, moeda, b) { return b + (moeda || ''); });
+  // telefone do cliente falado: "11 98765-4321", "zap 98765 4321"
+  t = t.replace(/(?:(?:o |do |da )?(?:telefone|celular|whats|whatsapp|zap|número|numero)(?: dele| dela| é| e)?\s*)?(?<![\d.])(?:\(?(\d{2})\)?\s*)?(9\d{4})[-\s]?(\d{4})(?![\d.])/g, function (m, ddd, a, b) {
+    c.tel = (ddd ? '(' + ddd + ') ' : '') + a + '-' + b; return ' , ';
+  });
   // muletas da fala
   t = t.replace(/(?<![a-zà-ú])(bom dia|boa tarde|boa noite|vamos lá|vamos la|deixa eu ver|deixa ver|olha só|olha|aí|ai|né|tipo assim|tipo|beleza|tá bom|ta bom|hum|uhum|então|entao|mais ou menos|uns|umas|cerca de|em torno de|aproximadamente|eu cobro|cobro|vou cobrar|eu faço por|faço por|faco por|tá|ta)(?![a-zà-ú])/g, ' ');
   t = t.replace(/(?<![a-zà-ú])(?:é |e )?(?:um |1 |o )?(?:orçamento|orcamento)(?: (?:de|do|da|para|pra))?(?![a-zà-ú])/g, ' , ');
@@ -1000,10 +1028,22 @@ function ler(k) { try { return localStorage.getItem(k); } catch (e) { return nul
 function guardar(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
 function lerJSON(k, padrao) { try { var v = JSON.parse(ler(k)); return v == null ? padrao : v; } catch (e) { return padrao; } }
 function guardarJSON(k, v) {
-  if (!guardar(k, JSON.stringify(v))) avisar('Este celular não deixou salvar. Libere espaço ou baixe uma cópia na aba Perfil.');
+  var ok = guardar(k, JSON.stringify(v));
+  if (!ok) avisar('Este celular não deixou salvar. Libere espaço ou baixe uma cópia na aba Perfil.');
+  var f = document.getElementById('falha-salvar'); if (f) f.hidden = ok; // fica na tela até voltar a salvar
+  return ok;
 }
 function novoId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-function avisar(t) { $('status').textContent = t; $('status-perfil').textContent = t; }
+function avisar(t) { $('status').textContent = t; $('status-perfil').textContent = t; if (t) toast(t); else $('toast').hidden = true; }
+// Aviso flutuante: o texto de status fica lá embaixo da tela e a pessoa não via
+var toastTimer = null, toastAcao = null;
+function toast(t, rotulo, acao) {
+  $('toast-txt').textContent = t; toastAcao = acao || null;
+  $('toast-btn').hidden = !acao; if (acao) $('toast-btn').textContent = rotulo;
+  $('toast').hidden = false; clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { $('toast').hidden = true; toastAcao = null; }, acao ? 6000 : 4500);
+}
+$('toast-btn').addEventListener('click', function () { var a = toastAcao; $('toast').hidden = true; toastAcao = null; if (a) a(); });
 
 // migração da versão anterior
 (function migrar() {
@@ -1136,7 +1176,7 @@ function desenharItens() {
       '<div class="nums">' +
       '<label>Qtd<input id="q' + idx + '" type="number" step="any" inputmode="decimal"></label>' +
       '<label>Un.<input id="u' + idx + '"></label>' +
-      '<label>Valor unit. (R$)<input id="v' + idx + '" type="number" step="any" inputmode="decimal"></label>' +
+      '<label>R$ cada<input id="v' + idx + '" type="number" step="any" inputmode="decimal"></label>' +
       '<button class="remover" type="button" aria-label="Remover item">Remover</button>' +
       '</div><div class="sub-total" id="s' + idx + '"></div>';
     box.appendChild(d);
@@ -1151,7 +1191,10 @@ function desenharItens() {
       if (!(Number(vi.value) > 0)) { var p = acharPreco(di.value); if (p && p.valor) { vi.value = p.valor; if (!ui.value || ui.value === 'un') ui.value = p.un; atualizar(); } }
     });
     [di, qi, ui, vi].forEach(function (el) { el.addEventListener('input', atualizar); });
-    d.querySelector('.remover').addEventListener('click', function () { atual.itens.splice(idx, 1); desenharItens(); });
+    d.querySelector('.remover').addEventListener('click', function () {
+      var tirado = atual.itens.splice(idx, 1)[0]; desenharItens();
+      toast('Item removido: ' + (tirado.descricao || 'Serviço'), 'Desfazer', function () { atual.itens.splice(Math.min(idx, atual.itens.length), 0, tirado); desenharItens(); });
+    });
     atualizar();
   });
   atualizarTotal();
@@ -1218,6 +1261,7 @@ function comPrecoDaTabela(it) {
 }
 function aplicarCondicoes(r) {
   if (r.endereco && !atual.cliente.endereco) atual.cliente.endereco = r.endereco;
+  if (r.tel && !atual.cliente.tel) atual.cliente.tel = r.tel;
   if (r.prazo) atual.prazo = r.prazo;
   if (r.garantia) atual.garantia = r.garantia;
   if (r.validade) atual.validade = r.validade;
@@ -1246,6 +1290,20 @@ function acrescentar(texto) {
 // Por isso cada frase é ouvida numa sessão curta, que reinicia sozinha até a pessoa tocar para parar.
 var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
 var rec = null, querOuvir = false, base = '', frases = [], parcial = '', silencios = 0;
+// Voz no próprio celular (Chrome 141+ tem SpeechRecognition.install e processLocally): funciona sem internet
+// depois que a pessoa baixa o pacote de português. Só chamamos a API quando ela toca no botão, porque
+// available()/install() derrubaram a aba no Chromium sem o serviço de voz (teste em 08/10/2026).
+var OPC_LOCAL = { langs: ['pt-BR'], processLocally: true }, forcarLocal = false;
+var vozLocal = ler('orc-voz-local') === '1';
+$('voz-baixar').hidden = !(Rec && Rec.install) || vozLocal;
+$('voz-baixar').addEventListener('click', function () {
+  $('voz-baixar').disabled = true; $('voz-baixar').textContent = 'Baixando a voz… pode continuar usando';
+  Promise.resolve().then(function () { return Rec.install(OPC_LOCAL); }).then(function (ok) {
+    $('voz-baixar').disabled = false; $('voz-baixar').textContent = '⬇ Baixar a voz para funcionar sem internet';
+    if (ok) { vozLocal = true; guardar('orc-voz-local', '1'); $('voz-baixar').hidden = true; $('mic-offline').hidden = true; avisar('Pronto: a voz agora funciona até sem internet.'); }
+    else avisar('O celular não deixou baixar agora. Tente de novo com Wi-Fi.');
+  }).catch(function () { $('voz-baixar').disabled = false; $('voz-baixar').textContent = '⬇ Baixar a voz para funcionar sem internet'; avisar('Este celular não tem a voz sem internet.'); });
+});
 if (!Rec) { $('mic').disabled = true; $('mic-aviso').hidden = false; }
 function limparRepeticao(t) {
   return t.replace(/(^|\s)([a-zà-ú]+)(?:\s+\2)+(?=\s|$)/gi, '$1$2').replace(/\s+/g, ' ').trim();
@@ -1265,6 +1323,7 @@ function mostrarFala() {
 function ouvir() {
   rec = new Rec();
   rec.lang = 'pt-BR'; rec.continuous = false; rec.interimResults = true; rec.maxAlternatives = 1;
+  if (vozLocal && (navigator.onLine === false || forcarLocal)) { if ('processLocally' in rec) rec.processLocally = true; else if ('mode' in rec) rec.mode = 'ondevice-only'; }
   rec.onresult = function (e) {
     var r = e.results[e.results.length - 1];
     silencios = 0;
@@ -1273,6 +1332,8 @@ function ouvir() {
   };
   rec.onerror = function (e) {
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { querOuvir = false; avisar('Libere o microfone para este site nas configurações do navegador.'); }
+    else if (e.error === 'network' && vozLocal && !forcarLocal) { forcarLocal = true; } // sinal caiu: a próxima escuta usa a voz do próprio celular
+    else if ((e.error === 'language-not-supported' || e.error === 'service-not-allowed') && rec.processLocally) { querOuvir = false; vozLocal = false; guardar('orc-voz-local', ''); $('mic-offline').hidden = false; $('voz-baixar').hidden = false; }
     else if (e.error === 'network') { querOuvir = false; $('mic-offline').hidden = false; $('mic-offline').scrollIntoView({ block: 'nearest' }); }
     else if (e.error === 'no-speech') { if (++silencios >= 3) querOuvir = false; } // esqueceu o microfone ligado: para sozinho
     else if (e.error !== 'aborted') avisar('Não deu para ouvir. Tente de novo ou digite.');
@@ -1298,7 +1359,7 @@ function temOrcamentoMontado() { return atual.itens.some(function (it) { return 
 $('mic').addEventListener('click', function () {
   if (!Rec) return;
   if (querOuvir) { querOuvir = false; if (rec) rec.stop(); return; }
-  if (navigator.onLine === false) { $('mic-offline').hidden = false; $('fala').focus(); return; }
+  if (navigator.onLine === false && !vozLocal) { $('mic-offline').hidden = false; $('fala').focus(); return; }
   base = $('selo-exemplo').hidden ? $('fala').value.trim() : '';
   frases = []; parcial = ''; silencios = 0; querOuvir = true;
   $('mic').classList.add('gravando'); $('mic-txt').textContent = 'Ouvindo… toque para parar';
@@ -1322,7 +1383,7 @@ $('novo').addEventListener('click', function () {
   if (!atual.id && !eExemplo() && totalDe(atual) > 0 && Date.now() - confirmarNovo > 4000) {
     confirmarNovo = Date.now(); avisar('Esse orçamento ainda não foi enviado. Toque de novo para apagar e começar outro.'); return;
   }
-  confirmarNovo = 0;
+  confirmarNovo = 0; $('zap-msg').hidden = true;
   atual = docVazio(); fotos = []; desenharFotos(); $('fala').value = ''; $('selo-exemplo').hidden = true;
   atual.itens = [{ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }];
   preencherCampos(); avisar(''); window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1621,6 +1682,15 @@ function pdfOrcamento(d) {
   if (perfil.sobre && !(perfil.trabalhos || []).length) { y += 3; doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(29, 36, 40); doc.text('Quem vai fazer o serviço', M, y); y = pdfTexto(doc, [perfil.sobre], y + 5); }
   var rot = d.entrada > 0 && d.entrada < 100 ? 'Pague o sinal com Pix: ' + dinheiro(sinalDe(d)) : 'Pague com Pix: ' + dinheiro(sinalDe(d));
   y = pdfPix(doc, codigoPix(sinalDe(d), 'ORC' + d.numero), rot, y + 4);
+  var linkAp = !d.assinatura && window.linkAprovacao ? window.linkAprovacao(d) : '';
+  if (linkAp) {
+    if (y > 250) { doc.addPage(); y = 20; }
+    var tl = 'Aprove este orçamento pelo celular: toque aqui';
+    doc.setFillColor(255, 246, 214); doc.roundedRect(M, y, W - 2 * M, 14, 2, 2, 'F');
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(29, 36, 40); doc.text(tl, M + 4, y + 6);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(93, 103, 108); doc.text(linkAp, M + 4, y + 11);
+    doc.link(M, y, W - 2 * M, 14, { url: linkAp }); y += 18;
+  }
   pdfAssinaturas(doc, d, y + 2);
   pdfFotos(doc, d === atual ? fotos : [], 'Fotos do local');
   pdfMarca(doc);
@@ -1725,10 +1795,15 @@ $('zap').addEventListener('click', function () {
   comDados(mandarZap);
 });
 function mandarZap() {
-  try { salvarAtual(true); desenharOrcs(); compartilhar(pdfOrcamento(atual), textoOrcamento(atual), atual.cliente.tel); }
+  try {
+    salvarAtual(true); desenharOrcs(); compartilhar(pdfOrcamento(atual), textoOrcamento(atual), atual.cliente.tel);
+    // o WhatsApp às vezes descarta o texto que vai junto com o PDF; este botão manda a mensagem com o link e o "responda SIM"
+    $('zap-msg').hidden = !atual.cliente.tel || !!atual.assinatura;
+  }
   catch (e) { salvarAtual(true); abrirWhats(atual.cliente.tel, textoOrcamento(atual)); avisar('Abrimos o WhatsApp com o resumo e o Pix.'); }
 }
 // Barra fixa com total e envio: aparece quando há valor e os botões de baixo estão fora da tela
+$('zap-msg').addEventListener('click', function () { abrirWhats(atual.cliente.tel, textoOrcamento(atual)); $('zap-msg').hidden = true; });
 $('barra-pdf').addEventListener('click', function () { $('pdf').click(); });
 $('barra-zap').addEventListener('click', function () { $('zap').click(); });
 var zapVisivel = false;
@@ -1964,7 +2039,7 @@ function irPara(aba) {
   ['novo', 'orcs', 'precos', 'clientes', 'perfil'].forEach(function (a) { $('tela-' + a).hidden = a !== aba; });
   document.querySelectorAll('.abas button').forEach(function (b) { if (b.dataset.aba === aba) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   document.querySelector('header h1').textContent = TITULOS[aba];
-  $('sub-novo').hidden = aba !== 'novo';
+  $('sub-novo').hidden = aba !== 'novo' || docs.length > 0; // quem já usa não precisa da explicação: o microfone sobe
   if (window.mostrarBarra) mostrarBarra();
   if (aba === 'orcs') desenharOrcs(); if (aba === 'precos') desenharPrecos(); if (aba === 'clientes') desenharClientes();
   window.scrollTo(0, 0);
@@ -2050,7 +2125,7 @@ $('ouvir').addEventListener('click', function () {
 });
 
 // ---------- sem internet: a voz não funciona, o resto sim ----------
-function mostrarOffline() { $('mic-offline').hidden = navigator.onLine !== false; }
+function mostrarOffline() { $('mic-offline').hidden = navigator.onLine !== false || vozLocal; if (navigator.onLine) forcarLocal = false; }
 window.addEventListener('online', mostrarOffline); window.addEventListener('offline', mostrarOffline); mostrarOffline();
 
 // ---------- pôr o app na tela do celular ----------
@@ -2147,6 +2222,36 @@ $('bv-fechar').addEventListener('click', function () { guardar('orc-bv-fechado',
 mostrarBoasVindas();
 if (!perfil.nome) $('aviso-perfil').hidden = false;
 window.addEventListener('DOMContentLoaded', function () { try { atualizarTotal(); } catch (e) {} });
+// Modais: foco vai para dentro, o fundo fica inerte, Esc fecha e o foco volta para onde estava
+(function () {
+  var voltar = null;
+  function aberto() { return Array.prototype.filter.call(document.querySelectorAll('.modal'), function (m) { return !m.hidden; })[0]; }
+  new MutationObserver(function () {
+    var m = aberto(), wrap = document.querySelector('.wrap');
+    if (m && !m._focado) {
+      m._focado = true; voltar = document.activeElement; if (wrap) wrap.inert = true;
+      var alvo = m.querySelector('input:not([type=hidden]):not([type=file]), textarea, h2');
+      if (alvo && alvo.tagName === 'H2') alvo.tabIndex = -1;
+      setTimeout(function () { if (!m.contains(document.activeElement) && alvo) alvo.focus(); }, 0);
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.modal'), function (x) { if (x.hidden && x._focado) { x._focado = false; if (!aberto()) { if (wrap) wrap.inert = false; if (voltar && voltar.focus) voltar.focus(); } } });
+  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['hidden'] });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var m = aberto(); if (!m) return;
+    var b = Array.prototype.filter.call(m.querySelectorAll('button'), function (x) { return /fechar|cancelar|agora não|voltar/i.test(x.textContent) || /-fechar$/.test(x.id); }).pop();
+    if (b) b.click(); else m.hidden = true;
+  });
+})();
+// Atalhos do ícone do app (manifest): ?falar=1 leva ao microfone, ?aba=orcs abre os orçamentos
+(function () {
+  if (docs.length) $('sub-novo').hidden = true;
+  var q = new URLSearchParams(location.search);
+  if (q.get('aba') && $('tela-' + q.get('aba'))) irPara(q.get('aba'));
+  if (q.get('falar')) { irPara('novo'); setTimeout(function () { $('mic').scrollIntoView({ block: 'center' }); $('mic').focus(); }, 50); }
+})();
+// Pede ao navegador para não apagar os dados do app quando o celular ficar sem espaço
+if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(function (j) { if (!j && docs.length) navigator.storage.persist(); }).catch(function () {});
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script defer src="conta.js"></script>

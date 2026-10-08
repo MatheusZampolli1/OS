@@ -617,6 +617,20 @@
 "Pagamento: pix"
 ]
 }
+],
+[
+"orçamento para a dona Márcia 11 98765-4321 pintura da sala R$ 600",
+"Pintura da sala 1un x600 #Márcia",
+{
+"tel": "(11) 98765-4321"
+}
+],
+[
+"pintura 600 zap 98765 4321",
+"Pintura 1un x600",
+{
+"tel": "98765-4321"
+}
 ]
 ]
 }
