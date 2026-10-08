@@ -212,6 +212,30 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
 .linha-edit { display: grid; grid-template-columns: minmax(0, 1fr) 70px 96px auto; gap: 6px; align-items: end; }
 .linha-edit label { font-size: .78rem; color: var(--muted); }
 @media (max-width: 420px) { .linha-edit { grid-template-columns: minmax(0, 1fr) 64px 86px; } .linha-edit .remover { grid-column: 1 / -1; justify-self: end; } }
+/* ----- revisão 08/10: contraste ao sol, alvos de toque, barra de envio ----- */
+input, textarea, select { border: 1.5px solid #8a9499; min-height: 48px; }
+button, .botao { min-height: 48px; }
+.abas button { min-height: 0; font-size: .8rem; }
+.item .nums label { font-size: .85rem; }
+.fotos button { width: 36px; height: 36px; min-height: 0; top: -10px; right: -10px; }
+input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 3px solid var(--ink); outline-offset: 2px; box-shadow: 0 0 0 6px var(--accent);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .zap, :root:not([data-theme="light"]) .mic.gravando,
+  :root:not([data-theme="light"]) .chip.pago, :root:not([data-theme="light"]) .aba-num { color: #15191b; }
+  :root:not([data-theme="light"]) input, :root:not([data-theme="light"]) textarea, :root:not([data-theme="light"]) select { border-color: #6f7a7f; }
+}
+:root[data-theme="dark"] .zap, :root[data-theme="dark"] .mic.gravando, :root[data-theme="dark"] .chip.pago, :root[data-theme="dark"] .aba-num { color: #15191b; }
+:root[data-theme="dark"] input, :root[data-theme="dark"] textarea, :root[data-theme="dark"] select { border-color: #6f7a7f; }
+.barra-envio {
+  position: fixed; left: 0; right: 0; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); z-index: 19;
+  background: var(--surface); border-top: 1px solid var(--line); box-shadow: 0 -4px 12px rgba(0, 0, 0, .08);
+  display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 8px 12px;
+}
+.barra-envio span { display: grid; font-size: .8rem; color: var(--muted); line-height: 1.2; }
+.barra-envio strong { font: 700 1.25rem/1.1 var(--font-display); color: var(--ink); font-variant-numeric: tabular-nums; }
+.barra-envio button { padding: 10px 14px; }
 .modal {
   position: fixed; inset: 0; z-index: 40; background: rgba(10, 14, 16, .55);
   display: grid; align-items: end; padding: 0;
@@ -254,7 +278,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
     <section aria-labelledby="t-falar">
       <h2 id="t-falar">1. Fale o serviço</h2>
       <div class="bloco">
-        <button id="mic" class="mic" type="button"><span class="ponto" aria-hidden="true"></span><span id="mic-txt">Toque e fale</span></button>
+        <button id="mic" class="mic" type="button" aria-pressed="false"><span class="ponto" aria-hidden="true"></span><span id="mic-txt">Toque e fale</span></button>
         <p id="mic-aviso" class="aviso" hidden>Seu navegador não reconhece fala. Use o Chrome no Android ou digite abaixo.</p>
         <p id="mic-offline" class="aviso" hidden>Sem internet, a voz do app não funciona (quem transforma a fala em texto é o servidor do Google). Digite abaixo, ou toque no microfone do teclado do celular. O resto do app funciona normal e tudo fica salvo.</p>
         <label for="fala">O que você falou (dá para corrigir)
@@ -590,6 +614,21 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
     <button id="mat-fechar" type="button">Fechar</button>
   </div>
 </div>
+<div id="barra-envio" class="barra-envio" hidden>
+  <span>Total <strong id="barra-total">R$ 0,00</strong></span>
+  <button id="barra-pdf" type="button">PDF</button>
+  <button id="barra-zap" class="zap" type="button">WhatsApp</button>
+</div>
+<div id="modal-dados" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-dados">
+  <div class="modal-caixa">
+    <h2 id="t-dados">Seu nome no orçamento</h2>
+    <p class="dica" style="margin:0">Sai no PDF para o cliente saber quem é você e pagar o sinal. É só uma vez; depois dá para mudar no Perfil.</p>
+    <label for="dd-nome">Seu nome ou empresa<input id="dd-nome" autocomplete="name"></label>
+    <label for="dd-tel">Seu WhatsApp<input id="dd-tel" inputmode="tel" autocomplete="tel"></label>
+    <label for="dd-pix">Chave Pix <small class="dica">opcional, para o cliente pagar o sinal</small><input id="dd-pix" placeholder="Celular com +55, CPF, e-mail ou aleatória"></label>
+    <div class="linha-botoes"><button id="dd-ok" class="primario" type="button">Salvar e continuar</button><button id="dd-pular" type="button">Agora não</button></div>
+  </div>
+</div>
 <div id="modal-pag" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="t-pag">
   <div class="modal-caixa">
     <h2 id="t-pag">Registrar pagamento</h2>
@@ -607,8 +646,8 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // ===== núcleo: leitor de fala → itens, e Pix copia-e-cola =====
 var NUM_PALAVRAS = {
@@ -1129,6 +1168,7 @@ function atualizarTotal() {
   $('subtotal').textContent = dinheiro(st);
   $('linha-desc').hidden = !ds; $('desconto-mostra').textContent = '− ' + dinheiro(ds);
   $('total').textContent = dinheiro(tt);
+  if (window.mostrarBarra) mostrarBarra();
   var cod = codigoPix(sinalDe(atual), 'ORC' + (atual.numero || numeroTexto(proximoNumero())));
   $('pix-box').hidden = !cod;
   if (cod) {
@@ -1245,10 +1285,14 @@ function ouvir() {
   rec.start();
 }
 function pararVisual() {
+  var estava = $('mic').classList.contains('gravando');
   querOuvir = false; $('mic').classList.remove('gravando'); $('mic-txt').textContent = 'Toque e fale';
+  $('mic').setAttribute('aria-pressed', 'false'); if (estava && navigator.vibrate) navigator.vibrate(40);
   var novo = frases.join(', ').trim();
   if (novo && $('selo-exemplo').hidden && temOrcamentoMontado()) { $('selo-exemplo').hidden = true; acrescentar(novo); }
   else if ($('fala').value.trim()) { var ex = !$('selo-exemplo').hidden; $('selo-exemplo').hidden = true; montar(ex); }
+  else return;
+  if (estava) $('t-itens').scrollIntoView({ behavior: 'smooth', block: 'start' }); // mostra o que o app entendeu
 }
 function temOrcamentoMontado() { return atual.itens.some(function (it) { return (it.descricao || '').trim() || Number(it.valorUnit) > 0; }); }
 $('mic').addEventListener('click', function () {
@@ -1258,6 +1302,7 @@ $('mic').addEventListener('click', function () {
   base = $('selo-exemplo').hidden ? $('fala').value.trim() : '';
   frases = []; parcial = ''; silencios = 0; querOuvir = true;
   $('mic').classList.add('gravando'); $('mic-txt').textContent = 'Ouvindo… toque para parar';
+  $('mic').setAttribute('aria-pressed', 'true'); if (navigator.vibrate) navigator.vibrate(40);
   avisar('');
   try { ouvir(); } catch (err) { pararVisual(); avisar('Não deu para ligar o microfone. Tente de novo.'); }
 });
@@ -1271,7 +1316,13 @@ $('cliente').addEventListener('input', function () {
   if (c) { if (!$('cliente-tel').value) $('cliente-tel').value = c.tel; if (!$('cliente-end').value) $('cliente-end').value = c.endereco; }
   atualizarTotal();
 });
+var confirmarNovo = 0;
 $('novo').addEventListener('click', function () {
+  // orçamento com valor que ainda não foi salvo: pede um segundo toque
+  if (!atual.id && !eExemplo() && totalDe(atual) > 0 && Date.now() - confirmarNovo > 4000) {
+    confirmarNovo = Date.now(); avisar('Esse orçamento ainda não foi enviado. Toque de novo para apagar e começar outro.'); return;
+  }
+  confirmarNovo = 0;
   atual = docVazio(); fotos = []; desenharFotos(); $('fala').value = ''; $('selo-exemplo').hidden = true;
   atual.itens = [{ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }];
   preencherCampos(); avisar(''); window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1640,14 +1691,53 @@ function textoOrcamento(d) {
   if (perfil.nome) l.push('', perfil.nome);
   return l.join('\n');
 }
+// O exemplo da primeira abertura não vira orçamento de verdade, e o primeiro PDF não sai sem o nome de quem faz
+function eExemplo() { return !$('selo-exemplo').hidden; }
+var depoisDosDados = null, dadosPulados = false;
+function comDados(acao) {
+  if (perfil.nome || dadosPulados) return acao();
+  depoisDosDados = acao;
+  $('dd-nome').value = ''; $('dd-tel').value = perfil.tel || ''; $('dd-pix').value = perfil.pix || '';
+  $('modal-dados').hidden = false; $('dd-nome').focus();
+}
+$('dd-ok').addEventListener('click', function () {
+  if (!$('dd-nome').value.trim()) { $('dd-nome').focus(); return; }
+  perfil.nome = $('dd-nome').value.trim(); perfil.tel = $('dd-tel').value.trim(); perfil.pix = $('dd-pix').value.trim();
+  ['nome', 'tel', 'pix'].forEach(function (c) { $('p-' + c).value = perfil[c] || ''; });
+  guardarJSON('orc-perfil', perfil); $('aviso-perfil').hidden = true; atualizarTotal();
+  $('modal-dados').hidden = true; var a = depoisDosDados; depoisDosDados = null; if (a) a();
+});
+$('dd-pular').addEventListener('click', function () { dadosPulados = true; $('modal-dados').hidden = true; var a = depoisDosDados; depoisDosDados = null; if (a) a(); });
+function avisoExemplo() {
+  avisar('Isto é só o exemplo. Toque em “Toque e fale” e fale o seu serviço primeiro.');
+  $('mic').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 $('pdf').addEventListener('click', function () {
+  if (eExemplo()) { $('bv-pdf').click(); return; }
+  comDados(baixarPdf);
+});
+function baixarPdf() {
   try { salvarAtual(true); var x = pdfOrcamento(atual); x.doc.save(x.nome); avisar('PDF baixado e guardado em Orçamentos.'); desenharOrcs(); }
   catch (e) { avisar('Não deu para gerar o PDF. Verifique a internet e tente de novo.'); }
-});
+}
 $('zap').addEventListener('click', function () {
+  if (eExemplo()) { avisoExemplo(); return; }
+  comDados(mandarZap);
+});
+function mandarZap() {
   try { salvarAtual(true); desenharOrcs(); compartilhar(pdfOrcamento(atual), textoOrcamento(atual), atual.cliente.tel); }
   catch (e) { salvarAtual(true); abrirWhats(atual.cliente.tel, textoOrcamento(atual)); avisar('Abrimos o WhatsApp com o resumo e o Pix.'); }
-});
+}
+// Barra fixa com total e envio: aparece quando há valor e os botões de baixo estão fora da tela
+$('barra-pdf').addEventListener('click', function () { $('pdf').click(); });
+$('barra-zap').addEventListener('click', function () { $('zap').click(); });
+var zapVisivel = false;
+if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { zapVisivel = es[0].isIntersecting; mostrarBarra(); }).observe($('zap'));
+function mostrarBarra() {
+  var tt = totalDe(atual);
+  $('barra-total').textContent = dinheiro(tt);
+  $('barra-envio').hidden = !(tt > 0) || zapVisivel || eExemplo() || $('tela-novo').hidden;
+}
 $('copiar-pix').addEventListener('click', function () {
   var cod = $('pix-codigo').textContent;
   navigator.clipboard.writeText(cod).then(function () { avisar('Pix copiado.'); }).catch(function () {
@@ -1875,6 +1965,7 @@ function irPara(aba) {
   document.querySelectorAll('.abas button').forEach(function (b) { if (b.dataset.aba === aba) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   document.querySelector('header h1').textContent = TITULOS[aba];
   $('sub-novo').hidden = aba !== 'novo';
+  if (window.mostrarBarra) mostrarBarra();
   if (aba === 'orcs') desenharOrcs(); if (aba === 'precos') desenharPrecos(); if (aba === 'clientes') desenharClientes();
   window.scrollTo(0, 0);
 }
@@ -2055,8 +2146,9 @@ $('bv-pdf').addEventListener('click', function () {
 $('bv-fechar').addEventListener('click', function () { guardar('orc-bv-fechado', '1'); mostrarBoasVindas(); });
 mostrarBoasVindas();
 if (!perfil.nome) $('aviso-perfil').hidden = false;
+window.addEventListener('DOMContentLoaded', function () { try { atualizarTotal(); } catch (e) {} });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
-<script src="conta.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script defer src="conta.js"></script>
 </body>
 </html>
