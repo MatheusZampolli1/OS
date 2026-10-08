@@ -5,6 +5,7 @@ Rode na raiz do repositório:  python3 fonte/gerar_site.py
 O app fica em app/ e não é gerado aqui.
 """
 import html
+import json
 import os
 import re
 
@@ -86,6 +87,10 @@ def cabeca(titulo, descricao, base, caminho, extra=''):
 <meta property="og:description" content="{e(descricao)}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="pt_BR">
+<meta property="og:image" content="{URL}assets/compartilhar.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#1d2428">
 <link rel="icon" href="{base}assets/icone.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -471,7 +476,7 @@ def privacidade(base):
     return f'''<article class="wrap estreito artigo">
 <span class="etiqueta">Documento</span>
 <h1>Política de privacidade</h1>
-<p class="meta">Atualizado em 06/10/2026</p>
+<p class="meta">Atualizado em 08/10/2026</p>
 <p>Esta política explica quais dados o {NOME} trata, para quê e quais são os seus direitos pela Lei Geral de Proteção de Dados (Lei 13.709/2018).</p>
 <h2>Quem é o responsável</h2>
 <p>O controlador dos dados é {RESPONSAVEL}, responsável pelo {NOME}. Pedidos sobre seus dados podem ser feitos pelo <a href="{base}contato.html">contato</a>.</p>
@@ -482,20 +487,24 @@ def privacidade(base):
 <li><b>Seu trabalho:</b> orçamentos, preços, clientes (nome, telefone, endereço), fotos e assinaturas que você coloca no app.</li>
 <li><b>Uso do app:</b> contagens anônimas de quando o app é aberto e de quando um PDF é gerado, ligadas a um número aleatório do aparelho. Não incluem nada do orçamento (cliente, itens ou valores) e servem só para sabermos se o app está ajudando.</li>
 <li><b>Entrar com Google:</b> se você escolher entrar com o Google, recebemos do Google só o seu nome, e-mail e foto do perfil, para criar e identificar a conta. Não temos acesso à sua senha do Google.</li>
+<li><b>Assinatura do plano:</b> ao assinar, você informa nome e CPF ou CNPJ. Esses dados e o seu e-mail vão para a Asaas, empresa de pagamentos que emite a cobrança (cartão, Pix ou boleto). Os dados do cartão são digitados na página da Asaas; nós não os recebemos.</li>
 <li><b>Link de aprovação:</b> quando você manda um orçamento com link, guardamos uma cópia do que o seu cliente vê (seus dados de contato, nome do cliente, serviços, valores e condições), quantas vezes o link foi aberto e a resposta dele (aprovou ou pediu alteração, com o nome e o comentário que ele escrever). Quem tem o link consegue ver o orçamento. A cópia é apagada quando você apaga o orçamento ou a conta.</li>
 </ul>
 <h2>Voz</h2>
-<p>O reconhecimento de voz é feito pelo próprio navegador do seu celular. No Google Chrome, o navegador envia o áudio ao serviço de voz do Google para transformar em texto. O {NOME} recebe só o texto, não grava nem guarda o áudio.</p>
+<p>O reconhecimento de voz é feito pelo próprio navegador do seu celular. No Google Chrome, o navegador envia o áudio ao serviço de voz do Google para transformar em texto, a não ser que você baixe a voz para usar sem internet; nesse caso o áudio fica no aparelho. O {NOME} recebe só o texto, não grava nem guarda o áudio.</p>
 <h2>Para que usamos</h2>
 <ul>
 <li>Fazer o app funcionar: guardar e mostrar seus orçamentos em qualquer aparelho (execução de contrato).</li>
 <li>Responder seus pedidos de suporte.</li>
 <li>Melhorar o app com base nas contagens anônimas de uso (legítimo interesse).</li>
+<li>Cobrar a assinatura e emitir as faturas (execução de contrato e obrigação legal).</li>
 <li>Avisar sobre mudanças importantes no app ou nos preços.</li>
 </ul>
 <p>Não vendemos seus dados nem os dos seus clientes, e não usamos esses dados para publicidade.</p>
 <h2>Onde ficam</h2>
-<p>Sem conta, os dados ficam só no seu aparelho. Com conta, ficam no Supabase, serviço de banco de dados e login que usamos. Cada conta só consegue ler os próprios dados: essa regra é aplicada no banco de dados, não apenas na tela.</p>
+<p>Sem conta, os dados ficam só no seu aparelho. Com conta, ficam no Supabase, serviço de banco de dados e login que usamos, em servidor na região de São Paulo. Cada conta só consegue ler os próprios dados: essa regra é aplicada no banco de dados, não apenas na tela.</p>
+<h2>Com quem compartilhamos</h2>
+<p>Só com os serviços que fazem o app funcionar, cada um para a sua parte: Supabase (banco de dados e login), Asaas (cobrança da assinatura), Google (reconhecimento de voz do Chrome e, se você escolher, login com Google) e GitHub (hospedagem das páginas do site, que não guarda seus orçamentos). Algumas dessas empresas podem processar dados fora do Brasil; nesses casos a transferência segue o que a LGPD permite para a execução do contrato (art. 33).</p>
 <h2>Por quanto tempo</h2>
 <p>Enquanto a sua conta existir. Se você apagar a conta, os dados são apagados.</p>
 <h2>Seus direitos</h2>
@@ -707,11 +716,22 @@ def calculadoras():
     return feitas
 
 
+def ld_inicio():
+    # dados estruturados para o Google: o app e as perguntas frequentes
+    app = {'@context': 'https://schema.org', '@type': 'SoftwareApplication', 'name': NOME, 'url': URL,
+           'applicationCategory': 'BusinessApplication', 'operatingSystem': 'Android, iOS, navegador',
+           'description': 'Orçamento por voz para pedreiro, pintor, eletricista, encanador e gesseiro: fale o serviço e mande o PDF com Pix no WhatsApp.',
+           'offers': {'@type': 'Offer', 'price': '29.90', 'priceCurrency': 'BRL', 'description': 'Plano mensal, com 14 dias grátis'}}
+    faq = {'@context': 'https://schema.org', '@type': 'FAQPage',
+           'mainEntity': [{'@type': 'Question', 'name': q, 'acceptedAnswer': {'@type': 'Answer', 'text': r}} for q, r in PERGUNTAS]}
+    return ''.join('<script type="application/ld+json">' + json.dumps(x, ensure_ascii=False).replace('</', '<\\/') + '</script>\n' for x in (app, faq))
+
+
 # ---------------------------------------------------------------- geração
 def gerar():
     feitas = []
     feitas.append(pagina('index.html', f'{NOME}: orçamento por voz para quem trabalha com obra',
-                         'Fale o serviço e receba o orçamento pronto em PDF, com Pix e assinatura, para mandar no WhatsApp. Para pedreiro, pintor, eletricista, encanador e gesseiro.', inicio))
+                         'Fale o serviço e receba o orçamento pronto em PDF, com Pix e assinatura, para mandar no WhatsApp. Para pedreiro, pintor, eletricista, encanador e gesseiro.', inicio, ld_inicio()))
     feitas.append(pagina('precos.html', f'Preços · {NOME}', f'Um plano com tudo incluído: {PRECO_MES} por mês ou {PRECO_ANO} por ano, com 14 dias grátis. Grátis durante o lançamento.', precos))
     feitas.append(pagina('profissoes/index.html', f'Profissões · {NOME}', 'Orçamento por voz para pedreiro, pintor, eletricista, encanador e gesseiro.', profissoes_indice))
     for k, p in PROFISSOES.items():
