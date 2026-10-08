@@ -1,0 +1,622 @@
+{
+"itens": [
+[
+"pintura da sala 600",
+"Pintura da sala 1un x600"
+],
+[
+"troca do quadro de luz 450",
+"Troca do quadro de luz 1un x450"
+],
+[
+"pintura da sala fica 600",
+"Pintura da sala 1un x600"
+],
+[
+"é 600 a pintura",
+"Pintura 1un x600"
+],
+[
+"mão de obra 2 mil e 800",
+"Mão de obra 1un x2800"
+],
+[
+"troca de fiação um e quinhentos",
+"Troca de fiação 1un x1500"
+],
+[
+"muro 300 pau",
+"Muro 1un x300"
+],
+[
+"seiscentos reais pintura do muro",
+"Pintura do muro 1un x600"
+],
+[
+"setecentos reais",
+"Serviço 1un x700"
+],
+[
+"oitocentos reais conserto do telhado",
+"Conserto do telhado 1un x800"
+],
+[
+"novecentos reais troca do piso",
+"Troca do piso 1un x900"
+],
+[
+"cento e cinquenta reais visita técnica",
+"Visita técnica 1un x150"
+],
+[
+"contrapiso 2 e meio metros a 30",
+"Contrapiso 2.5m² x30"
+],
+[
+"assentamento de piso 20 metro a 45",
+"Assentamento de piso 20m² x45"
+],
+[
+"pintura do quarto 3 por 4 pé direito 2,70 pintura a 18",
+"Pintura (quarto 3 × 4 m, pé-direito 2,7 m) 37.8m² x18"
+],
+[
+"instalação do chuveiro 120",
+"Instalação do chuveiro 1un x120"
+],
+[
+"4 tomadas 30 cada",
+"Tomadas 4un x30"
+],
+[
+"diária de ajudante 150",
+"Diária de ajudante 1un x150"
+],
+[
+"troca de 3 lâmpadas 60",
+"Troca de lâmpadas 3un x20"
+],
+[
+"pintura 50 metros 18 o metro",
+"Pintura 50m² x18"
+],
+[
+"grafiato 30 metros 25",
+"Grafiato 30m² x25"
+],
+[
+"sanca de gesso 14 metros a 60",
+"Sanca de gesso 14m x60"
+],
+[
+"rodapé 20 metros a 15",
+"Rodapé 20m x15"
+],
+[
+"muro dois mil e quinhentos",
+"Muro 1un x2500"
+],
+[
+"reboco de 30 metros sai por 900",
+"Reboco 30m² x30"
+],
+[
+"quarto 3 por 4 pé direito dois e setenta pintura a dezoito",
+"Pintura (quarto 3 × 4 m, pé-direito 2,7 m) 37.8m² x18"
+],
+[
+"pintura da fachada fica dois mil e quinhentos",
+"Pintura da fachada 1un x2500"
+],
+[
+"calha 10 metros a 40",
+"Calha 10m x40"
+],
+[
+"pintura 85 metros",
+"Pintura 85m² x0"
+],
+[
+"pintura da sala 600 troca do chuveiro 120 e 3 tomadas 40 cada",
+"Pintura da sala 1un x600 | Troca do chuveiro 1un x120 | Tomadas 3un x40"
+],
+[
+"reboco 30 metros a 25 o metro pintura 60 metros a 18 troca de 4 tomadas a 30 cada mão de obra 150",
+"Reboco 30m² x25 | Pintura 60m² x18 | Troca de tomadas 4un x30 | Mão de obra 1un x150"
+],
+[
+"quarto 3 por 4 pé direito 2,70 pintura a 18 rodapé a 12",
+"Pintura (quarto 3 × 4 m, pé-direito 2,7 m) 37.8m² x18 | Rodapé (quarto 3 × 4 m) 14m x12"
+],
+[
+"pintura 2 demãos 40 metros fica 1200 lixamento 100",
+"Pintura 2 demãos 40m² x30 | Lixamento 1un x100"
+],
+[
+"piso 20 metros a 45 contrapiso 20 metros a 30",
+"Piso 20m² x45 | Contrapiso 20m² x30"
+],
+[
+"conserto do portão 300 pintura do muro 800 limpeza 150",
+"Conserto do portão 1un x300 | Pintura do muro 1un x800 | Limpeza 1un x150"
+],
+[
+"pintura da sala R$ 600",
+"Pintura da sala 1un x600"
+],
+[
+"troca do chuveiro R$ 120",
+"Troca do chuveiro 1un x120"
+],
+[
+"mão de obra R$ 1.500",
+"Mão de obra 1un x1500"
+],
+[
+"mão de obra R$ 1.500,00",
+"Mão de obra 1un x1500"
+],
+[
+"pintura 85 m² a R$ 18,50",
+"Pintura 85m² x18.5"
+],
+[
+"reboco 30 metros quadrados a R$ 25 o metro",
+"Reboco 30m² x25"
+],
+[
+"4 tomadas a R$ 30 cada",
+"Tomadas 4un x30"
+],
+[
+"troca de 4 tomadas a R$ 30 cada",
+"Troca de tomadas 4un x30"
+],
+[
+"piso porcelanato 40 m² a R$ 45 o metro",
+"Piso porcelanato 40m² x45"
+],
+[
+"Orçamento para o Ricardo pintura da sala R$ 600 e troca do chuveiro R$ 120",
+"Pintura da sala 1un x600 | Troca do chuveiro 1un x120 #Ricardo"
+],
+[
+"cliente Maria Souza reboco R$ 900",
+"Reboco 1un x900 #Maria Souza"
+],
+[
+"pintura da fachada R$ 2.500",
+"Pintura da fachada 1un x2500"
+],
+[
+"instalação de 6 pontos de luz a R$ 50 cada",
+"Instalação de pontos de luz 6pt x50"
+],
+[
+"quarto 3x4 pé direito 2,70 pintura a R$ 18",
+"Pintura (quarto 3 × 4 m, pé-direito 2,7 m) 37.8m² x18"
+],
+[
+"sala 4 x 5 pé-direito 2,80 pintura R$ 20 o metro",
+"Pintura (sala 4 × 5 m, pé-direito 2,8 m) 50.4m² x20"
+],
+[
+"assentamento de piso 20 m2 a 45",
+"Assentamento de piso 20m² x45"
+],
+[
+"retirada de entulho R$ 300 limpeza final R$ 200",
+"Retirada de entulho 1un x300 | Limpeza final 1un x200"
+],
+[
+"troca de fiação R$ 1.200 instalação do quadro R$ 450",
+"Troca de fiação 1un x1200 | Instalação do quadro 1un x450"
+],
+[
+"impermeabilização da laje 50 m² a R$ 35",
+"Impermeabilização da laje 50m² x35"
+],
+[
+"pintura 2 demãos 60 m² a R$ 15",
+"Pintura 2 demãos 60m² x15"
+],
+[
+"5 diárias de pedreiro a R$ 250",
+"Diárias de pedreiro 5dia x250"
+],
+[
+"textura 30 m² R$ 25 o metro",
+"Textura 30m² x25"
+],
+[
+"massa corrida 40 metros R$ 12",
+"Massa corrida 40m² x12"
+],
+[
+"rodapé 20 metros R$ 15 o metro",
+"Rodapé 20m x15"
+],
+[
+"instalação de ventilador de teto R$ 150",
+"Instalação de ventilador de teto 1un x150"
+],
+[
+"troca de 3 disjuntores R$ 60 cada",
+"Troca de disjuntores 3un x60"
+],
+[
+"conserto de vazamento R$ 180",
+"Conserto de vazamento 1un x180"
+],
+[
+"desentupimento R$ 150 troca do sifão R$ 40",
+"Desentupimento 1un x150 | Troca do sifão 1un x40"
+],
+[
+"pintura do portão R$ 350 e pintura da grade R$ 250",
+"Pintura do portão 1un x350 | Pintura da grade 1un x250"
+],
+[
+"gesso no teto 25 m² a R$ 40",
+"Gesso no teto 25m² x40"
+],
+[
+"drywall 15 m² a R$ 80",
+"Drywall 15m² x80"
+],
+[
+"visita técnica R$ 80",
+"Visita técnica 1un x80"
+],
+[
+"material incluso R$ 800",
+"Material incluso 1un x800"
+],
+[
+"pintura de 3 quartos R$ 1.800",
+"Pintura de quartos 3un x600"
+],
+[
+"instalação de 2 luminárias R$ 50 cada e 1 chuveiro R$ 100",
+"Instalação de luminárias 2un x50 | Chuveiro 1un x100"
+],
+[
+"contrapiso 30 m² R$ 30 o metro e piso 30 m² R$ 45 o metro",
+"Contrapiso 30m² x30 | Piso 30m² x45"
+],
+[
+"troca de telhas R$ 1.200",
+"Troca de telhas 1un x1200"
+],
+[
+"Orçamento pra dona Cida pintura completa da casa R$ 4.500",
+"Pintura completa da casa 1un x4500 #Cida"
+],
+[
+"Orçamento para a Patrícia reforma do banheiro R$ 3.200",
+"Reforma do banheiro 1un x3200 #Patrícia"
+],
+[
+"azulejo 18 m² a R$ 55",
+"Azulejo 18m² x55"
+],
+[
+"rejunte R$ 150",
+"Rejunte 1un x150"
+],
+[
+"pintura externa 120 m² a R$ 22",
+"Pintura externa 120m² x22"
+],
+[
+"instalação de torneira R$ 60",
+"Instalação de torneira 1un x60"
+],
+[
+"reboco 30 m² 25 reais o metro",
+"Reboco 30m² x25"
+],
+[
+"grafiato 40 m² 28 reais",
+"Grafiato 40m² x28"
+],
+[
+"troca do quadro de distribuição R$ 650 aterramento R$ 300",
+"Troca do quadro de distribuição 1un x650 | Aterramento 1un x300"
+],
+[
+"pintura R$ 18 o metro 85 metros",
+"Pintura 85m² x18"
+],
+[
+"muro 10 metros a R$ 120 o metro",
+"Muro 10m x120"
+],
+[
+"calçada 15 m² a R$ 70",
+"Calçada 15m² x70"
+],
+[
+"a pintura vai ficar em R$ 600",
+"Pintura 1un x600"
+],
+[
+"eu cobro 600 na pintura",
+"Pintura 1un x600"
+],
+[
+"pela pintura eu cobro 600",
+"Pintura 1un x600"
+],
+[
+"pintura sai 600",
+"Pintura 1un x600"
+],
+[
+"pintura fica em 600",
+"Pintura 1un x600"
+],
+[
+"pintura tá 600",
+"Pintura 1un x600"
+],
+[
+"pintura com duas mãos 60 m² a 15",
+"Pintura com 2 demãos 60m² x15"
+],
+[
+"rodapé 12 metros lineares a R$ 15",
+"Rodapé 12m x15"
+],
+[
+"contrapiso 2,5 m² a 30",
+"Contrapiso 2.5m² x30"
+],
+[
+"duas diárias de 200",
+"Diárias 2dia x200"
+],
+[
+"1 diária de ajudante R$ 150",
+"Diária de ajudante 1dia x150"
+],
+[
+"troca de 10 lâmpadas a 15 cada",
+"Troca de lâmpadas 10un x15"
+],
+[
+"instalação de 2 chuveiros R$ 120 cada",
+"Instalação de chuveiros 2un x120"
+],
+[
+"troca de 4 tomadas e 2 interruptores R$ 200",
+"Troca de tomadas e 2 interruptores 4un x50"
+],
+[
+"passar fiação nova 50 metros a R$ 8",
+"Passar fiação nova 50m x8"
+],
+[
+"eletroduto 20 metros a 12",
+"Eletroduto 20m x12"
+],
+[
+"instalação de padrão de energia R$ 1.800",
+"Instalação de padrão de energia 1un x1800"
+],
+[
+"troca de registro R$ 90",
+"Troca de registro 1un x90"
+],
+[
+"instalação de vaso sanitário R$ 180",
+"Instalação de vaso sanitário 1un x180"
+],
+[
+"caixa d'água 1000 litros instalação R$ 350",
+"Caixa d'água 1000 litros instalação 1un x350"
+],
+[
+"pintura de 2 portas R$ 80 cada",
+"Pintura de portas 2un x80"
+],
+[
+"envernizar 3 portas a 120",
+"Envernizar portas 3un x120"
+],
+[
+"lixar e pintar o portão R$ 400",
+"Lixar e pintar o portão 1un x400"
+],
+[
+"levantar muro de 15 metros a 180 o metro",
+"Levantar muro 15m x180"
+],
+[
+"chapisco e reboco 40 m² a 35",
+"Chapisco e reboco 40m² x35"
+],
+[
+"demolição R$ 500 caçamba R$ 400",
+"Demolição 1un x500 | Caçamba 1un x400"
+],
+[
+"pintura 60 m² a R$ 18 apaga o último",
+""
+],
+[
+"pintura 600 troca do chuveiro 120 apaga o último",
+"Pintura 1un x600"
+],
+[
+"pintura 600 troca do chuveiro 120 tira o último item",
+"Pintura 1un x600"
+],
+[
+"forro de PVC 20 m² a 60",
+"Forro de pvc 20m² x60"
+],
+[
+"porcelanato 60 por 60 30 m² a 50",
+"Porcelanato 60 por 60 30m² x50"
+],
+[
+"piso 30 metros quadrados R$ 45 o metro quadrado",
+"Piso 30m² x45"
+],
+[
+"pintura sala 3 x 4 pé direito 2,60 R$ 20 o metro",
+"Pintura (sala 3 × 4 m, pé-direito 2,6 m) 36.4m² x20"
+],
+[
+"reboco 30 m² R$ 25 o metro pintura 60 m² R$ 18 o metro 4 tomadas R$ 30 cada mão de obra do chuveiro R$ 150",
+"Reboco 30m² x25 | Pintura 60m² x18 | Tomadas 4un x30 | Mão de obra do chuveiro 1un x150"
+],
+[
+"piso 30 m2 45 contrapiso 30 m2 30",
+"Piso 30m² x45 | Contrapiso 30m² x30"
+],
+[
+"troca de piso da cozinha 12 m² a R$ 60 rodapé 14 metros a R$ 15 retirada do piso antigo R$ 300",
+"Troca de piso da cozinha 12m² x60 | Rodapé 14m x15 | Retirada do piso antigo 1un x300"
+]
+],
+"condicoes": [
+[
+"pintura da sala 600 prazo de 5 dias",
+"Pintura da sala 1un x600",
+{
+"prazo": "5 dias"
+}
+],
+[
+"pintura da sala 600 garantia de 90 dias",
+"Pintura da sala 1un x600",
+{
+"garantia": "90 dias"
+}
+],
+[
+"pintura da sala 600 metade na entrada",
+"Pintura da sala 1un x600",
+{
+"entrada": 50
+}
+],
+[
+"pintura da sala 600 50% de entrada",
+"Pintura da sala 1un x600",
+{
+"entrada": 50
+}
+],
+[
+"pintura da sala 600 desconto de 10%",
+"Pintura da sala 1un x600",
+{
+"desconto": {
+"tipo": "%",
+"valor": 10
+}
+}
+],
+[
+"pintura da sala 600 dou 50 de desconto",
+"Pintura da sala 1un x600",
+{
+"desconto": {
+"tipo": "R$",
+"valor": 50
+}
+}
+],
+[
+"pintura da sala 600 material por conta do cliente",
+"Pintura da sala 1un x600",
+{
+"obs": [
+"Material por conta do cliente"
+]
+}
+],
+[
+"pintura da sala 600 com material",
+"Pintura da sala 1un x600",
+{
+"obs": [
+"Material incluso"
+]
+}
+],
+[
+"pintura da sala R$ 600 validade de 15 dias",
+"Pintura da sala 1un x600",
+{
+"validade": 15
+}
+],
+[
+"pintura da sala R$ 600 pagamento em 3 vezes",
+"Pintura da sala 1un x600",
+{
+"obs": [
+"Parcelado em 3x"
+]
+}
+],
+[
+"aí tem a pintura da sala 600 aí depois a troca do chuveiro 120",
+"Pintura da sala 1un x600 | Troca do chuveiro 1un x120",
+{}
+],
+[
+"pintura da sala 600 não pera 700",
+"Pintura da sala 1un x700",
+{}
+],
+[
+"pintura da sala 600, não, 700",
+"Pintura da sala 1un x700",
+{}
+],
+[
+"tipo uns 600 a pintura da sala",
+"Pintura da sala 1un x600",
+{}
+],
+[
+"bom dia é um orçamento para o seu José pintura da sala 600",
+"Pintura da sala 1un x600 #José",
+{}
+],
+[
+"orçamento do seu Antônio rua das flores 123 pintura 800",
+"Pintura 1un x800 #Antônio",
+{
+"endereco": "Rua das Flores, 123"
+}
+],
+[
+"pintura sala 600 cozinha 400 quarto 500",
+"Pintura sala 1un x600 | Cozinha 1un x400 | Quarto 1un x500",
+{}
+],
+[
+"3 dias a 150",
+"Serviço 3dia x150",
+{}
+],
+[
+"orçamento para Dona Cida pintura da casa toda R$ 3.500 prazo de 10 dias úteis garantia de 1 ano metade na entrada e metade no final pagamento no pix",
+"Pintura da casa toda 1un x3500 #Cida",
+{
+"prazo": "10 dias úteis",
+"garantia": "1 ano",
+"entrada": 50,
+"obs": [
+"Pagamento: pix"
+]
+}
+]
+]
+}
