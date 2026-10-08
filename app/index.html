@@ -121,6 +121,14 @@ footer { color: var(--muted); font-size: .85rem; text-align: center; padding-blo
 .arquivo { position: relative; overflow: hidden; }
 .arquivo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .logo-prev { max-height: 48px; max-width: 140px; border-radius: 6px; }
+.trabalhos-sec { display: grid; gap: 8px; margin: 4px 0 12px; }
+.rotulo-trab { margin: 0; font-weight: 600; }
+.rotulo-trab small { display: block; font-weight: 400; }
+.trab-lista { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.trab-lista:empty { display: none; }
+.trab-lista figure { margin: 0; position: relative; }
+.trab-lista img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; display: block; }
+.trab-lista button { position: absolute; top: 2px; right: 2px; min-height: 0; width: 32px; height: 32px; padding: 0; border-radius: 50%; font-size: 16px; line-height: 1; }
 .resumo-pend { display: flex; flex-wrap: wrap; gap: 10px 18px; }
 .resumo-pend div { display: grid; gap: 2px; }
 .resumo-pend strong { font: 700 1.4rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
@@ -459,6 +467,11 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
         <label for="p-google">Link para o cliente te avaliar no Google (opcional)
           <input id="p-google" inputmode="url" placeholder="https://g.page/r/...">
         </label>
+        <div class="trabalhos-sec">
+          <p class="rotulo-trab">Fotos de trabalhos que você já fez <small class="dica">Até 4. Com elas, o orçamento ganha uma capa com seus trabalhos, que passa confiança para o cliente.</small></p>
+          <div id="trab-lista" class="trab-lista"></div>
+          <label class="botao arquivo" for="trab-in" id="trab-btn">Pôr foto de trabalho<input id="trab-in" type="file" accept="image/*" multiple></label>
+        </div>
         <button id="salvar-perfil" class="primario" type="button">Salvar meus dados</button>
         <p id="perfil-ok" class="status" role="status" hidden></p>
         <p class="dica" id="onde-fica">Fica salvo só neste celular.</p>
@@ -1315,6 +1328,40 @@ $('logo-in').addEventListener('change', function (e) {
   reduzirImagem(f, 400, 0.85, function (url) { perfil.logo = url; guardarJSON('orc-perfil', perfil); mostrarLogo(); });
 });
 mostrarLogo();
+// Fotos de trabalhos antigos: viram a capa do orçamento (como os apps de orçamento lá de fora fazem)
+function desenharTrabalhos() {
+  var box = $('trab-lista'), lista = perfil.trabalhos || []; box.textContent = '';
+  lista.forEach(function (f, i) {
+    var fig = document.createElement('figure'), im = document.createElement('img'), b = document.createElement('button');
+    im.src = f.url; im.alt = 'Trabalho ' + (i + 1);
+    b.type = 'button'; b.textContent = '×'; b.setAttribute('aria-label', 'Tirar foto de trabalho ' + (i + 1));
+    b.addEventListener('click', function () { perfil.trabalhos.splice(i, 1); guardarJSON('orc-perfil', perfil); desenharTrabalhos(); });
+    fig.appendChild(im); fig.appendChild(b); box.appendChild(fig);
+  });
+  $('trab-btn').hidden = lista.length >= 4;
+}
+$('trab-in').addEventListener('change', function (e) {
+  var arqs = Array.prototype.slice.call(e.target.files, 0, 4 - (perfil.trabalhos || []).length);
+  arqs.forEach(function (f) {
+    reduzirImagem(f, 1000, 0.85, function (grande) {
+      // corta em 4:3 pelo centro, para as fotos ficarem alinhadas na capa
+      var im = new Image();
+      im.onload = function () {
+        var cv = document.createElement('canvas'); cv.width = 640; cv.height = 480;
+        var esc = Math.max(640 / im.width, 480 / im.height), lw = im.width * esc, la = im.height * esc;
+        cv.getContext('2d').drawImage(im, (640 - lw) / 2, (480 - la) / 2, lw, la);
+        var url = cv.toDataURL('image/jpeg', 0.72);
+      perfil.trabalhos = (perfil.trabalhos || []).concat([{ url: url, w: 640, h: 480 }]).slice(0, 4);
+      if (!guardar('orc-perfil', JSON.stringify(perfil))) { perfil.trabalhos.pop(); avisar('Sem espaço no celular para mais fotos.'); }
+      else guardarJSON('orc-perfil', perfil); // grava de novo pelo caminho normal, que também manda para a conta
+      desenharTrabalhos();
+      };
+      im.src = grande;
+    });
+  });
+  e.target.value = '';
+});
+desenharTrabalhos();
 
 // ---------- numeração e gravação ----------
 function proximoNumero() { return (Number(ler('orc-seq')) || 0) + 1; }
@@ -1473,8 +1520,41 @@ function pdfMarca(doc) {
   }
   return doc;
 }
+// Capa: nome, para quem é, valor, quem vai fazer e fotos de trabalhos já feitos
+function pdfCapa(doc, d) {
+  var lista = (perfil.trabalhos || []).slice(0, 4);
+  if (!lista.length) return;
+  doc.setFillColor(242, 180, 0); doc.rect(0, 0, W, 6, 'F');
+  var y = 24;
+  if (perfil.logo) { try { doc.addImage(perfil.logo, 'JPEG', M, 14, 26, 26, undefined, 'FAST'); y = 50; } catch (e) {} }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(24); doc.setTextColor(29, 36, 40);
+  var nome = doc.splitTextToSize(perfil.nome || 'Prestador de serviço', W - 2 * M); doc.text(nome, M, y); y += nome.length * 9;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(93, 103, 108);
+  var l1 = [perfil.tel && 'WhatsApp ' + perfil.tel, perfil.cidade, perfil.doc && 'CPF/CNPJ ' + perfil.doc].filter(Boolean).join('  ·  ');
+  if (l1) { doc.text(l1, M, y); y += 8; }
+  y += 4; doc.setDrawColor(29, 36, 40); doc.setLineWidth(0.4); doc.line(M, y, W - M, y); y += 10;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(29, 36, 40);
+  doc.text('Orçamento Nº ' + d.numero + (d.cliente.nome ? ' para ' + d.cliente.nome : ''), M, y); y += 8;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(60, 68, 72);
+  doc.text(d.data + '  ·  Valor: ' + dinheiro(totalDe(d)) + '  ·  detalhes na próxima página', M, y); y += 8;
+  if (perfil.sobre) { y += 2; y = pdfTexto(doc, [perfil.sobre], y, 11); }
+  y += 4; doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(29, 36, 40); doc.text('Trabalhos que já fiz', M, y); y += 5;
+  var larg = (W - 2 * M - 6) / 2, alt = Math.min(larg * 0.75, (282 - y - 8) / 2);
+  lista.forEach(function (f, i) {
+    var col = i % 2, lin = Math.floor(i / 2), x = M + col * (larg + 6), yy = y + lin * (alt + 6);
+    var la = Math.min(alt, larg * f.h / f.w), lw = la * f.w / f.h; // as fotos já foram cortadas em 4:3
+    try { doc.addImage(f.url, 'JPEG', x + (larg - lw) / 2, yy, lw, la, undefined, 'FAST'); } catch (e) {}
+  });
+  if (perfil.google) {
+    var yg = y + Math.ceil(lista.length / 2) * (alt + 6) + 4, t = 'Veja minhas avaliações no Google';
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(29, 36, 40);
+    doc.text(t, M, yg); doc.link(M, yg - 4, doc.getTextWidth(t), 5, { url: perfil.google });
+  }
+  doc.addPage();
+}
 function pdfOrcamento(d) {
   var doc = pdfNovo();
+  pdfCapa(doc, d);
   var y = pdfCabecalho(doc, 'ORÇAMENTO', d.numero, d.data);
   y = pdfCliente(doc, d, y);
   y = pdfItens(doc, d, y);
@@ -1487,7 +1567,7 @@ function pdfOrcamento(d) {
   cond.push('Validade deste orçamento: ' + d.validade + ' dias.');
   if (d.obs) cond.push('Observações: ' + d.obs);
   y = pdfTexto(doc, cond, y);
-  if (perfil.sobre) { y += 3; doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(29, 36, 40); doc.text('Quem vai fazer o serviço', M, y); y = pdfTexto(doc, [perfil.sobre], y + 5); }
+  if (perfil.sobre && !(perfil.trabalhos || []).length) { y += 3; doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(29, 36, 40); doc.text('Quem vai fazer o serviço', M, y); y = pdfTexto(doc, [perfil.sobre], y + 5); }
   var rot = d.entrada > 0 && d.entrada < 100 ? 'Pague o sinal com Pix: ' + dinheiro(sinalDe(d)) : 'Pague com Pix: ' + dinheiro(sinalDe(d));
   y = pdfPix(doc, codigoPix(sinalDe(d), 'ORC' + d.numero), rot, y + 4);
   pdfAssinaturas(doc, d, y + 2);
@@ -1773,7 +1853,7 @@ $('backup-in').addEventListener('change', function (e) {
       guardarJSON('orc-perfil', perfil); guardarJSON('orc-docs', docs); guardarJSON('orc-precos', precos); guardarJSON('orc-clientes', clientes);
       if (c.seq) guardar('orc-seq', c.seq);
       Object.keys(CAMPOS).forEach(function (id) { $(id).value = perfil[CAMPOS[id]] || ''; });
-      mostrarLogo(); tudo(); avisar('Cópia restaurada: ' + docs.length + ' orçamentos.');
+      mostrarLogo(); desenharTrabalhos(); tudo(); avisar('Cópia restaurada: ' + docs.length + ' orçamentos.');
     } catch (err) { avisar('Esse arquivo não é uma cópia do Tá Orçado.'); }
   };
   r.readAsText(f); e.target.value = '';
