@@ -252,7 +252,7 @@ body { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
         <label for="fala">O que você falou (dá para corrigir)
           <textarea id="fala">Orçamento para o cliente João Silva, reboco de parede 30 metros quadrados a 25 reais o metro, pintura com duas demãos 60 metros a 18 reais, troca de 4 tomadas a 30 reais cada, mão de obra de instalação do chuveiro 150 reais</textarea>
         </label>
-        <p class="dica">Se você não falar o preço, usamos o valor da sua tabela de preços. Pode falar as medidas do cômodo, como “quarto 3 por 4, pé-direito 2,70, pintura a 18”, que o app calcula os metros quadrados.</p>
+        <p class="dica">Se você não falar o preço, usamos o valor da sua tabela de preços. Pode falar as medidas do cômodo, como “quarto 3 por 4, pé-direito 2,70, pintura a 18”, que o app calcula os metros quadrados. Prazo, garantia, entrada e desconto também: “prazo de 5 dias, garantia de 90 dias, metade na entrada”. Errou? Fale “não, 700” ou “apaga o último”. Falar de novo acrescenta ao que já está montado.</p>
         <button id="montar" class="primario" type="button">Montar orçamento</button>
       </div>
     </section>
@@ -667,12 +667,17 @@ function separarServicos(t) {
     if (!/^\d+(?:\.\d+)?$/.test(w[i])) continue;
     var ant = w[i - 1] === 'r$' ? w[i - 2] : w[i - 1];
     if (w[i - 1] === 'r$' && !w[i - 2]) continue;
-    if (!ant || !/^[a-zà-ú]+$/.test(ant) || ANTES_FRACO.test(ant)) continue;
+    if (!ant || !/^([a-zà-ú]+|m2)$/.test(ant) || ANTES_FRACO.test(ant)) continue;
+    if (/^(por|x)$/.test(ant) && /^\d/.test(w[i - 2] || '')) continue; // "3 x 4": medida, não preço
     var j = i + 1;
     if (w[j] && new RegExp('^(' + MOEDA + ')$').test(w[j])) saida.push(w[j++]);
     var resto = w.slice(j).join(' '), mu = resto.match(POR_UNIDADE);
     if (mu && mu.index === 0) { var n = mu[0].split(' ').length; for (var k = 0; k < n; k++) saida.push(w[j++]); }
     var prox = w[j];
+    // "pintura sala 600 cozinha 400": cômodo no singular depois de um valor alto é o próximo serviço
+    if (prox && Number(w[i]) >= 20 && /^(cozinha|sala|quarto|banheiro|lavanderia|varanda|corredor|garagem|área|area|suíte|suite|fachada|muro|portão|portao|telhado|escada|quintal|banheira|janela|porta)$/.test(prox)) { saida.push(','); i = j - 1; continue; }
+    // "pintura 18 o metro 85 metros": a metragem depois do preço ainda é do mesmo serviço
+    if (mu && mu.index === 0 && /metro|m2/.test(mu[0]) && /^\d/.test(prox || '') && /^(m|m2|metros?)$/.test(w[j + 1] || '')) { i = j - 1; continue; }
     if (!prox || prox === ',' || DEPOIS_CONTINUA.test(prox)) { i = j - 1; continue; }
     if (/^[a-zà-ú]+$/.test(prox) || /^\d/.test(prox)) saida.push(',');
     i = j - 1;
@@ -687,11 +692,15 @@ function capitalizar(s) {
 
 function lerFala(texto) {
   var t = ' ' + texto.toLowerCase().replace(/\s+/g, ' ') + ' ';
+  // O Chrome escreve "85 m²" e "85m²"; o ² não conta como letra para o \b, então vira "m2"
+  t = t.replace(/m²/g, 'm2').replace(/metros? quadrados?/g, 'm2').replace(/(\d)(m2|m|mts?)(?![a-zà-ú\d])/g, '$1 $2').replace(/(?<![a-zà-ú])mts?(?![a-zà-ú])/g, 'metros');
+  // "duas mãos" de tinta são demãos
+  t = t.replace(/(?<![a-zà-ú])(duas|três|tres|quatro|\d) (?:de )?m[ãa]os(?![a-zà-ú])/g, '$1 demãos');
   t = palavrasParaNumeros(t);
   t = normalizarNumeros(t);
 
   var cliente = '';
-  var mCli = texto.match(/(?:para o cliente|pra o cliente|para a cliente|cliente|para dona|pra dona|para seu|pra seu|para o seu|para a dona)\s+(?:é\s+|o\s+|a\s+|dona\s+|seu\s+)?([A-Za-zÀ-ú]+)(\s+[A-ZÀ-Ú][a-zà-ú]+)?/i);
+  var mCli = texto.match(/(?:para o cliente|pra o cliente|para a cliente|cliente|para dona|pra dona|para seu|pra seu|para o seu|para a dona|pro seu|do seu|da dona|para o senhor|para a senhora|pro senhor|pra senhora|do senhor|da senhora)\s+(?:é\s+|o\s+|a\s+|dona\s+|seu\s+)?([A-Za-zÀ-ú]+)(\s+[A-ZÀ-Ú][a-zà-ú]+)?/i);
   // "Orçamento para o Ricardo", "para a Patrícia", "pra Paulo": nome com inicial maiúscula logo no começo
   if (!mCli) mCli = texto.match(/^\s*(?:[Oo]rçamento\s+)?(?:[Pp]ara|[Pp]ra)\s+(?:o\s+|a\s+)?([A-ZÀ-Ú][a-zà-ú]+)(\s+[A-ZÀ-Ú][a-zà-ú]+)?/);
   if (mCli) {
@@ -702,6 +711,10 @@ function lerFala(texto) {
     t = t.replace(alvo.trim(), ' , ');
   }
 
+  // Condições faladas no meio do orçamento vão para os campos certos, não viram item
+  var cond = lerCondicoes(t);
+  t = cond.t;
+
   // "12,50" é um número só (a vírgula separa itens)
   t = t.replace(/(\d),(\d{1,2})(?!\d)/g, '$1.$2');
   // "18 reais e 50 centavos" vira 18.50 reais
@@ -710,15 +723,21 @@ function lerFala(texto) {
   t = t.replace(/(\d+)\s*(?:reais|real)\s+e\s+(\d{1,2})\s*centavos?/g, function (m, a, b) { return a + '.' + (b.length === 1 ? '0' + b : b) + ' reais'; });
   // "... a 80 e instalação de chuveiro ...": um "e" logo depois de um valor separa dois itens
   t = t.replace(new RegExp('(\\d(?:\\s*(?:' + MOEDA + '))?)\\s+e\\s+(?=[a-zà-ú\\d])(?!meio\\b)', 'g'), '$1 , ');
+  // "4 tomadas a 30 cada e 1 chuveiro 100": o "e" depois de "cada"/"o metro" também separa itens
+  t = t.replace(/(\d\s*(?:reais|real)?\s*(?:cada uma|cada um|cada|o metro linear|o metro|o m2|a unidade|o ponto|a hora|o dia|a diária|a diaria|por dia|por metro|por hora))\s+e\s+(?=[a-zà-ú\d])(?!meio\b)/g, '$1 , ');
   t = separarServicos(t);
   var partes = t.split(/[,;:\n]|\.(?!\d)| e depois | depois | mais | também | tambem | outro item | próximo item | proximo item /);
-  var itens = [];
+  var itens = [], apagarAntes = 0;
   var comodo = null; // medidas faladas ("quarto 3 por 4, pé-direito 2,70") valem para os itens seguintes
   partes.forEach(function (p) {
     p = ' ' + p.trim() + ' ';
     if (!p.trim()) return;
+    // "apaga o último", "tira esse item", "cancela o último": desfaz o item anterior
+    if (/^\s*(?:apaga|apagar|apague|tira|tirar|tire|cancela|cancelar|cancele|remove|remover|exclui|excluir|esquece|esqueça|esqueca)(?:\s+(?:o|esse|este|isso|ele|aquele))?(?:\s+(?:último|ultimo|item|serviço|servico|último item|ultimo item))?\s*$/.test(p)) { if (itens.length) itens.pop(); else apagarAntes++; comodo = null; return; }
     var md = p.match(/(\d+(?:\.\d+)?)\s*(?:m|metros?)?\s*(?:por|x)\s*(\d+(?:\.\d+)?)\s*(?:m\b|metros?\b)?/);
     var mh = p.match(/(?:p[ée][\s-]*direito|altura)\s*(?:de\s*)?(\d+(?:\.\d+)?)\s*(?:m\b|metros?\b)?/);
+    // "porcelanato 60 por 60": medida da peça em centímetros, não do cômodo
+    if (md && (Number(md[1]) >= 20 || Number(md[2]) >= 20)) md = null;
     if (md || mh) {
       if (md) {
         var nomeC = p.slice(0, md.index).match(/(quarto|sala|cozinha|banheiro|lavanderia|varanda|corredor|escrit[óo]rio|garagem|[áa]rea|su[íi]te|closet|c[ôo]modo|loja|parede)\s*(?:de\s*)?$/);
@@ -739,6 +758,11 @@ function lerFala(texto) {
     if (!mPreco) {
       var mv = p.match(/(?:^|\s)(?:fica|ficou|vai ficar|é|sai|sai por|custa|cobro|valor|valor de|preço|preco|total|no total)\s+(\d+(?:\.\d+)?)(?!\.?\d)(?!\s*(?:m\b|m²|m2|metros?|unidades?|pontos?|horas?|dias?|di[áa]rias?|sacos?|latas?|pe[çc]as?|%|x\b|por\b))/);
       if (mv) { mPreco = [mv[1], null, mv[1]]; mPreco.index = mv.index + mv[0].lastIndexOf(mv[1]); }
+    }
+    // "600 a pintura da sala": o valor veio antes do serviço
+    if (!mPreco) {
+      var mi = p.match(/^\s*(\d+(?:\.\d+)?)\s+(?:a|o|na|no|pela|pelo|pra|para|de)\s+[a-zà-ú][^\d]*$/);
+      if (mi && Number(mi[1]) >= 10) { mPreco = [mi[1], null, mi[1]]; mPreco.index = mi.index + mi[0].indexOf(mi[1]); }
     }
     // "2 unidades a 70": preço no fim, sem a palavra reais
     if (!mPreco) {
@@ -772,14 +796,16 @@ function lerFala(texto) {
     var qtd = null, un = 'un', linearDito = false;
     var re = /(\d+(?:\.\d+)?)/g, m, primeiro = null, achou = false;
     while ((m = re.exec(resto)) && !achou) {
-      if (!primeiro) primeiro = m;
       var apos = resto.slice(m.index + m[1].length).trim();
+      // "caixa d'água 1000 litros", "chuveiro 220 volts", "porcelanato 60 por 60": é especificação, não quantidade
+      if (/^(litros?|l|kg|quilos?|cm|mm|w|watts?|volts?|v|amperes?|polegadas?|por \d|x \d|demãos|dem[ãa]os)(?![a-zà-ú\d])/.test(apos) || /(?:por|x)\s*$/.test(resto.slice(0, m.index))) continue;
+      if (!primeiro) primeiro = m;
       for (var i = 0; i < UNIDADES.length; i++) {
         var u = apos.match(UNIDADES[i][0]);
         if (u) {
           qtd = Number(m[1]); un = UNIDADES[i][1]; achou = true; linearDito = /linear/.test(u[0]);
           // "3 pontos de luz" mantém "ponto de luz" na descrição; "tomada 6 pontos" não repete a palavra
-          var manter = un === 'pt' && /^\s*de\b/.test(apos.slice(u[0].length)) ? ' ' + u[0] : '';
+          var manter = (un === 'pt' || un === 'dia') && /^\s*de\b/.test(apos.slice(u[0].length)) ? ' ' + u[0] : '';
           resto = resto.slice(0, m.index) + manter + ' ' + apos.slice(u[0].length);
           break;
         }
@@ -792,9 +818,11 @@ function lerFala(texto) {
     }
 
     if (preco !== null && qtd !== null && !unitario && p.precoComA && (achou || /^(m²|m|h|dia|pt)$/.test(un))) unitario = true;
+    // "3 portas a 120": na obra, "a" depois da quantidade é o preço de cada um
+    if (preco !== null && qtd > 1 && !unitario && p.precoComA && !precoSolto && preco < 1000) unitario = true;
 
     var fimFraco = new RegExp(L + '(a|por|de|do|da|no|na|com|e|o|os|as|em|pra|para|valor|preço|preco|fica|vai ficar|sai|total|no total|de serviço|de servico)\\s*$');
-    var inicioFraco = new RegExp('^\\s*(de|do|da|e|é|o|a|um|uma|com|pra|para|tem|vai ter|vou fazer|fazer|faço|faco)' + R);
+    var inicioFraco = new RegExp('^\\s*(de|do|da|e|é|o|a|um|uma|com|pra|para|tem|vai ter|vou fazer|fazer|faço|faco|na|no|pela|pelo)' + R);
     var desc = resto.replace(new RegExp(L + '(' + MOEDA + ')' + R, 'g'), ' ').replace(/\s+/g, ' ').trim();
     for (var k = 0; k < 4; k++) desc = desc.replace(fimFraco, '').replace(inicioFraco, '').replace(/\s+/g, ' ').trim();
     // "pintura do quarto ... pintura": a palavra repetida sai
@@ -823,10 +851,46 @@ function lerFala(texto) {
       else if (!h && /pint|massa|textura|reboco|emboço|emboco|chapisco|grafiato|parede|revestimento|azulejo|selador/.test(dl)) desc += ' (fale o pé-direito para o app calcular as paredes)';
       if (area) { qtd = Math.round(area * 100) / 100; un = unA; unitario = true; desc = desc + ' (' + conta + ')'; }
     }
+    // "massa corrida 40 metros 12": ninguém cobra 30 centavos o metro, então 12 é o preço do metro
+    if (preco !== null && !unitario && qtdFalada && /^(m²|m)$/.test(un) && preco / qtd < 2) unitario = true;
     var valorUnit = preco === null ? 0 : (unitario ? preco : preco / qtd);
     itens.push({ descricao: capitalizar(desc), qtd: qtd, un: un, valorUnit: Math.round(valorUnit * 100) / 100 });
   });
-  return { cliente: cliente, itens: itens };
+  return { cliente: cliente, itens: itens, apagarAntes: apagarAntes, endereco: cond.endereco, prazo: cond.prazo, garantia: cond.garantia,
+    validade: cond.validade, entrada: cond.entrada, desconto: cond.desconto, obs: cond.obs };
+}
+
+// "prazo de 5 dias", "garantia de 90 dias", "metade na entrada", "10% de desconto", "material por conta do cliente",
+// "rua das Flores 123", "600, não, 700", "aí", "né", "tipo"... Recebe o texto já em minúsculas e com números.
+function lerCondicoes(t) {
+  var c = { prazo: '', garantia: '', validade: null, entrada: null, desconto: null, obs: [], endereco: '' };
+  function tira(re, fn) { t = t.replace(re, function () { fn.apply(null, arguments); return ' , '; }); }
+  var N = '(\\d+(?:\\.\\d+)?)', TEMPO = '(dias? úteis|dias? uteis|dias?|semanas?|m[êe]s|meses|anos?)';
+  function tempo(n, u) { n = Number(n); u = u.replace('uteis', 'úteis'); if (n === 1) u = u.replace(/^dias/, 'dia').replace(/^semanas/, 'semana').replace(/^meses/, 'mês').replace(/^anos/, 'ano'); else u = u.replace(/^dia(?!s)/, 'dias').replace(/^semana(?!s)/, 'semanas').replace(/^m[êe]s$/, 'meses').replace(/^ano(?!s)/, 'anos'); return String(n).replace('.', ',') + ' ' + u; }
+  // "600, não, 700" / "600 aliás 700": fica o último valor
+  t = t.replace(new RegExp(N + '(\\s*(?:' + MOEDA + '))?\\s*,?\\s*(?:não|nao|aliás|alias|quer dizer|na verdade|corrigindo|digo|ou melhor|melhor dizendo|errei)(?:\\s*,?\\s*(?:pera|peraí|perai|espera|é|errei|o certo é|são|sao))*\\s*,?\\s*(?:r\\$\\s*)?' + N, 'g'), function (m, a, moeda, b) { return b + (moeda || ''); });
+  // muletas da fala
+  t = t.replace(/(?<![a-zà-ú])(bom dia|boa tarde|boa noite|vamos lá|vamos la|deixa eu ver|deixa ver|olha só|olha|aí|ai|né|tipo assim|tipo|beleza|tá bom|ta bom|hum|uhum|então|entao|mais ou menos|uns|umas|cerca de|em torno de|aproximadamente|eu cobro|cobro|vou cobrar|eu faço por|faço por|faco por|tá|ta)(?![a-zà-ú])/g, ' ');
+  t = t.replace(/(?<![a-zà-ú])(?:é |e )?(?:um |1 |o )?(?:orçamento|orcamento)(?: (?:de|do|da|para|pra))?(?![a-zà-ú])/g, ' , ');
+  tira(new RegExp('(?:prazo(?: de entrega| da obra| do serviço| do servico)?|fica pronto em|entrego em|termino em|termina em|levo|demora|serviço de|servico de)\\s*(?:de|é|e|fica|em|são|sao)?\\s*' + N + '\\s*' + TEMPO + '(?:\\s*de (?:serviço|servico|obra))?', 'g'), function (m, n, u) { c.prazo = tempo(n, u); });
+  tira(new RegExp('garantia\\s*(?:de|é|e|fica)?\\s*' + N + '\\s*' + TEMPO + '(?:\\s*(?:no|do|de) (?:serviço|servico))?', 'g'), function (m, n, u) { c.garantia = tempo(n, u); });
+  tira(new RegExp('(?:validade(?: do orçamento| do orcamento| da proposta)?|vale por|válido por|valido por|orçamento vale|orcamento vale)\\s*(?:de|é|e)?\\s*' + N + '\\s*dias?', 'g'), function (m, n) { c.validade = Number(n); });
+  tira(new RegExp(N + '\\s*(?:%|por cento)\\s*(?:de |na |no )?(?:entrada|sinal|adiantado|antes)', 'g'), function (m, n) { c.entrada = Number(n); });
+  tira(new RegExp('(?:entrada|sinal)\\s*(?:de)?\\s*' + N + '\\s*(?:%|por cento)', 'g'), function (m, n) { c.entrada = Number(n); });
+  tira(/(?<![a-zà-ú])metade (?:na entrada|de entrada|de sinal|antes|adiantado|no começo|no comeco)(?:,? (?:e )?(?:a )?metade (?:no final|na entrega|no fim|depois))?/g, function () { c.entrada = 50; });
+  tira(/(?<![a-zà-ú])(?:tudo|pagamento|100 ?%) (?:antes|adiantado)(?![a-zà-ú])/g, function () { c.entrada = 100; });
+  tira(/(?<![a-zà-ú])(?:(?:pagamento|paga|pago) )?(?:à vista|a vista)? ?(?:no final|na entrega|no fim) do serviço|(?:pagamento|paga|pago) (?:à vista|a vista|no final|na entrega)(?![a-zà-ú])/g, function () { c.entrada = 0; });
+  tira(new RegExp('(?:desconto de|com desconto de|dou|faço|faco|tiro)\\s*' + N + '\\s*(?:%|por cento)(?:\\s*de desconto)?|' + N + '\\s*(?:%|por cento)\\s*de desconto', 'g'), function (m, a, b) { c.desconto = { tipo: '%', valor: Number(a || b) }; });
+  tira(new RegExp('(?:desconto de|com desconto de)\\s*(?:r\\$\\s*)?' + N + '(?:\\s*(?:' + MOEDA + '))?|(?:dou|faço|faco|tiro)?\\s*(?:r\\$\\s*)?' + N + '(?:\\s*(?:' + MOEDA + '))?\\s*de desconto', 'g'), function (m, a, b) { c.desconto = { tipo: 'R$', valor: Number(a || b) }; });
+  tira(/(?<![a-zà-ú])(?:o )?material (?:(?:fica |é |e )?por conta do cliente|é do cliente|e do cliente|do cliente|o cliente compra|você compra|voce compra|não incluso|nao incluso|à parte|a parte)(?![a-zà-ú])|(?<![a-zà-ú])sem material(?![a-zà-ú])/g, function () { c.obs.push('Material por conta do cliente'); });
+  tira(/(?<![a-zà-ú])(?:com material|(?:o )?material (?:incluso|incluído|incluido)|já com (?:o )?material|ja com (?:o )?material)(?![a-zà-ú])(?!\s*(?:r\$\s*)?\d)/g, function () { c.obs.push('Material incluso'); });
+  tira(/(?<![a-zà-ú])(?:pagamento|pago|paga|aceito|recebo)? ?(?:no |em |via |por )?(pix|cartão|cartao|dinheiro|boleto)(?: ou (pix|cartão|cartao|dinheiro|boleto))?(?![a-zà-ú])/g, function (m, a, b) { if (/pagamento|pago|paga|aceito|recebo|^\s*(no|via|em|por) /.test(m) || !a) c.obs.push('Pagamento: ' + [a, b].filter(Boolean).join(' ou ').replace('cartao', 'cartão')); else c.obs.push('Pagamento: ' + a.replace('cartao', 'cartão')); });
+  tira(new RegExp('(?:parcelo|parcelado|parcela|pagamento|pago|paga)\\s*(?:em)?\\s*' + N + '\\s*(?:vezes|x|parcelas)(?:\\s*(?:no|sem juros|com juros)[a-zà-ú ]*?(?=,|$))?', 'g'), function (m, n) { c.obs.push('Parcelado em ' + n + 'x'); });
+  tira(/(?<![a-zà-ú])(rua|avenida|av\.?|travessa|alameda|estrada|rodovia|praça|praca)\s+([a-zà-ú][a-zà-ú ]{1,40}?)\s*,?\s*(?:número |numero |nº |n )?(\d{1,5})(?![\d.]|\s*(?:reais|real|conto|pau|m2|m\b|metros?))/g, function (m, tipo, nome, n) {
+    c.endereco = capitalizar(tipo.replace(/^av\.?$/, 'avenida')) + ' ' + nome.trim().replace(/(^|\s)([a-zà-ú])(?=[a-zà-ú]{3})/g, function (x, e, l) { return e + l.toUpperCase(); }) + ', ' + n;
+  });
+  c.t = t;
+  return c;
 }
 
 // ----- Pix copia-e-cola (BR Code estático, padrão EMV do Banco Central) -----
@@ -1090,11 +1154,37 @@ function montar(eraExemplo) {
     var c = clientes.filter(function (x) { return x.nome.toLowerCase() === r.cliente.toLowerCase(); })[0];
     atual.cliente = c ? { nome: c.nome, tel: c.tel, endereco: c.endereco } : { nome: r.cliente, tel: '', endereco: '' };
   } else if (cli && cli.nome && $('selo-exemplo').hidden) atual.cliente = cli;
-  atual.itens = r.itens.map(function (it) {
-    if (!(it.valorUnit > 0)) { var p = acharPreco(it.descricao); if (p && p.valor) { it.valorUnit = p.valor; if (it.un === 'un') it.un = p.un; } }
-    return it;
-  });
+  atual.itens = r.itens.map(comPrecoDaTabela);
   if (!atual.itens.length) atual.itens = [{ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }];
+  aplicarCondicoes(r);
+  preencherCampos();
+}
+function comPrecoDaTabela(it) {
+  if (!(it.valorUnit > 0)) { var p = acharPreco(it.descricao); if (p && p.valor) { it.valorUnit = p.valor; if (it.un === 'un') it.un = p.un; } }
+  return it;
+}
+function aplicarCondicoes(r) {
+  if (r.endereco && !atual.cliente.endereco) atual.cliente.endereco = r.endereco;
+  if (r.prazo) atual.prazo = r.prazo;
+  if (r.garantia) atual.garantia = r.garantia;
+  if (r.validade) atual.validade = r.validade;
+  if (r.desconto) atual.desconto = r.desconto;
+  if (r.entrada !== null) { if ([0, 30, 50, 100].indexOf(r.entrada) >= 0) atual.entrada = r.entrada; else r.obs.push('Sinal de ' + r.entrada + '%'); }
+  if (r.obs.length) atual.obs = (atual.obs ? atual.obs + '. ' : '') + r.obs.filter(function (o) { return atual.obs.indexOf(o) < 0; }).join('. ');
+}
+// Falar de novo com o orçamento já montado só acrescenta: não perde preço corrigido à mão, fotos nem campos digitados
+function acrescentar(texto) {
+  lerCampos();
+  var r = lerFala(texto);
+  for (var k = 0; k < r.apagarAntes; k++) atual.itens.pop();
+  atual.itens = atual.itens.filter(function (it) { return (it.descricao || '').trim() || Number(it.valorUnit) > 0; });
+  r.itens.forEach(function (it) { atual.itens.push(comPrecoDaTabela(it)); });
+  if (!atual.itens.length) atual.itens = [{ descricao: '', qtd: 1, un: 'un', valorUnit: 0 }];
+  if (r.cliente && !atual.cliente.nome) {
+    var c = clientes.filter(function (x) { return x.nome.toLowerCase() === r.cliente.toLowerCase(); })[0];
+    atual.cliente = c ? { nome: c.nome, tel: c.tel, endereco: c.endereco } : { nome: r.cliente, tel: '', endereco: atual.cliente.endereco };
+  }
+  aplicarCondicoes(r);
   preencherCampos();
 }
 
@@ -1102,7 +1192,7 @@ function montar(eraExemplo) {
 // O Chrome do Android repete o trecho já falado quando a escuta é contínua.
 // Por isso cada frase é ouvida numa sessão curta, que reinicia sozinha até a pessoa tocar para parar.
 var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-var rec = null, querOuvir = false, base = '', frases = [], parcial = '';
+var rec = null, querOuvir = false, base = '', frases = [], parcial = '', silencios = 0;
 if (!Rec) { $('mic').disabled = true; $('mic-aviso').hidden = false; }
 function limparRepeticao(t) {
   return t.replace(/(^|\s)([a-zà-ú]+)(?:\s+\2)+(?=\s|$)/gi, '$1$2').replace(/\s+/g, ' ').trim();
@@ -1124,13 +1214,15 @@ function ouvir() {
   rec.lang = 'pt-BR'; rec.continuous = false; rec.interimResults = true; rec.maxAlternatives = 1;
   rec.onresult = function (e) {
     var r = e.results[e.results.length - 1];
+    silencios = 0;
     if (r.isFinal) { guardarFrase(r[0].transcript); parcial = ''; } else parcial = r[0].transcript;
     mostrarFala();
   };
   rec.onerror = function (e) {
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { querOuvir = false; avisar('Libere o microfone para este site nas configurações do navegador.'); }
     else if (e.error === 'network') { querOuvir = false; $('mic-offline').hidden = false; $('mic-offline').scrollIntoView({ block: 'nearest' }); }
-    else if (e.error !== 'no-speech' && e.error !== 'aborted') avisar('Não deu para ouvir. Tente de novo ou digite.');
+    else if (e.error === 'no-speech') { if (++silencios >= 3) querOuvir = false; } // esqueceu o microfone ligado: para sozinho
+    else if (e.error !== 'aborted') avisar('Não deu para ouvir. Tente de novo ou digite.');
   };
   rec.onend = function () {
     if (parcial) { guardarFrase(parcial); parcial = ''; mostrarFala(); }
@@ -1141,14 +1233,17 @@ function ouvir() {
 }
 function pararVisual() {
   querOuvir = false; $('mic').classList.remove('gravando'); $('mic-txt').textContent = 'Toque e fale';
-  if ($('fala').value.trim()) { var ex = !$('selo-exemplo').hidden; $('selo-exemplo').hidden = true; montar(ex); }
+  var novo = frases.join(', ').trim();
+  if (novo && $('selo-exemplo').hidden && temOrcamentoMontado()) { $('selo-exemplo').hidden = true; acrescentar(novo); }
+  else if ($('fala').value.trim()) { var ex = !$('selo-exemplo').hidden; $('selo-exemplo').hidden = true; montar(ex); }
 }
+function temOrcamentoMontado() { return atual.itens.some(function (it) { return (it.descricao || '').trim() || Number(it.valorUnit) > 0; }); }
 $('mic').addEventListener('click', function () {
   if (!Rec) return;
   if (querOuvir) { querOuvir = false; if (rec) rec.stop(); return; }
   if (navigator.onLine === false) { $('mic-offline').hidden = false; $('fala').focus(); return; }
   base = $('selo-exemplo').hidden ? $('fala').value.trim() : '';
-  frases = []; parcial = ''; querOuvir = true;
+  frases = []; parcial = ''; silencios = 0; querOuvir = true;
   $('mic').classList.add('gravando'); $('mic-txt').textContent = 'Ouvindo… toque para parar';
   avisar('');
   try { ouvir(); } catch (err) { pararVisual(); avisar('Não deu para ligar o microfone. Tente de novo.'); }
