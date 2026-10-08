@@ -372,10 +372,27 @@ def profissoes_indice(base):
 # ---------------------------------------------------------------- novidades
 VERSOES = [
     ('Em construção', 'breve', [
-        'Conta com login: seus orçamentos, clientes e preços guardados na nuvem e em qualquer aparelho',
-        'Assinatura do orçamento à distância, por link',
-        'Aviso quando o cliente abrir o orçamento',
         'Mais de uma pessoa usando a mesma empresa',
+    ]),
+    ('Versão 5 · 08/10/2026', 'nova', [
+        'O app entende melhor a fala da obra: “85 m²”, “pintura da sala 600”, “3 portas a 120”, “eu cobro 600 na pintura”',
+        'Fale prazo, garantia, entrada, desconto, material e forma de pagamento: cada um vai para o campo certo, sem virar item',
+        'Errou? Fale “não, 700” para corrigir o valor ou “apaga o último” para tirar o item',
+        'Falar de novo acrescenta itens sem perder o que você já corrigiu à mão, nem as fotos',
+        'O telefone e o endereço do cliente ditos na fala vão para a ficha dele',
+        'Voz sem internet: baixe a voz em português uma vez e use até na obra sem sinal (Chrome novo)',
+        'Capa do orçamento com até 4 fotos de trabalhos que você já fez',
+        'Link para o cliente aprovar no celular dentro do PDF',
+        'Barra com o total e os botões PDF e WhatsApp sempre à mão',
+        'Antes do primeiro PDF, o app pede seu nome, WhatsApp e Pix',
+        'Remover item agora tem Desfazer',
+        'Abre rápido mesmo com sinal fraco, e cores e botões mais fáceis de ver no sol',
+    ]),
+    ('Versão 4 · 06/10/2026', '', [
+        'Conta com login: orçamentos, clientes e preços guardados na nuvem e em qualquer aparelho',
+        'Cliente aprova o orçamento por link no celular, e o app avisa quando ele abrir',
+        'Medidas do cômodo viram metros quadrados e lista de material para mandar ao depósito',
+        'Lembrete para cobrar resposta de orçamento parado e calculadoras no menu',
     ]),
     ('Versão 3 · 05/10/2026', '', [
         'Abas: Novo, Orçamentos, Preços, Clientes e Perfil',
@@ -402,7 +419,7 @@ VERSOES = [
 def novidades(base):
     blocos = ''
     for titulo, tag, itens in VERSOES:
-        t = f'<span class="tag breve">Em breve</span>' if tag else ''
+        t = {'breve': '<span class="tag breve">Em breve</span>', 'nova': '<span class="tag">Nova</span>'}.get(tag, '')
         blocos += f'<div class="versao">{t}<h2>{e(titulo)}</h2><ul>' + ''.join(f'<li>{e(i)}</li>' for i in itens) + '</ul></div>'
     return f'''<section class="secao"><div class="wrap estreito">
 <div class="cab"><span class="etiqueta">Novidades</span><h1>O que mudou no app</h1><p class="sub">Cada melhoria, na ordem em que entrou.</p></div>
