@@ -187,7 +187,7 @@ def inicio(base):
 <span class="selo"><i aria-hidden="true"></i>Grátis durante o lançamento</span>
 <h1>Fale o serviço.<br>O orçamento sai pronto.</h1>
 <p class="sub">Para pedreiro, pintor, eletricista, encanador e gesseiro. Você fala no celular, o app monta o orçamento em PDF com Pix e você manda no WhatsApp do cliente, ainda na obra.</p>
-<div class="botoes"><a class="botao primario" href="{base}criar-conta.html">Criar conta grátis</a><a class="botao" href="#como">Ver como funciona</a></div>
+<div class="botoes"><a class="botao primario" href="{base}criar-conta.html">Criar conta grátis</a><a class="botao" href="{base}app/">Testar agora, sem cadastro</a></div>
 <p class="miudo">Sem cartão. Sem instalar nada. Funciona no navegador do celular.</p>
 </div>
 <div class="celular" role="img" aria-label="Exemplo de tela do app: a fala vira um orçamento em PDF">
