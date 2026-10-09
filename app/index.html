@@ -772,6 +772,7 @@ function lerFala(texto) {
   t = t.replace(/m²/g, 'm2').replace(/metros? quadrados?/g, 'm2').replace(/(\d)(m2|m|mts?)(?![a-zà-ú\d])/g, '$1 $2').replace(/(?<![a-zà-ú])mts?(?![a-zà-ú])/g, 'metros');
   // "duas mãos" de tinta são demãos
   t = t.replace(/(?<![a-zà-ú])(duas|três|tres|quatro|\d) (?:de )?m[ãa]os(?![a-zà-ú])/g, '$1 demãos');
+  t = t.replace(/(?<![a-zà-ú])por cento(?![a-zà-ú])/g, '%');
   t = palavrasParaNumeros(t);
   t = normalizarNumeros(t);
 
@@ -1079,11 +1080,12 @@ function docVazio() {
     desconto: { tipo: 'R$', valor: 0 }, entrada: 50, validade: 15, prazo: '', garantia: '', obs: '',
     status: 'rascunho', assinatura: null, pagamentos: [] };
 }
-function subtotalDe(d) { return d.itens.reduce(function (s, i) { return s + (Number(i.qtd) || 0) * (Number(i.valorUnit) || 0); }, 0); }
+function totalItem(i) { return Math.round((Number(i.qtd) || 0) * (Number(i.valorUnit) || 0) * 100) / 100; }
+function subtotalDe(d) { return Math.round(d.itens.reduce(function (s, i) { return s + totalItem(i); }, 0) * 100) / 100; }
 function descontoDe(d) {
   var st = subtotalDe(d), v = Number(d.desconto && d.desconto.valor) || 0;
   if (!v) return 0;
-  return Math.min(st, d.desconto.tipo === '%' ? st * v / 100 : v);
+  return Math.max(0, Math.min(st, d.desconto.tipo === '%' ? st * v / 100 : v));
 }
 function totalDe(d) { return Math.round((subtotalDe(d) - descontoDe(d)) * 100) / 100; }
 function pagoDe(d) { return (d.pagamentos || []).reduce(function (s, p) { return s + Number(p.valor || 0); }, 0); }
@@ -1154,7 +1156,7 @@ function telWhats(t) {
 // ---------- tela: itens ----------
 function lerCampos() {
   atual.cliente = { nome: $('cliente').value.trim(), tel: $('cliente-tel').value.trim(), endereco: $('cliente-end').value.trim() };
-  atual.desconto = { tipo: $('desc-tipo').value, valor: Number($('desc-valor').value) || 0 };
+  atual.desconto = { tipo: $('desc-tipo').value, valor: Math.max(0, Number($('desc-valor').value) || 0) };
   atual.entrada = Number($('entrada').value) || 0;
   atual.validade = Number($('validade').value) || 15;
   atual.prazo = $('prazo').value.trim(); atual.garantia = $('garantia').value.trim(); atual.obs = $('obs').value.trim();
@@ -1174,17 +1176,17 @@ function desenharItens() {
     d.innerHTML =
       '<label>Serviço<input class="desc" id="d' + idx + '"></label>' +
       '<div class="nums">' +
-      '<label>Qtd<input id="q' + idx + '" type="number" step="any" inputmode="decimal"></label>' +
+      '<label>Qtd<input id="q' + idx + '" type="number" min="0" step="any" inputmode="decimal"></label>' +
       '<label>Un.<input id="u' + idx + '"></label>' +
-      '<label>R$ cada<input id="v' + idx + '" type="number" step="any" inputmode="decimal"></label>' +
+      '<label>R$ cada<input id="v' + idx + '" type="number" min="0" step="any" inputmode="decimal"></label>' +
       '<button class="remover" type="button" aria-label="Remover item">Remover</button>' +
       '</div><div class="sub-total" id="s' + idx + '"></div>';
     box.appendChild(d);
     var di = $('d' + idx), qi = $('q' + idx), ui = $('u' + idx), vi = $('v' + idx);
     di.value = it.descricao; qi.value = it.qtd; ui.value = it.un; vi.value = it.valorUnit || '';
     function atualizar() {
-      it.descricao = di.value; it.qtd = Number(qi.value) || 0; it.un = ui.value; it.valorUnit = Number(vi.value) || 0;
-      $('s' + idx).textContent = String(it.qtd).replace('.', ',') + ' ' + it.un + ' × ' + dinheiro(it.valorUnit) + ' = ' + dinheiro(it.qtd * it.valorUnit);
+      it.descricao = di.value; it.qtd = Math.max(0, Number(qi.value) || 0); it.un = ui.value; it.valorUnit = Math.max(0, Number(vi.value) || 0);
+      $('s' + idx).textContent = String(it.qtd).replace('.', ',') + ' ' + it.un + ' × ' + dinheiro(it.valorUnit) + ' = ' + dinheiro(totalItem(it));
       atualizarTotal();
     }
     di.addEventListener('change', function () {
@@ -1572,7 +1574,7 @@ function pdfItens(doc, d, y) {
     doc.text(linhas, M, y);
     doc.text(String(it.qtd).replace('.', ',') + ' ' + it.un, 122, y, { align: 'right' });
     doc.text(dinheiro(it.valorUnit), 158, y, { align: 'right' });
-    doc.text(dinheiro(it.qtd * it.valorUnit), W - M, y, { align: 'right' });
+    doc.text(dinheiro(totalItem(it)), W - M, y, { align: 'right' });
     y += linhas.length * 5 + 3; doc.line(M, y - 2, W - M, y - 2); y += 2;
   });
   var ds = descontoDe(d);
@@ -1749,7 +1751,7 @@ function compartilhar(x, texto, tel, msgOk) {
 }
 function textoOrcamento(d) {
   var l = ['*Orçamento nº ' + d.numero + (d.cliente.nome ? ' para ' + d.cliente.nome : '') + '*'];
-  d.itens.forEach(function (it) { l.push('• ' + (it.descricao || 'Serviço') + ': ' + dinheiro(it.qtd * it.valorUnit)); });
+  d.itens.forEach(function (it) { l.push('• ' + (it.descricao || 'Serviço') + ': ' + dinheiro(totalItem(it))); });
   if (descontoDe(d)) l.push('Desconto: − ' + dinheiro(descontoDe(d)));
   l.push('*Total: ' + dinheiro(totalDe(d)) + '*');
   if (d.entrada > 0 && d.entrada < 100) l.push('Sinal de ' + d.entrada + '% para começar: ' + dinheiro(sinalDe(d)));

@@ -631,6 +631,9 @@
 {
 "tel": "98765-4321"
 }
-]
+],
+["pintura 800 dez por cento de desconto", "Pintura 1un x800", {"desconto": {"tipo": "%", "valor": 10}}],
+["pintura 800 10 por cento de desconto", "Pintura 1un x800", {"desconto": {"tipo": "%", "valor": 10}}],
+["pintura 800 trinta por cento de sinal", "Pintura 1un x800", {"entrada": 30}]
 ]
 }
