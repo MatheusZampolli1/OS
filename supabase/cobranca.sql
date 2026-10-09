@@ -17,7 +17,7 @@ alter table public.cobranca_config add column if not exists preco_trimestral num
 alter table public.cobranca_config enable row level security;
 drop policy if exists "todos leem" on public.cobranca_config;
 create policy "todos leem" on public.cobranca_config for select to anon, authenticated using (true);
-revoke insert, update, delete on public.cobranca_config from anon, authenticated;
+revoke all on public.cobranca_config from anon, authenticated;
 grant select on public.cobranca_config to anon, authenticated;
 
 -- ---------- assinatura de cada usuário ----------
@@ -38,7 +38,7 @@ alter table public.assinaturas enable row level security;
 drop policy if exists "dono le" on public.assinaturas;
 create policy "dono le" on public.assinaturas for select to authenticated using ((select auth.uid()) = user_id);
 revoke all on public.assinaturas from anon;
-revoke insert, update, delete on public.assinaturas from authenticated;
+revoke all on public.assinaturas from authenticated;
 grant select on public.assinaturas to authenticated;
 
 -- ---------- cobranças (faturas) ----------
@@ -61,7 +61,7 @@ alter table public.cobrancas enable row level security;
 drop policy if exists "dono le" on public.cobrancas;
 create policy "dono le" on public.cobrancas for select to authenticated using ((select auth.uid()) = user_id);
 revoke all on public.cobrancas from anon;
-revoke insert, update, delete on public.cobrancas from authenticated;
+revoke all on public.cobrancas from authenticated;
 grant select on public.cobrancas to authenticated;
 
 -- eventos já processados (o Asaas pode mandar o mesmo aviso mais de uma vez)

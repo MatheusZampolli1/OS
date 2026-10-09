@@ -145,7 +145,7 @@ export function criarAssinar(amb, f = fetch) {
       return resposta(req, 200, { link: primeira ? primeira.invoiceUrl : null, vencimento: venc });
     } catch (e) {
       console.error('assinar', e);
-      return resposta(req, e.asaas ? 400 : 500, { erro: e.asaas ? 'O Asaas recusou: ' + e.message : 'Não deu para criar a assinatura agora. Tente de novo em alguns minutos.' });
+      return resposta(req, e.asaas ? 400 : 500, { erro: e.asaas ? 'Não deu para criar a assinatura com esses dados. Confira o nome e o CPF ou CNPJ e tente de novo.' : 'Não deu para criar a assinatura agora. Tente de novo em alguns minutos.' });
     }
   };
 }
@@ -171,7 +171,28 @@ export function criarCancelar(amb, f = fetch) {
   };
 }
 
+// Comparação sem atalho: o tempo não revela quantos caracteres do token estavam certos.
+function iguais(a, b) {
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
+// Situação que o pagamento precisa ter no Asaas para o aviso ser aceito. Evento fora da lista só é registrado.
+const PAGOS = ['CONFIRMED', 'RECEIVED', 'RECEIVED_IN_CASH'];
+const STATUS_DO_EVENTO = {
+  PAYMENT_CONFIRMED: PAGOS,
+  PAYMENT_RECEIVED: PAGOS,
+  PAYMENT_RECEIVED_IN_CASH: PAGOS,
+  PAYMENT_OVERDUE: ['OVERDUE'],
+  PAYMENT_REFUNDED: ['REFUNDED', 'REFUND_REQUESTED', 'REFUND_IN_PROGRESS'],
+  PAYMENT_CHARGEBACK_REQUESTED: ['CHARGEBACK_REQUESTED', 'CHARGEBACK_DISPUTE', 'AWAITING_CHARGEBACK_REVERSAL'],
+  PAYMENT_RECEIVED_IN_CASH_UNDONE: ['PENDING', 'OVERDUE'],
+};
+
 // Avisos do Asaas. Responde 200 só depois de gravar; em erro devolve 500 para o Asaas reenviar.
+// O conteúdo do aviso não é confiado: o pagamento é buscado de novo no Asaas e o que vale é a resposta dele.
 export function criarWebhook(amb, f = fetch) {
   const c = clientes(amb, f);
   let esperado = '';
@@ -180,10 +201,22 @@ export function criarWebhook(amb, f = fetch) {
     esperado = esperado || String(amb.ASAAS_WEBHOOK_TOKEN || '');
     if (esperado.length < 32) return new Response('ASAAS_WEBHOOK_TOKEN nao configurado', { status: 500 });
     const tok = req.headers.get('asaas-access-token') || '';
-    if (tok.length !== esperado.length || tok !== esperado) return new Response('nao autorizado', { status: 401 });
+    if (!iguais(tok, esperado)) return new Response('nao autorizado', { status: 401 });
     let ev;
     try { ev = await req.json(); } catch (e) { return new Response('json invalido', { status: 400 }); }
+    const ignorar = (motivo) => new Response(JSON.stringify({ resultado: 'ignorado: ' + motivo }), { headers: { 'content-type': 'application/json' } });
     try {
+      if (ev && ev.payment && ev.payment.id) {
+        let real;
+        try { real = await c.asaas('GET', '/payments/' + encodeURIComponent(String(ev.payment.id))); }
+        catch (e) {
+          if (e.asaas && e.status === 404) return ignorar('pagamento nao existe no Asaas');
+          throw e; // Asaas fora do ar ou chave errada: 500 para o Asaas reenviar depois
+        }
+        const aceitos = STATUS_DO_EVENTO[ev.event];
+        if (aceitos && !aceitos.includes(real.status)) return ignorar('situacao do pagamento no Asaas e ' + real.status);
+        ev = { ...ev, payment: real };
+      }
       const r = await c.rpc('processar_evento_asaas', { p: ev });
       return new Response(JSON.stringify({ resultado: r }), { headers: { 'content-type': 'application/json' } });
     } catch (e) {

@@ -12,6 +12,7 @@ create table if not exists public.eventos_app (
 );
 create index if not exists eventos_app_tipo on public.eventos_app (tipo, em);
 create index if not exists eventos_app_aparelho on public.eventos_app (aparelho, em);
+create index if not exists eventos_app_em on public.eventos_app (em);
 alter table public.eventos_app enable row level security;
 drop policy if exists "qualquer um registra" on public.eventos_app;
 create policy "qualquer um registra" on public.eventos_app for insert to anon, authenticated
@@ -19,6 +20,21 @@ create policy "qualquer um registra" on public.eventos_app for insert to anon, a
 revoke all on public.eventos_app from anon, authenticated;
 grant insert on public.eventos_app to anon, authenticated;
 grant usage on sequence public.eventos_app_id_seq to anon, authenticated;
+
+-- Limite: um aparelho registra até 60 eventos por hora e o app inteiro até 5000 por hora.
+-- Passou disso, o evento é descartado em silêncio (o app não percebe e o funil não infla).
+-- security definer porque anon pode inserir, mas não ler a tabela que está sendo contada.
+create or replace function public.limitar_eventos_app() returns trigger
+language plpgsql security definer set search_path = '' as $$
+begin
+  if (select count(*) from public.eventos_app where aparelho = new.aparelho and em > now() - interval '1 hour') >= 60 then return null; end if;
+  if (select count(*) from public.eventos_app where em > now() - interval '1 hour') >= 5000 then return null; end if;
+  return new;
+end $$;
+revoke execute on function public.limitar_eventos_app() from public, anon, authenticated;
+drop trigger if exists limitar_eventos_app on public.eventos_app;
+create trigger limitar_eventos_app before insert on public.eventos_app
+  for each row execute function public.limitar_eventos_app();
 
 -- Painel do dono: funil dos últimos 30 dias e ativação das contas.
 create or replace function public.painel_ativacao() returns jsonb
