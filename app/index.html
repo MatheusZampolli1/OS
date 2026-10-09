@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="canonical" href="https://matheuszampolli1.github.io/OS/app/">
 <title>Tá Orçado</title>
 <meta name="description" content="Fale o serviço e receba o orçamento pronto em PDF para mandar no WhatsApp, com Pix copia e cola.">
 <link rel="manifest" href="manifest.webmanifest">
@@ -670,8 +671,8 @@ input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus
   </div>
 </div>
 
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" crossorigin="anonymous"></script>
 <script>
 // ===== núcleo: leitor de fala → itens, e Pix copia-e-cola =====
 var NUM_PALAVRAS = {
@@ -797,7 +798,7 @@ function lerFala(texto) {
   // "18 reais e 50 centavos" vira 18.50 reais
   // "2 e meio" → 2.5
   t = t.replace(/(\d+) e (?:meio|meia)(?![a-zà-ú])/g, '$1.5');
-  t = t.replace(/(\d+)\s*(?:reais|real)\s+e\s+(\d{1,2})\s*centavos?/g, function (m, a, b) { return a + '.' + (b.length === 1 ? '0' + b : b) + ' reais'; });
+  t = t.replace(/(\d+)\s*(?:(?:reais|real)\s+)?e\s+(\d{1,2})\s*centavos?/g, function (m, a, b) { return a + '.' + (b.length === 1 ? '0' + b : b) + ' reais'; });
   // "... a 80 e instalação de chuveiro ...": um "e" logo depois de um valor separa dois itens
   t = t.replace(new RegExp('(\\d(?:\\s*(?:' + MOEDA + '))?)\\s+e\\s+(?=[a-zà-ú\\d])(?!meio\\b)', 'g'), '$1 , ');
   // "4 tomadas a 30 cada e 1 chuveiro 100": o "e" depois de "cada"/"o metro" também separa itens
@@ -845,6 +846,11 @@ function lerFala(texto) {
     if (!mPreco) {
       var mf = p.match(/\b(?:a|por)\s+(\d+(?:\.\d+)?)(?=\s*$|\s+(?:o|a|por|cada)\b)/);
       if (mf) { mPreco = [mf[1], null, mf[1]]; mPreco.index = mf.index + mf[0].lastIndexOf(mf[1]); }
+    }
+    // "pintura 18 o metro 40 metros": o número logo antes de "o metro", "cada"... é o preço da unidade
+    if (!mPreco) {
+      var mpu = p.match(new RegExp('(\\d+(?:\\.\\d+)?)\\s+(?=' + POR_UNIDADE.source + ')'));
+      if (mpu) { mPreco = [mpu[1], null, mpu[1]]; mPreco.index = mpu.index; }
     }
     // "pintura da sala 600", "4 tomadas 30 cada", "grafiato 30 metros 25": o número solto no fim é o preço
     if (!mPreco) {
@@ -2255,7 +2261,7 @@ window.addEventListener('DOMContentLoaded', function () { try { atualizarTotal()
 // Pede ao navegador para não apagar os dados do app quando o celular ficar sem espaço
 if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(function (j) { if (!j && docs.length) navigator.storage.persist(); }).catch(function () {});
 </script>
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous"></script>
 <script defer src="conta.js"></script>
 </body>
 </html>
