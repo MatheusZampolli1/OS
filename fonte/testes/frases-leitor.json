@@ -639,6 +639,18 @@
 ],
 ["pintura 800 dez por cento de desconto", "Pintura 1un x800", {"desconto": {"tipo": "%", "valor": 10}}],
 ["pintura 800 10 por cento de desconto", "Pintura 1un x800", {"desconto": {"tipo": "%", "valor": 10}}],
-["pintura 800 trinta por cento de sinal", "Pintura 1un x800", {"entrada": 30}]
+["pintura 800 trinta por cento de sinal", "Pintura 1un x800", {"entrada": 30}],
+["pintura 1,500", "Pintura 1un x1500", {"duvidas": [["Era R$ 1,50"]]}],
+["pintura 2,500 reais", "Pintura 1un x2500", {"duvidas": [["Era R$ 2,50"]]}],
+["pintura 1,500 metros a 30", "Pintura 1.5m² x30", {"duvidas": []}],
+["pintura 1.500", "Pintura 1un x1500", {"duvidas": []}],
+["pintura um conto e meio", "Pintura 1un x1500", {"duvidas": [["Era R$ 1,50"]]}],
+["pintura dois contos e meio", "Pintura 1un x2500", {"duvidas": [["Era R$ 2,50"]]}],
+["pintura dois conto", "Pintura 1un x2000", {"duvidas": [["Era R$ 2,00"]]}],
+["pintura 30 conto", "Pintura 1un x30", {"duvidas": []}],
+["4 tomadas 5 conto cada", "Tomadas 4un x5", {"duvidas": []}],
+["pintura 3 vezes de 200", "Pintura 1un x600", {"duvidas": [["Era 3 × R$ 200,00"]], "obs": ["Parcelado em 3x de R$ 200,00"]}],
+["pintura 3x de 200", "Pintura 1un x600", {"duvidas": [["Era 3 × R$ 200,00"]], "obs": ["Parcelado em 3x de R$ 200,00"]}],
+["pintura da sala R$ 600 pagamento em 3 vezes", "Pintura da sala 1un x600", {"duvidas": [], "obs": ["Parcelado em 3x"]}]
 ]
 }
