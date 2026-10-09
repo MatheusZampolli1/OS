@@ -88,7 +88,7 @@ p { margin: 0; }
 .doc .lin { display: flex; justify-content: space-between; gap: 8px; font: 500 .74rem/1.3 var(--font-data); font-variant-numeric: tabular-nums; }
 .doc .tot { border-top: 2px solid #1d2428; padding-top: 6px; display: flex; justify-content: space-between; font: 700 1.1rem/1 var(--font-display); }
 .doc .tit { font: 700 1rem/1 var(--font-display); }
-.zap-falso { background: var(--go); color: #fff; border-radius: 10px; padding: 10px; text-align: center; font-weight: 600; }
+.zap-falso { background: #1f7a4d; color: #fff; border-radius: 10px; padding: 10px; text-align: center; font-weight: 600; }
 
 /* passos e grades */
 .passos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; counter-reset: p; }

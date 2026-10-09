@@ -630,10 +630,11 @@ def post(p):
 # Páginas próprias de login. Usam a mesma sessão do app (supabase-js guarda no localStorage
 # deste domínio), então quem entra aqui já abre o app conectado.
 SUPABASE_JS = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js'
+SUPABASE_JS_SRI = 'sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok'  # sha384 do arquivo dessa versão; trocar junto com a versão
 
 
 def conta_scripts(base):
-    return f'<script src="{SUPABASE_JS}"></script>\n<script src="{base}assets/conta-site.js"></script>\n'
+    return f'<script src="{SUPABASE_JS}" integrity="{SUPABASE_JS_SRI}" crossorigin="anonymous"></script>\n<script src="{base}assets/conta-site.js"></script>\n'
 
 
 def ja_dentro(base, acao):

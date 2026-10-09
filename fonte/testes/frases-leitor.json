@@ -479,7 +479,12 @@
 [
 "troca de piso da cozinha 12 m² a R$ 60 rodapé 14 metros a R$ 15 retirada do piso antigo R$ 300",
 "Troca de piso da cozinha 12m² x60 | Rodapé 14m x15 | Retirada do piso antigo 1un x300"
-]
+],
+["pintura 18 o metro 40 metros", "Pintura 40m² x18"],
+["pintura 18,90 o metro 40 metros", "Pintura 40m² x18.9"],
+["pintura 18 reais o metro 40 metros", "Pintura 40m² x18"],
+["pintura 800 e 50 centavos", "Pintura 1un x800.5"],
+["pintura 800 reais e 50 centavos", "Pintura 1un x800.5"]
 ],
 "condicoes": [
 [
