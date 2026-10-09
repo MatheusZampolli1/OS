@@ -15,7 +15,7 @@ NOME = 'Tá Orçado'
 
 # Canal de atendimento. Vazio esconde o item no site.
 WHATSAPP = '5511989167926'  # só dígitos, com DDI
-EMAIL = ''
+EMAIL = 'taorcado@gmail.com'
 RESPONSAVEL = 'Matheus Zampolli'
 
 PRECO_MES = 'R$ 29,90'
@@ -176,7 +176,7 @@ PERGUNTAS = [
     ('Funciona no iPhone?',
      'O app abre em qualquer celular. O reconhecimento de voz foi testado no Chrome para Android; se a voz não funcionar no seu aparelho, dá para digitar os itens.'),
     ('Quanto custa?',
-     f'Enquanto o app está em lançamento, é grátis. Depois, o plano será {PRECO_MES} por mês ou {PRECO_ANO} por ano, com 14 dias grátis para testar e sem cartão no cadastro.'),
+     f'Todo mundo começa com 14 dias grátis, sem cartão. Depois, o plano é {PRECO_MES} por mês ou {PRECO_ANO} por ano, e você só paga se quiser continuar.'),
 ]
 
 
@@ -189,7 +189,7 @@ def inicio(base):
                     for k, p in PROFISSOES.items())
     return f'''<section class="hero"><div class="wrap">
 <div class="hero-texto">
-<span class="selo"><i aria-hidden="true"></i>Grátis durante o lançamento</span>
+<span class="selo"><i aria-hidden="true"></i>14 dias grátis, sem cartão</span>
 <h1>Fale o serviço.<br>O orçamento sai pronto.</h1>
 <p class="sub">Para pedreiro, pintor, eletricista, encanador e gesseiro. Você fala no celular, o app monta o orçamento em PDF com Pix e você manda no WhatsApp do cliente, ainda na obra.</p>
 <div class="botoes"><a class="botao primario" href="{base}criar-conta.html">Criar conta grátis</a><a class="botao" href="{base}app/">Testar agora, sem cadastro</a></div>
@@ -268,7 +268,7 @@ def inicio(base):
 def precos(base):
     return f'''<section class="secao"><div class="wrap">
 <div class="cab"><span class="etiqueta">Preços</span><h1>Um plano, tudo incluído.</h1><p class="sub">Sem limite de orçamentos, sem cobrança por cliente e sem taxa sobre o seu Pix. Mesmo app em todos os planos; muda só o período.</p></div>
-<p class="faixa-aviso">Lançamento: enquanto estamos em teste, o app é grátis para todo mundo. Ninguém será cobrado sem aviso antes.</p>
+<p class="faixa-aviso">Comece com 14 dias grátis, sem cartão. Ninguém é cobrado sem avisar antes.</p>
 <div class="planos" style="margin-top:20px">
 <div class="plano"><span class="etiqueta">Mensal</span><p class="valor">{PRECO_MES}<small> /mês</small></p>
 <ul><li>14 dias grátis, sem cartão</li><li>Cancele quando quiser</li><li>Todas as funções</li></ul></div>
@@ -314,7 +314,7 @@ def precos(base):
     ('Preciso pôr cartão para testar?', 'Não. O teste de 14 dias não pede cartão. No fim, você escolhe se quer continuar.'),
     ('Vocês cobram taxa sobre o que eu recebo?', 'Não. O Pix vai da conta do cliente direto para a sua. Não ficamos com nenhuma parte.'),
     ('E se eu cancelar?', 'Você continua podendo exportar todos os seus dados: cópia de segurança completa e planilha.'),
-    ('Como vou pagar?', 'No cartão de crédito, que renova sozinho a cada período, ou por Pix e boleto, com uma fatura no seu e-mail a cada período. Durante o lançamento, não há cobrança.'),
+    ('Como vou pagar?', 'No cartão de crédito, que renova sozinho a cada período, ou por Pix e boleto, com uma fatura no seu e-mail a cada período.'),
     ('E quando acabam os 14 dias?', 'Você escolhe um plano e paga. Se não assinar, o app para de criar e enviar orçamentos, recibos e relatórios. Seus dados continuam guardados e você pode ver e exportar tudo quando quiser.'),
     ('E se um pagamento atrasar?', 'O app continua funcionando por 3 dias. Depois disso, a criação de documentos fica pausada até o pagamento cair, e volta sozinha assim que ele é confirmado.'),
     ('Posso desistir e pedir o dinheiro de volta?', 'Sim. Em até 7 dias depois do primeiro pagamento, devolvemos o valor inteiro (direito de arrependimento do Código de Defesa do Consumidor). Depois disso, o cancelamento vale no fim do período já pago.'),
@@ -467,7 +467,7 @@ def termos(base):
 <h2>3. Conta</h2>
 <p>Você é responsável por manter sua senha em segredo. Se perceber uso indevido, fale com a gente pelo <a href="{base}contato.html">contato</a>.</p>
 <h2>4. Preço e cancelamento</h2>
-<p>Durante o lançamento, o app é gratuito. Quando a cobrança começar, os preços estarão na página <a href="{base}precos.html">Preços</a>, com aviso prévio a quem já usa.</p>
+<p>Todo mundo começa com 14 dias grátis, sem cartão. Os preços estão na página <a href="{base}precos.html">Preços</a>. Quem já usa o app é avisado antes de qualquer cobrança.</p>
 <ul>
 <li><b>Teste:</b> 14 dias grátis com todas as funções, sem cartão, uma vez por pessoa. O teste começa quando a conta é criada (ou quando a cobrança começar, para quem já usava).</li>
 <li><b>Planos:</b> mensal, trimestral ou anual, renovados automaticamente ao fim de cada período até você cancelar. No cartão, a renovação é cobrada sozinha; no Pix ou boleto, enviamos uma fatura por e-mail.</li>
@@ -750,7 +750,7 @@ def gerar():
     feitas = []
     feitas.append(pagina('index.html', f'{NOME}: orçamento por voz para quem trabalha com obra',
                          'Fale o serviço e receba o orçamento pronto em PDF, com Pix e assinatura, para mandar no WhatsApp. Para pedreiro, pintor, eletricista, encanador e gesseiro.', inicio, ld_inicio()))
-    feitas.append(pagina('precos.html', f'Preços · {NOME}', f'Um plano com tudo incluído: {PRECO_MES} por mês ou {PRECO_ANO} por ano, com 14 dias grátis. Grátis durante o lançamento.', precos))
+    feitas.append(pagina('precos.html', f'Preços · {NOME}', f'Um plano com tudo incluído: {PRECO_MES} por mês ou {PRECO_ANO} por ano, com 14 dias grátis. 14 dias grátis, sem cartão.', precos))
     feitas.append(pagina('profissoes/index.html', f'Profissões · {NOME}', 'Orçamento por voz para pedreiro, pintor, eletricista, encanador e gesseiro.', profissoes_indice))
     for k, p in PROFISSOES.items():
         feitas.append(pagina(f'profissoes/{k}.html', f'{p["titulo"]} · {NOME}', p['chamada'], profissao(k)))
