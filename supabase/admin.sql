@@ -8,9 +8,10 @@ create table if not exists public.admins (
 alter table public.admins enable row level security;   -- sem nenhuma política: só o próprio banco lê
 revoke all on public.admins from anon, authenticated;
 
--- Primeira vez: a conta mais antiga do app (a sua, criada no teste) vira admin.
+-- Primeira vez: troque SEU-EMAIL-AQUI pelo e-mail da sua conta no app e rode. Se o e-mail não existir, nada acontece.
+-- (Antes o admin era "a conta mais antiga"; rodar de novo depois de apagar a sua conta promovia outra pessoa.)
 insert into public.admins (user_id)
-select id from auth.users order by created_at limit 1
+select id from auth.users where lower(email) = lower('SEU-EMAIL-AQUI')
 on conflict do nothing;
 
 -- Número que veio do app, aceitando texto ou número.
