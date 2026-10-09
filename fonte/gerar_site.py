@@ -750,7 +750,7 @@ def gerar():
     feitas = []
     feitas.append(pagina('index.html', f'{NOME}: orçamento por voz para quem trabalha com obra',
                          'Fale o serviço e receba o orçamento pronto em PDF, com Pix e assinatura, para mandar no WhatsApp. Para pedreiro, pintor, eletricista, encanador e gesseiro.', inicio, ld_inicio()))
-    feitas.append(pagina('precos.html', f'Preços · {NOME}', f'Um plano com tudo incluído: {PRECO_MES} por mês ou {PRECO_ANO} por ano, com 14 dias grátis. 14 dias grátis, sem cartão.', precos))
+    feitas.append(pagina('precos.html', f'Preços · {NOME}', f'Um plano com tudo incluído: {PRECO_MES} por mês ou {PRECO_ANO} por ano, com 14 dias grátis e sem cartão no cadastro.', precos))
     feitas.append(pagina('profissoes/index.html', f'Profissões · {NOME}', 'Orçamento por voz para pedreiro, pintor, eletricista, encanador e gesseiro.', profissoes_indice))
     for k, p in PROFISSOES.items():
         feitas.append(pagina(f'profissoes/{k}.html', f'{p["titulo"]} · {NOME}', p['chamada'], profissao(k)))
