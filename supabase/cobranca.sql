@@ -204,9 +204,9 @@ begin
     update public.cobrancas set creditado = false where id = cob.id;
     res := 'estornado';
   elsif ev = 'PAYMENT_OVERDUE' then
-    -- só a fatura da assinatura atual conta; uma fatura velha de um plano trocado não atrasa ninguém
+    -- só a fatura da assinatura atual conta, e só se o período pago já acabou; uma fatura velha de um plano trocado não atrasa ninguém
     update public.assinaturas set status = 'atrasada', atualizado = now()
-     where user_id = uid and status in ('ativa', 'pendente') and (pg ->> 'subscription' is null or asaas_subscription = pg ->> 'subscription');
+     where user_id = uid and status in ('ativa', 'pendente') and (pago_ate is null or pago_ate < now()) and (pg ->> 'subscription' is null or asaas_subscription = pg ->> 'subscription');
     res := 'atrasada';
   else
     res := 'registrado';
